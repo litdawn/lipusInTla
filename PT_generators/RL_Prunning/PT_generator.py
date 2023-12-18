@@ -24,6 +24,9 @@ class PT_generator:
         self.path2CFile = path2CFile
         self.vars = get_varnames_from_source_code(self.path2CFile)
         self.consts = get_consts_from_source_code(self.path2CFile)
+        print("smt: ",self.smt)
+        print("vars: ",self.vars)
+        print("consts: ",self.consts)
 
         init_varSelection(self.vars)
 

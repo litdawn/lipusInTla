@@ -1,17 +1,12 @@
-import z3
-
-
-def getConstsFromZ3Exp(smt_exp):
+# 读取z3的常量
+def getConstsFromTlaExp(tla_exp):
     frontiers = []
-    frontiers.append(smt_exp)
+    frontiers.append(tla_exp)
     res = []
-    while len(frontiers) > 0:
-        curNode = frontiers[0]
-        frontiers.__delitem__(0)
-        if curNode.sort() == z3.IntSort() and 'const_' in curNode.decl().name():
-            res.append(str(curNode))
-        frontiers.extend(curNode.children())
-    return res
+    while len(frontiers)>0:
+        #todo: 也许要正则匹配一下，读tla的常量，也许不用改
+        break
+    return 0
 
 
 

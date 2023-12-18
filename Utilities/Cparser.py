@@ -1,8 +1,5 @@
-from pycparser import *
-from pycparser import parse_file
 
-
-class VarDefVisitor(c_ast.NodeVisitor):
+class VarDefVisitor():
     def __init__(self):
         self.varnames = []
 
@@ -12,17 +9,18 @@ class VarDefVisitor(c_ast.NodeVisitor):
         self.varnames.append(node.name)
 
 
-def get_varnames_from_source_code(path2CFile):
-    try:
-        astnode = parse_file(path2CFile, use_cpp=True)
-    except c_parser.ParseError as e:
-        return "Parse error:" + str(e)
-    v = VarDefVisitor()
-    v.visit(astnode)
-    return v.varnames
+def get_varnames_from_source_code(file):
+    varnames = []
+    tla_lines = []
+    with open(file, 'r') as f:
+        for line in f.readlines():
+            tla_lines.append(line)
+            if line.startswith("VARIABLE"):
+                varnames.append(line[9:-1])
+    return varnames, tla_lines
 
 
-class ConstDefVisitor(c_ast.NodeVisitor):
+class ConstDefVisitor():
     def __init__(self):
         self.consts = set()
 
@@ -31,14 +29,12 @@ class ConstDefVisitor(c_ast.NodeVisitor):
             self.consts.add(int(node.value))
 
 
-def get_consts_from_source_code(path2CFile):
-    try:
-        astnode = parse_file(path2CFile, use_cpp=True)
-    except c_parser.ParseError as e:
-        return "Parse error:" + str(e)
-    v = ConstDefVisitor()
-    v.visit(astnode)
-    consters = list(v.consts)
+def get_consts_from_source_code(file):
+    consters = []
+    with open(file, 'r') as f:
+        for line in f.readlines():
+            if line.startswith("CONSTANT"):
+                consters.append(line[9:-1])
     for extrac in [0, 1, -1, 2, -2, 3, -3, 6, 4]:
         if extrac not in consters:
             consters.append(extrac)

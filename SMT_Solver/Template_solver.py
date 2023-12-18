@@ -6,7 +6,8 @@ from z3 import *
 
 set_param('parallel.enable', True)
 from SMT_Solver.Config import config
-from Utilities.SMT_parser import getConstsFromZ3Exp
+from Utilities.SMT_parser import getConstsFromTlaExp
+from Utilities.oldSMT_parser import getConstsFromZ3Exp
 from Utilities.TimeController import time_limit_calling
 
 
