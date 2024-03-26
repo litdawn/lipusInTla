@@ -1,17 +1,12 @@
-import torch
-import z3
-from torch import tensor, optim
 from torch.optim import Adam
 
-from PT_generators.RL_Prunning.Conifg import *
 from PT_generators.RL_Prunning.ExternalProcesses.CFG_parser import parseCFG
 from PT_generators.RL_Prunning.ExternalProcesses.SMT_parser import parseSMT
 from PT_generators.RL_Prunning.ExternalProcesses.Sampling import sampling
 from PT_generators.RL_Prunning.NNs.NeuralNetwork import *
 from PT_generators.RL_Prunning.TemplateCenter.TemplateCenter import InitPT, getLeftHandle, init_varSelection, \
-    AvailableActionSelection, update_PT_rule_selction, update_PT_value, ShouldStrict, StrictnessDirtribution, const_ID, \
-    simplestAction, init_constSelection, LossnessDirtribution
-from Utilities.Cparser import get_varnames_from_source_code, get_consts_from_source_code
+    AvailableActionSelection, update_PT_rule_selction, ShouldStrict, StrictnessDirtribution, simplestAction, init_constSelection, LossnessDirtribution
+from seedTemplate.tlaParser.tlaparser import get_varnames_from_source_code, get_consts_from_source_code
 import torch.nn.functional as F
 
 

@@ -1,12 +1,10 @@
 import random
-import signal
 
 from z3 import *
 #todo z3求解器换成apalache或者翻译成smtlib
 
 set_param('parallel.enable', True)
 from SMT_Solver.Config import config
-from Utilities.SMT_parser import getConstsFromTlaExp
 from Utilities.oldSMT_parser import getConstsFromZ3Exp
 from Utilities.TimeController import time_limit_calling
 

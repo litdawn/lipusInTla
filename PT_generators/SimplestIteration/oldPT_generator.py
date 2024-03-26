@@ -1,7 +1,6 @@
 # This is a Template Iteration PT generator which try from the simplest.
-import random
 
-from Utilities.Cparser import get_varnames_from_source_code
+from seedTemplate.tlaParser.tlaparser import get_varnames_from_source_code
 from itertools import combinations, combinations_with_replacement
 from z3 import *
 

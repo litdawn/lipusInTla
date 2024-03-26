@@ -21,21 +21,27 @@ from PT_generators.RL_Prunning.Conifg import config
 #     'non_v': []  # dynamically initialize this one
 # }
 RULE = {
+    # and
     'non_nc': [And(Bool('non_nd')), And(Bool('non_nd'), Bool('non_nd')),
                And(Bool('non_nd'), Bool('non_nd'), Bool('non_nd'))],
+    # or
     'non_nd': [Or(Bool('non_p')), Or(Bool('non_p'), Bool('non_p')), Or(Bool('non_p'), Bool('non_p'), Bool('non_p'))],
+    # < <= =
     'non_p': [Int('non_t') < Int('non_s'),
               Int('non_t') <= Int('non_s'),
               Int('non_t') == Int('non_s')],
+    # +
     'non_t': [Int('non_term'),
               Int('non_term') + Int('non_term'),
               Int('non_term') + Int('non_term') + Int('non_term'),
               Int('non_term') + Int('non_term') + Int('non_term') + Int('non_term')],
+    # *
     'non_term': [Int('non_v'),
                  Int('non_s') * Int('non_v'),
                  Int('non_s') * Int('non_v') * Int('non_v'),
                  Int('non_s') * Int('non_v') * Int('non_v') * Int('non_v'),
                  Int('non_s') * Int('non_v') * Int('non_v') * Int('non_v') * Int('non_v')],
+    'non_'
     # 'non_op1': [-Int('non_t')],  # 'Rule_op1_abs'],
     'non_s': [Int('undecided')],  # Int('non_decided')
     # 'non_decided': ['VALUE'],

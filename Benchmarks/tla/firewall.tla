@@ -48,5 +48,5 @@ TypeOK ==
 
 
 Symmetry == Permutations(Node)
-IndCand == -6*internal <= 4
+IndCand == -8*internal <= 5
 ====
