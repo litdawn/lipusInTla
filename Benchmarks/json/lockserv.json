@@ -1,0 +1,101 @@
+{
+  "location": "line 1, col 1 to line 71, col 4 of module lockserv",
+  "moduleInfo": {
+    "location": "line 1, col 1 to line 1, col 25 of module lockserv",
+    "moduleName": "lockserv"
+  },
+  "extends": {
+    "extendedModuleNames": [
+      "TLC"
+    ],
+    "location": "line 2, col 1 to line 2, col 11 of module lockserv"
+  },
+  "body": {
+    "declaredParams": [
+      {
+        "location": "line 4, col 1 to line 4, col 13 of module lockserv",
+        "paramName": "Node"
+      }
+    ],
+    "definedVariables": [
+      {
+        "variableName": "lock_msg"
+      },
+      {
+        "variableName": "grant_msg"
+      },
+      {
+        "variableName": "unlock_msg"
+      },
+      {
+        "variableName": "holds_lock"
+      },
+      {
+        "variableName": "server_holds_lock"
+      }
+    ],
+    "location": "line 4, col 1 to line 69, col 70 of module lockserv",
+    "operatorDefinitions": [
+      {
+        "location": "line 12, col 1 to line 12, col 74 of module lockserv",
+        "operatorName": "vars",
+        "type": "State"
+      },
+      {
+        "location": "line 14, col 1 to line 16, col 73 of module lockserv",
+        "operatorName": "SendLock",
+        "paramNum": 1,
+        "type": "Action"
+      },
+      {
+        "location": "line 18, col 1 to line 24, col 42 of module lockserv",
+        "operatorName": "RecvLock",
+        "paramNum": 1,
+        "type": "Action"
+      },
+      {
+        "location": "line 26, col 1 to line 30, col 58 of module lockserv",
+        "operatorName": "RecvGrant",
+        "paramNum": 1,
+        "type": "Action"
+      },
+      {
+        "location": "line 32, col 1 to line 36, col 59 of module lockserv",
+        "operatorName": "Unlock",
+        "paramNum": 1,
+        "type": "Action"
+      },
+      {
+        "location": "line 39, col 1 to line 43, col 52 of module lockserv",
+        "operatorName": "RecvUnlock",
+        "paramNum": 1,
+        "type": "Action"
+      },
+      {
+        "location": "line 45, col 1 to line 50, col 36 of module lockserv",
+        "operatorName": "Next",
+        "type": "State"
+      },
+      {
+        "location": "line 52, col 1 to line 57, col 31 of module lockserv",
+        "operatorName": "Init",
+        "type": "State"
+      },
+      {
+        "location": "line 59, col 1 to line 64, col 36 of module lockserv",
+        "operatorName": "TypeOK",
+        "type": "State"
+      },
+      {
+        "location": "line 66, col 1 to line 66, col 31 of module lockserv",
+        "operatorName": "NextUnchanged",
+        "type": "State"
+      },
+      {
+        "location": "line 69, col 1 to line 69, col 70 of module lockserv",
+        "operatorName": "Mutex",
+        "type": "State"
+      }
+    ]
+  }
+}

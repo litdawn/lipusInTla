@@ -1,0 +1,36 @@
+{
+  "location": "line 1, col 1 to line 64, col 77 of module Randomization",
+  "moduleInfo": {
+    "location": "line 1, col 1 to line 1, col 77 of module Randomization",
+    "moduleName": "Randomization"
+  },
+  "extends": {
+    "extendedModuleNames": [],
+    "location": "line 2147483647, col 2147483647 to line -2147483648, col -2147483648 of module Randomization"
+  },
+  "body": {
+    "declaredParams": [],
+    "definedVariables": [],
+    "location": "line 23, col 1 to line 62, col 71 of module Randomization",
+    "operatorDefinitions": [
+      {
+        "location": "line 30, col 1 to line 30, col 64 of module Randomization",
+        "operatorName": "RandomSubset",
+        "paramNum": 2,
+        "type": "Action"
+      },
+      {
+        "location": "line 48, col 1 to line 49, col 67 of module Randomization",
+        "operatorName": "RandomSetOfSubsets",
+        "paramNum": 3,
+        "type": "Action"
+      },
+      {
+        "location": "line 61, col 1 to line 62, col 71 of module Randomization",
+        "operatorName": "TestRandomSetOfSubsets",
+        "paramNum": 3,
+        "type": "Action"
+      }
+    ]
+  }
+}

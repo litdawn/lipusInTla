@@ -1,4 +1,4 @@
-from type import Type
+from seedTemplate.SeedTemplate import Type
 
 
 class Element(object):
@@ -28,23 +28,45 @@ class Element(object):
 
 # todo
 class TLA:
-    def __init__(self, constants, variables, actions):
-        self.variables = variables
-        self.actions = actions
-        self.constants = constants
+    def __init__(self):
+        self.variables = []
+        self.actions = []
+        self.constants = []
 
+    def init_var(self, constants, variables, actions):
+
+        for var in variables:
+            self.variables.append(self.construct_var(var["name"], var["info"]))
+        for act in actions:
+            self.actions.append(self.construct_var(act["name"], act["info"]))
+        for cons in constants:
+            self.constants.append(self.construct_var(cons["name"], cons["info"]))
 
     def construct_var(self, name, info):
         var = self.Variable()
+        var.self_type = info["self_type"]
+        var.name = name
+        if var.self_type == Type.ACTION:
+            var.index_type = info["index_type"]
+            var.result = self.construct_var("result", info["result"])
+        elif var.self_type == Type.SET:
+            var.sub_num = info["sub_num"]
+            var.sub_type = info["sub_type"]
+        elif var.self_type == Type.ARRAY:
+            var.index_type = info["index_type"]
+            var.content = self.construct_var("content", info["content"])
+        return var
+
+    def duplicate_var(self, name, info):
+        var = self.Variable()
         var.self_type = info.self_type
         var.name = name
-        if var.self_type == Type.ARRAY:
-            var.index_type = info.index_type
-            var.result = self.construct_var("result", info.result)
-
-        elif var.self_type == Type.SET:
+        if var.self_type == Type.SET:
             var.sub_num = info.sub_num
             var.sub_type = info.sub_type
+        elif var.self_type == Type.ARRAY:
+            var.index_type = info.index_type
+            var.content = info.content
         return var
 
     class Variable(Element):
@@ -55,10 +77,10 @@ class TLA:
 
     class Constant(Element):
         sub = {}
+
         def __init__(self):
             super(Element, self).__init__()
 
     class Action(Element):
         def __init__(self, ):
             super(Element, self).__init__()
-

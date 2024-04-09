@@ -1,0 +1,119 @@
+{
+  "location": "line 1, col 1 to line 112, col 4 of module peterson",
+  "moduleInfo": {
+    "location": "line 1, col 1 to line 1, col 25 of module peterson",
+    "moduleName": "peterson"
+  },
+  "extends": {
+    "extendedModuleNames": [
+      "TLC",
+      "Naturals",
+      "FiniteSets"
+    ],
+    "location": "line 2, col 1 to line 2, col 33 of module peterson"
+  },
+  "body": {
+    "declaredParams": [
+      {
+        "location": "line 32, col 1 to line 32, col 16 of module peterson",
+        "paramName": "ProcSet"
+      }
+    ],
+    "definedVariables": [
+      {
+        "variableName": "flag"
+      },
+      {
+        "variableName": "turn"
+      },
+      {
+        "variableName": "pc"
+      }
+    ],
+    "location": "line 24, col 1 to line 111, col 31 of module peterson",
+    "operatorDefinitions": [
+      {
+        "location": "line 29, col 1 to line 29, col 28 of module peterson",
+        "operatorName": "vars",
+        "type": "State"
+      },
+      {
+        "location": "line 37, col 1 to line 37, col 40 of module peterson",
+        "operatorName": "Other",
+        "paramNum": 1,
+        "type": "Action"
+      },
+      {
+        "location": "line 39, col 1 to line 42, col 39 of module peterson",
+        "operatorName": "Init",
+        "type": "State"
+      },
+      {
+        "location": "line 48, col 1 to line 51, col 41 of module peterson",
+        "operatorName": "a1",
+        "paramNum": 1,
+        "type": "Action"
+      },
+      {
+        "location": "line 54, col 1 to line 57, col 27 of module peterson",
+        "operatorName": "a2",
+        "paramNum": 1,
+        "type": "Action"
+      },
+      {
+        "location": "line 61, col 1 to line 65, col 27 of module peterson",
+        "operatorName": "a3",
+        "paramNum": 2,
+        "type": "Action"
+      },
+      {
+        "location": "line 68, col 1 to line 73, col 33 of module peterson",
+        "operatorName": "a4",
+        "paramNum": 2,
+        "type": "Action"
+      },
+      {
+        "location": "line 76, col 1 to line 79, col 41 of module peterson",
+        "operatorName": "cs",
+        "paramNum": 1,
+        "type": "Action"
+      },
+      {
+        "location": "line 82, col 1 to line 85, col 27 of module peterson",
+        "operatorName": "a5",
+        "paramNum": 1,
+        "type": "Action"
+      },
+      {
+        "location": "line 87, col 1 to line 94, col 19 of module peterson",
+        "operatorName": "Next",
+        "type": "State"
+      },
+      {
+        "location": "line 96, col 1 to line 96, col 32 of module peterson",
+        "operatorName": "Spec",
+        "type": "State"
+      },
+      {
+        "location": "line 100, col 1 to line 100, col 72 of module peterson",
+        "operatorName": "Mutex",
+        "type": "State"
+      },
+      {
+        "location": "line 102, col 1 to line 102, col 33 of module peterson",
+        "operatorName": "Symmetry",
+        "type": "State"
+      },
+      {
+        "location": "line 105, col 1 to line 108, col 58 of module peterson",
+        "operatorName": "TypeOK",
+        "type": "State"
+      },
+      {
+        "location": "line 111, col 1 to line 111, col 31 of module peterson",
+        "operatorName": "NextUnchanged",
+        "type": "State"
+      }
+    ]
+  }
+}

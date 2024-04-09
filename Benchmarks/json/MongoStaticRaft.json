@@ -1,0 +1,197 @@
+{
+  "location": "line 1, col 1 to line 176, col 77 of module MongoStaticRaft",
+  "moduleInfo": {
+    "location": "line 1, col 1 to line 1, col 32 of module MongoStaticRaft",
+    "moduleName": "MongoStaticRaft"
+  },
+  "extends": {
+    "extendedModuleNames": [
+      "Naturals",
+      "Integers",
+      "FiniteSets",
+      "Sequences",
+      "TLC"
+    ],
+    "location": "line 6, col 1 to line 6, col 54 of module MongoStaticRaft"
+  },
+  "body": {
+    "declaredParams": [
+      {
+        "location": "line 8, col 1 to line 8, col 16 of module MongoStaticRaft",
+        "paramName": "Server"
+      },
+      {
+        "location": "line 9, col 1 to line 9, col 33 of module MongoStaticRaft",
+        "paramName": "Secondary"
+      },
+      {
+        "location": "line 10, col 1 to line 10, col 17 of module MongoStaticRaft",
+        "paramName": "InitTerm"
+      }
+    ],
+    "definedVariables": [
+      {
+        "variableName": "currentTerm"
+      },
+      {
+        "variableName": "state"
+      },
+      {
+        "variableName": "log"
+      },
+      {
+        "variableName": "committed"
+      }
+    ],
+    "location": "line 8, col 1 to line 174, col 29 of module MongoStaticRaft",
+    "operatorDefinitions": [
+      {
+        "location": "line 17, col 1 to line 17, col 46 of module MongoStaticRaft",
+        "operatorName": "vars",
+        "type": "State"
+      },
+      {
+        "location": "line 24, col 1 to line 24, col 22 of module MongoStaticRaft",
+        "operatorName": "Empty",
+        "paramNum": 1,
+        "type": "Action"
+      },
+      {
+        "location": "line 27, col 1 to line 27, col 68 of module MongoStaticRaft",
+        "operatorName": "InLog",
+        "paramNum": 2,
+        "type": "Action"
+      },
+      {
+        "location": "line 30, col 1 to line 30, col 62 of module MongoStaticRaft",
+        "operatorName": "LastTerm",
+        "paramNum": 1,
+        "type": "Action"
+      },
+      {
+        "location": "line 31, col 1 to line 31, col 48 of module MongoStaticRaft",
+        "operatorName": "LastEntry",
+        "paramNum": 1,
+        "type": "Action"
+      },
+      {
+        "location": "line 32, col 1 to line 32, col 60 of module MongoStaticRaft",
+        "operatorName": "GetTerm",
+        "paramNum": 2,
+        "type": "Action"
+      },
+      {
+        "location": "line 33, col 1 to line 33, col 43 of module MongoStaticRaft",
+        "operatorName": "LogTerm",
+        "paramNum": 2,
+        "type": "Action"
+      },
+      {
+        "location": "line 36, col 1 to line 36, col 69 of module MongoStaticRaft",
+        "operatorName": "Quorums",
+        "paramNum": 1,
+        "type": "Action"
+      },
+      {
+        "location": "line 40, col 1 to line 47, col 56 of module MongoStaticRaft",
+        "operatorName": "CanRollback",
+        "paramNum": 2,
+        "type": "Action"
+      },
+      {
+        "location": "line 50, col 1 to line 56, col 12 of module MongoStaticRaft",
+        "operatorName": "CanVoteForOplog",
+        "paramNum": 3,
+        "type": "Action"
+      },
+      {
+        "location": "line 59, col 1 to line 65, col 33 of module MongoStaticRaft",
+        "operatorName": "ImmediatelyCommitted",
+        "paramNum": 2,
+        "type": "Action"
+      },
+      {
+        "location": "line 68, col 1 to line 71, col 47 of module MongoStaticRaft",
+        "operatorName": "UpdateTermsExpr",
+        "paramNum": 2,
+        "type": "Action"
+      },
+      {
+        "location": "line 81, col 1 to line 84, col 50 of module MongoStaticRaft",
+        "operatorName": "ClientRequest",
+        "paramNum": 1,
+        "type": "Action"
+      },
+      {
+        "location": "line 87, col 1 to line 104, col 50 of module MongoStaticRaft",
+        "operatorName": "GetEntries",
+        "paramNum": 2,
+        "type": "Action"
+      },
+      {
+        "location": "line 107, col 1 to line 112, col 50 of module MongoStaticRaft",
+        "operatorName": "RollbackEntries",
+        "paramNum": 2,
+        "type": "Action"
+      },
+      {
+        "location": "line 115, col 1 to line 126, col 35 of module MongoStaticRaft",
+        "operatorName": "BecomeLeader",
+        "paramNum": 2,
+        "type": "Action"
+      },
+      {
+        "location": "line 129, col 1 to line 144, col 44 of module MongoStaticRaft",
+        "operatorName": "CommitEntry",
+        "paramNum": 2,
+        "type": "Action"
+      },
+      {
+        "location": "line 151, col 1 to line 153, col 35 of module MongoStaticRaft",
+        "operatorName": "UpdateTerms",
+        "paramNum": 2,
+        "type": "Action"
+      },
+      {
+        "location": "line 155, col 1 to line 159, col 21 of module MongoStaticRaft",
+        "operatorName": "Init",
+        "type": "State"
+      },
+      {
+        "location": "line 161, col 1 to line 161, col 57 of module MongoStaticRaft",
+        "operatorName": "ClientRequestAction",
+        "type": "State"
+      },
+      {
+        "location": "line 162, col 1 to line 162, col 57 of module MongoStaticRaft",
+        "operatorName": "GetEntriesAction",
+        "type": "State"
+      },
+      {
+        "location": "line 163, col 1 to line 163, col 67 of module MongoStaticRaft",
+        "operatorName": "RollbackEntriesAction",
+        "type": "State"
+      },
+      {
+        "location": "line 164, col 1 to line 164, col 85 of module MongoStaticRaft",
+        "operatorName": "BecomeLeaderAction",
+        "type": "State"
+      },
+      {
+        "location": "line 165, col 1 to line 165, col 59 of module MongoStaticRaft",
+        "operatorName": "UpdateTermsActions",
+        "type": "State"
+      },
+      {
+        "location": "line 167, col 1 to line 172, col 25 of module MongoStaticRaft",
+        "operatorName": "Next",
+        "type": "State"
+      },
+      {
+        "location": "line 174, col 1 to line 174, col 29 of module MongoStaticRaft",
+        "operatorName": "Spec",
+        "type": "State"
+      }
+    ]
+  }
+}

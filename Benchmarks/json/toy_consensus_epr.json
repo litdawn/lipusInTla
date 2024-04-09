@@ -1,0 +1,98 @@
+{
+  "location": "line 1, col 1 to line 52, col 4 of module toy_consensus_epr",
+  "moduleInfo": {
+    "location": "line 1, col 1 to line 1, col 34 of module toy_consensus_epr",
+    "moduleName": "toy_consensus_epr"
+  },
+  "extends": {
+    "extendedModuleNames": [
+      "TLC",
+      "Naturals",
+      "FiniteSets"
+    ],
+    "location": "line 4, col 1 to line 4, col 33 of module toy_consensus_epr"
+  },
+  "body": {
+    "declaredParams": [
+      {
+        "location": "line 6, col 1 to line 6, col 13 of module toy_consensus_epr",
+        "paramName": "Node"
+      },
+      {
+        "location": "line 7, col 1 to line 7, col 15 of module toy_consensus_epr",
+        "paramName": "Quorum"
+      },
+      {
+        "location": "line 8, col 1 to line 8, col 14 of module toy_consensus_epr",
+        "paramName": "Value"
+      }
+    ],
+    "definedVariables": [
+      {
+        "variableName": "voted"
+      },
+      {
+        "variableName": "vote"
+      },
+      {
+        "variableName": "decided"
+      }
+    ],
+    "location": "line 6, col 1 to line 50, col 55 of module toy_consensus_epr",
+    "operatorDefinitions": [
+      {
+        "location": "line 14, col 1 to line 14, col 30 of module toy_consensus_epr",
+        "operatorName": "vars",
+        "type": "State"
+      },
+      {
+        "location": "line 16, col 1 to line 16, col 47 of module toy_consensus_epr",
+        "operatorName": "ChosenAt",
+        "paramNum": 2,
+        "type": "Action"
+      },
+      {
+        "location": "line 19, col 1 to line 23, col 28 of module toy_consensus_epr",
+        "operatorName": "CastVote",
+        "paramNum": 2,
+        "type": "Action"
+      },
+      {
+        "location": "line 26, col 1 to line 29, col 31 of module toy_consensus_epr",
+        "operatorName": "Decide",
+        "paramNum": 2,
+        "type": "Action"
+      },
+      {
+        "location": "line 31, col 1 to line 34, col 19 of module toy_consensus_epr",
+        "operatorName": "Init",
+        "type": "State"
+      },
+      {
+        "location": "line 36, col 1 to line 38, col 50 of module toy_consensus_epr",
+        "operatorName": "Next",
+        "type": "State"
+      },
+      {
+        "location": "line 40, col 1 to line 40, col 31 of module toy_consensus_epr",
+        "operatorName": "NextUnchanged",
+        "type": "State"
+      },
+      {
+        "location": "line 42, col 1 to line 45, col 31 of module toy_consensus_epr",
+        "operatorName": "TypeOK",
+        "type": "State"
+      },
+      {
+        "location": "line 48, col 1 to line 48, col 40 of module toy_consensus_epr",
+        "operatorName": "Safety",
+        "type": "State"
+      },
+      {
+        "location": "line 50, col 1 to line 50, col 55 of module toy_consensus_epr",
+        "operatorName": "Symmetry",
+        "type": "State"
+      }
+    ]
+  }
+}

@@ -1,0 +1,112 @@
+{
+  "location": "line 1, col 1 to line 173, col 38 of module SimpleRegular",
+  "moduleInfo": {
+    "location": "line 1, col 1 to line 1, col 76 of module SimpleRegular",
+    "moduleName": "SimpleRegular"
+  },
+  "extends": {
+    "extendedModuleNames": [
+      "Integers"
+    ],
+    "location": "line 58, col 1 to line 58, col 16 of module SimpleRegular"
+  },
+  "body": {
+    "declaredParams": [
+      {
+        "location": "line 60, col 1 to line 60, col 10 of module SimpleRegular",
+        "paramName": "N"
+      }
+    ],
+    "definedVariables": [
+      {
+        "variableName": "VARIABLES"
+      },
+      {
+        "variableName": "x"
+      },
+      {
+        "variableName": "y"
+      },
+      {
+        "variableName": "pc"
+      }
+    ],
+    "location": "line 60, col 1 to line 129, col 42 of module SimpleRegular",
+    "operatorDefinitions": [
+      {
+        "location": "line 75, col 1 to line 75, col 22 of module SimpleRegular",
+        "operatorName": "vars",
+        "type": "State"
+      },
+      {
+        "location": "line 77, col 1 to line 77, col 19 of module SimpleRegular",
+        "operatorName": "ProcSet",
+        "type": "State"
+      },
+      {
+        "location": "line 79, col 1 to line 82, col 43 of module SimpleRegular",
+        "operatorName": "Init",
+        "type": "State"
+      },
+      {
+        "location": "line 84, col 1 to line 87, col 21 of module SimpleRegular",
+        "operatorName": "a1",
+        "paramNum": 1,
+        "type": "Action"
+      },
+      {
+        "location": "line 89, col 1 to line 92, col 21 of module SimpleRegular",
+        "operatorName": "a2",
+        "paramNum": 1,
+        "type": "Action"
+      },
+      {
+        "location": "line 94, col 1 to line 98, col 20 of module SimpleRegular",
+        "operatorName": "b",
+        "paramNum": 1,
+        "type": "Action"
+      },
+      {
+        "location": "line 100, col 1 to line 100, col 45 of module SimpleRegular",
+        "operatorName": "proc",
+        "paramNum": 1,
+        "type": "Action"
+      },
+      {
+        "location": "line 102, col 1 to line 102, col 38 of module SimpleRegular",
+        "operatorName": "Next",
+        "type": "State"
+      },
+      {
+        "location": "line 104, col 1 to line 104, col 29 of module SimpleRegular",
+        "operatorName": "Spec",
+        "type": "State"
+      },
+      {
+        "location": "line 106, col 1 to line 106, col 57 of module SimpleRegular",
+        "operatorName": "Termination",
+        "type": "State"
+      },
+      {
+        "location": "line 108, col 1 to line 108, col 31 of module SimpleRegular",
+        "operatorName": "NextUnchanged",
+        "type": "State"
+      },
+      {
+        "location": "line 113, col 1 to line 114, col 46 of module SimpleRegular",
+        "operatorName": "PCorrect",
+        "type": "State"
+      },
+      {
+        "location": "line 122, col 1 to line 124, col 59 of module SimpleRegular",
+        "operatorName": "TypeOK",
+        "type": "State"
+      },
+      {
+        "location": "line 126, col 1 to line 129, col 42 of module SimpleRegular",
+        "operatorName": "Inv",
+        "type": "State"
+      }
+    ]
+  }
+}

@@ -1,5 +1,5 @@
-import tla
-from type import Type
+from seedTemplate.tlaParser.tla import TLA
+from seedTemplate.SeedTemplate import Type
 
 
 class VarDefVisitor():
@@ -49,20 +49,25 @@ def get_consts_from_source_code(file):
 
 # 主函数，输入一个json对象
 def parse_file(file):
-    content = file.body
+    content = file['body']
     # tla_ins = tla.TLA()
     # 处理常量
     constants = []
     variables = []
     actions = []
-    for param in content.declaredParams:
-        constants.append({"name": param.paramName, "info": parse_type(param.typeComment)})
-    for var in content.definedviables:
-        variables.append({"name": var.variableName, "info": parse_type(var.typeComment)})
-    for operator in content.operatorDefinitions:
-        if operator.type == "action":
-            actions.append({"name": operator.operatorName, "info": parse_type(operator.typeComment)})
-    tla_ins = tla.TLA(constants, variables, actions)
+    for param in content['declaredParams']:
+        constants.append({"name": param['paramName'], "info": parse_type(param['typeComment'])})
+    for var in content['definedVariables']:
+        variables.append({"name": var['variableName'], "info": parse_type(var['typeComment'])})
+    for operator in content['operatorDefinitions']:
+        try:
+            if operator['type'] == "Action":
+                actions.append({"name": operator['operatorName'], "info": parse_type(operator['typeComment'])})
+            pass
+        except Exception as e:
+            pass
+    tla_ins = TLA()
+    tla_ins.init_var(constants, variables, actions)
     return tla_ins
 
 
@@ -80,8 +85,8 @@ def parse_type(str):
         result_info = parse_type(result_part)
         return {
             "self_type": Type.ACTION,
-            "param_type": param_info.self_type,
-            "param_num": param_info.num,
+            "param_type": param_info["self_type"],
+            "param_num": param_info["num"],
             "result": result_info
         }
 
@@ -94,7 +99,7 @@ def parse_type(str):
         content_info = parse_type(content_part)
         return {
             "self_type": Type.ARRAY,
-            "index_type": index_info.self_type,
+            "index_type": index_info["self_type"],
             "content": content_info
         }
 
@@ -145,3 +150,14 @@ def parse_type(str):
         "name": "default",
         "self_type": Type.BOOL
     }
+
+if __name__ == "__main__":
+    import json
+    from seedTemplate.SeedTemplate import SeedTemplate
+    with open('consensus_epr.json') as f:
+        data = json.load(f)
+        tla_ins = parse_file(data)
+        seed_tmpl = SeedTemplate(tla_ins)
+        print(seed_tmpl.generate())
+
+

@@ -8,15 +8,27 @@ from PT_generators.SimplestIteration.PT_generator import PT_generator
 from SMT_Solver import Template_solver
 from SMT_Solver.Config import config
 from SMT_Solver.SMT_verifier import SMT_verifier
+from seedTemplate.tlaParser import tlaparser
+from seedTemplate.SeedTemplate import SeedTemplate
 from Utilities.ArgParser import parseArgs
 
 
-
-def main(path2tla):
+def main(path2tla, path2cfg, path2json):
     start_time = time.time()
     # Step 1. Input the three formation of the code.
-    #path2CFile, path2CFG, path2SMT = parseArgs()
+    # todo: 第一步：tla静态检查
+
+    # path2CFile, path2CFG, path2SMT = parseArgs()
     # Step 2. Load the Partial Template Generator.
+
+    # todo: 第二步 生成seed和quants
+    fake_json = {}
+    tla_ins = tlaparser.parse_file(fake_json)
+    seed_template = SeedTemplate(tla_ins)
+    seeds, quants = seed_template.generate()
+
+    # todo: 第三步
+
     pT_generator = PT_generator(path2tla)
     sMT_verifier = SMT_verifier(pT_generator.var_names)
     # Step 3. ENTER the ICE Solving Loop
@@ -30,18 +42,18 @@ def main(path2tla):
         current_time = time.time()
         if current_time - start_time >= config.Limited_time:
             print("Loop invariant Inference is OOT")
-            return None,None
+            return None, None
         Iteration += 1
         # Step 3.1 Generate A partial template
         PT = pT_generator.generate_next(CE)
         if PT is None:
             print("The only way is to give up now")
-            return None,None
+            return None, None
         # Step 3.2 Solving the partial template
         try:
             Can_I = Template_solver.solve(PT, CE)
             print(Can_I)
-            #raise TimeoutError # try this thing out
+            # raise TimeoutError # try this thing out
         except TimeoutError as OOT:  # Out Of Time, we punish
             pT_generator.punish('STRICT', 'VERY', 'S')
             continue
@@ -66,12 +78,17 @@ def main(path2tla):
                 CE[Counter_example.kind].append(Counter_example.assignment)
             pT_generator.prise('LITTLE')
             continue
+
+
 if __name__ == "__main__":
-    path2tla=r"Benchmarks/tla/firewall.tla"
+    name = "firewall"
+    path2tla = r"Benchmarks/protocols/" + name + ".tla"
+    path2cfg = r"Benchmarks/cfg/" + name + ".cfg"
+    path2json = r"Benchmarks/json" + name + ".json"
     # path2config = path2tla[:-3] + "cfg"
     # command = f"java.exe -jar apalache-0.44.2/lib/apalache.jar check --inv=Inv --run-dir=gen_tla/apalache-cti-out --config={path2config} {path2tla} "
     # result = subprocess.run(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     # print(result)
     # path2CFG=r"Benchmarks/Linear/c_graph/2.c.json"
     # path2SMT=r"Benchmarks/Linear/c_smt2/2.c.smt"
-    main(path2tla)
+    main(path2tla, path2cfg, path2json)

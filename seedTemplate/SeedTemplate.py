@@ -1,9 +1,11 @@
 import random
+from itertools import combinations
 from itertools import permutations
-from tlaParser.type import Type
+
+from seedTemplate.tlaParser.type import Type
 
 
-class SeedTemplate(object):
+class SeedTemplate:
     # __OpDefNode = "@"
     # # Prefix operators
     # __OP_lnot = "\\lnot"
@@ -126,7 +128,7 @@ class SeedTemplate(object):
     # # OPCODE_box = OPCODE_cdot + 7
     # # OPCODE_diamond = OPCODE_cdot + 8
 
-    def __init__(self):
+    def __init__(self, tla_ins):
         self.quants = []
         self.seeds = []
         self.set = []
@@ -134,16 +136,21 @@ class SeedTemplate(object):
         self.bool = []
         self.str = ["VARA", "VARB", "VARC", "VARD", "VARE"]
         self.def_var = ["VARA", "VARB", "VARC", "VARD", "VARE"]
-        self.tla_ins = None
+        self.tla_ins = tla_ins
 
     def fill_str(self, tla_ins):
         cons = tla_ins.constants
         for con in cons:
-            if con.self_type == Type.STRING:
-                self.add2str_and_bool(con)
-            elif con.self_type == Type.SET:
-                for sub_con in con.sub:
-                    self.add2str_and_bool(sub_con)
+            self.set.append(con)
+            # try:
+            #     if con["self_type"] == Type.STRING:
+            #         self.add2str_and_bool(con)
+            #     pass
+            # except Exception as e:
+            #     if con["info"]["self_type"] == Type.SET:
+            #         for sub_con in con["info"]["sub"]:
+            #             self.add2str_and_bool({"name": "default", "self_type": con["info"]["sub_type"]})
+            #     pass
 
     def add2str_and_bool(self, var):
         if var.self_type == Type.STRING:
@@ -152,20 +159,26 @@ class SeedTemplate(object):
             self.bool.append(var.name)
 
     # 主函数
-    def generate(self, tla_ins):
-        self.tla_ins = tla_ins
+    def generate(self):
         # 处理常量
-        self.fill_str(tla_ins)
+        self.fill_str(self.tla_ins)
         # 处理变量
-        for var in tla_ins.variables:
+        for var in self.tla_ins.variables:
             self.generate_special_body(var)
         # 处理状态转换行为
-        for action in tla_ins.actions:
+        for action in self.tla_ins.actions:
             self.generate_special_body(action)
         # 生成"="
         self.generate_equal()
+        # 生成\subseteq
+        self.generate_subseteq()
         # 生成量词
         self.generate_quants()
+
+        print("seeds", self.seeds)
+        print("quants", self.quants)
+        print("str", self.str)
+        return self.seeds, self.quants
 
     def generate_special_body(self, var):
         if var.self_type == Type.SET:
@@ -178,17 +191,14 @@ class SeedTemplate(object):
         elif var.self_type == Type.ACTION:
             # do ()
             self.generate_action(var)
-        elif var.self_type == Type.STRING:
+        elif var.self_type == Type.STRING or var.self_type == Type.BOOL:
             self.seeds.append(var.name)
             self.add2str_and_bool(var)
-        elif var.self_type == Type.BOOL:
-            self.seeds.append(var.name)
-            self.add2str_and_bool(var.name)
         return 0
 
     #  in
     def generate_IN(self, var):
-        for i in permutations(self.def_var, var.sub_num):
+        for i in combinations(self.def_var, var.sub_num):
             name = "<<" + ', '.join(i) + ">> \\in " + var.name
             self.seeds.append(name)
         return 0
@@ -196,29 +206,39 @@ class SeedTemplate(object):
     # []
     def generate_BOX(self, var):
         for i in self.str:
-            name = var.name + "[" + i + "]"
-            new_var = self.tla_ins.construct_var(name, var.content)
-            self.generate_special_body(new_var)
+            if "[" not in i:
+                name = var.name + "[" + i + "]"
+                new_var = self.tla_ins.duplicate_var(name, var.content)
+                self.generate_special_body(new_var)
         return 0
 
     # ()
     def generate_action(self, var):
-        for i in permutations(self.str, var.param_num):
+        for i in combinations(self.str, var.param_num):
             name = var.name + "(" + ','.join(i) + ")"
-            new_var = self.tla_ins.construct_var(name, var.result)
+            new_var = self.tla_ins.duplicate_var(name, var.result)
             self.generate_special_body(new_var)
         return 0
 
     def generate_equal(self):
-        for i in permutations(self.str, 2):
+        for i in combinations(self.str, 2):
             self.seeds.append("=".join(i))
+        for i in combinations(self.set, 2):
+            self.seeds.append("=".join(ele.name for ele in i))
+        for i in self.set:
+            self.seeds.append(i.name + "=" + i.name)
+            self.seeds.append(i.name + "= {}")
         return 0
+
+    def generate_subseteq(self):
+        for i in permutations(self.set, 2):
+            self.seeds.append(" \\subseteq ".join(ele.name for ele in i))
 
     def generate_quants(self):
         for quant in self.def_var:
             for con in self.tla_ins.constants:
                 if con.self_type == Type.SET:
-                    self.quants.append("\\A " + quant + " in " + con.name)
+                    self.quants.append("\\A " + quant + " in " + con.name + " : ")
 
         return 0
 

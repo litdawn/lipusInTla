@@ -46,3 +46,20 @@ if __name__ == "__main__":
     overall_feature = torch.randn([1, config.SIZE_EXP_NODE_FEATURE])
     rp = RewardPredictor()
     print(rp(stateVec, overall_feature))
+
+
+# 这是一个名为 RewardPredictor 的 PyTorch 类。这个类似乎是在某种上下文中预测奖励的模型，可能是一个强化学习场景。
+#
+# RewardPredictor 类有三层：
+#
+# layer1 是一个线性层，接收大小为 config.SIZE_EXP_NODE_FEATURE * 2 的输入，并输出大小为 config.SIZE_EXP_NODE_FEATURE 的输出。
+# layer2 是一个线性层，接收大小为 config.SIZE_EXP_NODE_FEATURE 的输入，并输出大小为 config.SIZE_EXP_NODE_FEATURE // 2 的输出。
+# layer3 是一个线性层，接收大小为 config.SIZE_EXP_NODE_FEATURE // 2 的输入，并输出大小为 1 的输出。
+# 在 forward 方法中，首先将 stateVec 和 overall_feature 拼接在一起，然后通过 layer1、layer2 和 layer3 进行一系列的线性变换。
+# 最后，输出的结果被限制在 -10 和 10 之间。
+#
+# GetParameters 方法返回模型的参数。
+#
+# cudalize 方法将模型的所有层都移动到 GPU 上。
+#
+# 在主函数中，创建了一个 RewardPredictor 对象，并对其进行了测试。测试中使用了随机生成的 stateVec 和 overall_feature。

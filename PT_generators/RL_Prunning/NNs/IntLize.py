@@ -37,6 +37,11 @@ class IntLize(nn.Module):
         res.update(getParFromModule(self.layer2_n, prefix=PreFix + "layer2_n"))
         return res
 
+# 这是一个名为 IntLize 的 PyTorch 类，它继承了 nn.Module。这个类有两个线性层 layer1_n 和 layer2_n，并且在 forward 方法中，它会根据 action_vector 和 left_handle 的值来计算输出。
+#
+# 在 forward 方法中，如果 left_handle.decl() 的值为 'non_nc' 或 'non_nd'，那么它会计算一个值，这个值是 self.layer2_n(self.layer1_n(action_vector)) 和 tensor([[1]],dtype=torch.float32) 中的最大值与 tensor([[4]],dtype=torch.float32) 中的最小值。否则，它会触发一个断言错误，表示不应该到达这里。
+#
+# GetParameters 方法会返回一个字典，这个字典包含了 layer1_n 和 layer2_n 的参数。
 
 
 

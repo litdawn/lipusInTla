@@ -1,0 +1,107 @@
+{
+  "location": "line 1, col 1 to line 108, col 4 of module learning_switch_i4",
+  "moduleInfo": {
+    "location": "line 1, col 1 to line 1, col 35 of module learning_switch_i4",
+    "moduleName": "learning_switch_i4"
+  },
+  "extends": {
+    "extendedModuleNames": [
+      "TLC",
+      "Randomization"
+    ],
+    "location": "line 4, col 1 to line 4, col 26 of module learning_switch_i4"
+  },
+  "body": {
+    "declaredParams": [
+      {
+        "location": "line 6, col 1 to line 6, col 15 of module learning_switch_i4",
+        "paramName": "Packet"
+      },
+      {
+        "location": "line 7, col 1 to line 7, col 13 of module learning_switch_i4",
+        "paramName": "Node"
+      }
+    ],
+    "definedVariables": [
+      {
+        "variableName": "pending"
+      },
+      {
+        "variableName": "src"
+      },
+      {
+        "variableName": "dst"
+      },
+      {
+        "variableName": "link"
+      },
+      {
+        "variableName": "route_dom"
+      },
+      {
+        "variableName": "route_tc"
+      }
+    ],
+    "location": "line 6, col 1 to line 106, col 31 of module learning_switch_i4",
+    "operatorDefinitions": [
+      {
+        "location": "line 17, col 1 to line 17, col 51 of module learning_switch_i4",
+        "operatorName": "vars",
+        "type": "State"
+      },
+      {
+        "location": "line 19, col 1 to line 21, col 52 of module learning_switch_i4",
+        "operatorName": "NewPacket",
+        "paramNum": 1,
+        "type": "Action"
+      },
+      {
+        "location": "line 23, col 1 to line 39, col 33 of module learning_switch_i4",
+        "operatorName": "Flood",
+        "paramNum": 4,
+        "type": "Action"
+      },
+      {
+        "location": "line 41, col 1 to line 57, col 33 of module learning_switch_i4",
+        "operatorName": "Route",
+        "paramNum": 4,
+        "type": "Action"
+      },
+      {
+        "location": "line 59, col 1 to line 62, col 67 of module learning_switch_i4",
+        "operatorName": "Next",
+        "type": "State"
+      },
+      {
+        "location": "line 64, col 1 to line 74, col 55 of module learning_switch_i4",
+        "operatorName": "Init",
+        "type": "State"
+      },
+      {
+        "location": "line 81, col 1 to line 86, col 113 of module learning_switch_i4",
+        "operatorName": "Safety",
+        "type": "State"
+      },
+      {
+        "location": "line 88, col 1 to line 94, col 30 of module learning_switch_i4",
+        "operatorName": "TypeOK",
+        "type": "State"
+      },
+      {
+        "location": "line 96, col 1 to line 102, col 48 of module learning_switch_i4",
+        "operatorName": "TypeOKRandom",
+        "type": "State"
+      },
+      {
+        "location": "line 104, col 1 to line 104, col 56 of module learning_switch_i4",
+        "operatorName": "Symmetry",
+        "type": "State"
+      },
+      {
+        "location": "line 106, col 1 to line 106, col 31 of module learning_switch_i4",
+        "operatorName": "NextUnchanged",
+        "type": "State"
+      }
+    ]
+  }
+}

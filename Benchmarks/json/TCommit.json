@@ -1,0 +1,81 @@
+{
+  "location": "line 1, col 1 to line 71, col 77 of module TCommit",
+  "moduleInfo": {
+    "location": "line 1, col 1 to line 1, col 77 of module TCommit",
+    "moduleName": "TCommit"
+  },
+  "extends": {
+    "extendedModuleNames": [
+      "TLC"
+    ],
+    "location": "line 3, col 1 to line 3, col 11 of module TCommit"
+  },
+  "body": {
+    "declaredParams": [
+      {
+        "location": "line 5, col 1 to line 5, col 11 of module TCommit",
+        "paramName": "RM"
+      }
+    ],
+    "definedVariables": [
+      {
+        "variableName": "rmState"
+      }
+    ],
+    "location": "line 5, col 1 to line 70, col 28 of module TCommit",
+    "operatorDefinitions": [
+      {
+        "location": "line 8, col 1 to line 12, col 69 of module TCommit",
+        "operatorName": "TCTypeOK",
+        "type": "State"
+      },
+      {
+        "location": "line 14, col 1 to line 14, col 45 of module TCommit",
+        "operatorName": "Init",
+        "type": "State"
+      },
+      {
+        "location": "line 19, col 1 to line 19, col 69 of module TCommit",
+        "operatorName": "canCommit",
+        "type": "State"
+      },
+      {
+        "location": "line 24, col 1 to line 24, col 56 of module TCommit",
+        "operatorName": "notCommitted",
+        "type": "State"
+      },
+      {
+        "location": "line 34, col 1 to line 35, col 64 of module TCommit",
+        "operatorName": "Prepare",
+        "paramNum": 1,
+        "type": "Action"
+      },
+      {
+        "location": "line 37, col 1 to line 42, col 66 of module TCommit",
+        "operatorName": "Decide",
+        "paramNum": 1,
+        "type": "Action"
+      },
+      {
+        "location": "line 44, col 1 to line 44, col 48 of module TCommit",
+        "operatorName": "Next",
+        "type": "State"
+      },
+      {
+        "location": "line 49, col 1 to line 49, col 34 of module TCommit",
+        "operatorName": "TCSpec",
+        "type": "State"
+      },
+      {
+        "location": "line 57, col 1 to line 63, col 54 of module TCommit",
+        "operatorName": "TCConsistent",
+        "type": "State"
+      },
+      {
+        "location": "line 70, col 1 to line 70, col 28 of module TCommit",
+        "operatorName": "Symmetry",
+        "type": "State"
+      }
+    ]
+  }
+}

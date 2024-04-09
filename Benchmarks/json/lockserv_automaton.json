@@ -1,0 +1,101 @@
+{
+  "location": "line 1, col 1 to line 74, col 4 of module lockserv_automaton",
+  "moduleInfo": {
+    "location": "line 1, col 1 to line 1, col 35 of module lockserv_automaton",
+    "moduleName": "lockserv_automaton"
+  },
+  "extends": {
+    "extendedModuleNames": [
+      "TLC"
+    ],
+    "location": "line 4, col 1 to line 4, col 11 of module lockserv_automaton"
+  },
+  "body": {
+    "declaredParams": [
+      {
+        "location": "line 6, col 1 to line 6, col 13 of module lockserv_automaton",
+        "paramName": "Node"
+      }
+    ],
+    "definedVariables": [
+      {
+        "variableName": "lock_msg"
+      },
+      {
+        "variableName": "unlock_msg"
+      },
+      {
+        "variableName": "grant_msg"
+      },
+      {
+        "variableName": "holds_lock"
+      },
+      {
+        "variableName": "held"
+      }
+    ],
+    "location": "line 6, col 1 to line 72, col 70 of module lockserv_automaton",
+    "operatorDefinitions": [
+      {
+        "location": "line 16, col 1 to line 16, col 61 of module lockserv_automaton",
+        "operatorName": "vars",
+        "type": "State"
+      },
+      {
+        "location": "line 18, col 1 to line 20, col 60 of module lockserv_automaton",
+        "operatorName": "Lock",
+        "paramNum": 1,
+        "type": "Action"
+      },
+      {
+        "location": "line 22, col 1 to line 26, col 46 of module lockserv_automaton",
+        "operatorName": "Unlock",
+        "paramNum": 1,
+        "type": "Action"
+      },
+      {
+        "location": "line 28, col 1 to line 34, col 42 of module lockserv_automaton",
+        "operatorName": "RecvLock",
+        "paramNum": 1,
+        "type": "Action"
+      },
+      {
+        "location": "line 36, col 1 to line 40, col 45 of module lockserv_automaton",
+        "operatorName": "RecvGrant",
+        "paramNum": 1,
+        "type": "Action"
+      },
+      {
+        "location": "line 42, col 1 to line 46, col 52 of module lockserv_automaton",
+        "operatorName": "RecvUnlock",
+        "paramNum": 1,
+        "type": "Action"
+      },
+      {
+        "location": "line 48, col 1 to line 53, col 36 of module lockserv_automaton",
+        "operatorName": "Next",
+        "type": "State"
+      },
+      {
+        "location": "line 55, col 1 to line 60, col 19 of module lockserv_automaton",
+        "operatorName": "Init",
+        "type": "State"
+      },
+      {
+        "location": "line 62, col 1 to line 62, col 31 of module lockserv_automaton",
+        "operatorName": "NextUnchanged",
+        "type": "State"
+      },
+      {
+        "location": "line 64, col 1 to line 69, col 23 of module lockserv_automaton",
+        "operatorName": "TypeOK",
+        "type": "State"
+      },
+      {
+        "location": "line 72, col 1 to line 72, col 70 of module lockserv_automaton",
+        "operatorName": "Mutex",
+        "type": "State"
+      }
+    ]
+  }
+}

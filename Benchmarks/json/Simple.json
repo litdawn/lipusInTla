@@ -1,0 +1,111 @@
+{
+  "location": "line 1, col 1 to line 160, col 77 of module Simple",
+  "moduleInfo": {
+    "location": "line 1, col 1 to line 1, col 75 of module Simple",
+    "moduleName": "Simple"
+  },
+  "extends": {
+    "extendedModuleNames": [
+      "Integers"
+    ],
+    "location": "line 19, col 1 to line 19, col 16 of module Simple"
+  },
+  "body": {
+    "declaredParams": [
+      {
+        "location": "line 21, col 1 to line 21, col 10 of module Simple",
+        "paramName": "N"
+      }
+    ],
+    "definedVariables": [
+      {
+        "variableName": "VARIABLES"
+      },
+      {
+        "variableName": "x"
+      },
+      {
+        "variableName": "y"
+      },
+      {
+        "variableName": "pc"
+      }
+    ],
+    "location": "line 21, col 1 to line 118, col 42 of module Simple",
+    "operatorDefinitions": [
+      {
+        "location": "line 40, col 1 to line 40, col 22 of module Simple",
+        "operatorName": "vars",
+        "type": "State"
+      },
+      {
+        "location": "line 42, col 1 to line 42, col 19 of module Simple",
+        "operatorName": "ProcSet",
+        "type": "State"
+      },
+      {
+        "location": "line 44, col 1 to line 47, col 42 of module Simple",
+        "operatorName": "Init",
+        "type": "State"
+      },
+      {
+        "location": "line 49, col 1 to line 52, col 20 of module Simple",
+        "operatorName": "a",
+        "paramNum": 1,
+        "type": "Action"
+      },
+      {
+        "location": "line 54, col 1 to line 57, col 20 of module Simple",
+        "operatorName": "b",
+        "paramNum": 1,
+        "type": "Action"
+      },
+      {
+        "location": "line 59, col 1 to line 59, col 32 of module Simple",
+        "operatorName": "proc",
+        "paramNum": 1,
+        "type": "Action"
+      },
+      {
+        "location": "line 62, col 1 to line 63, col 32 of module Simple",
+        "operatorName": "Terminating",
+        "type": "State"
+      },
+      {
+        "location": "line 65, col 1 to line 65, col 38 of module Simple",
+        "operatorName": "Next",
+        "type": "State"
+      },
+      {
+        "location": "line 67, col 1 to line 67, col 29 of module Simple",
+        "operatorName": "Spec",
+        "type": "State"
+      },
+      {
+        "location": "line 69, col 1 to line 69, col 57 of module Simple",
+        "operatorName": "Termination",
+        "type": "State"
+      },
+      {
+        "location": "line 71, col 1 to line 71, col 31 of module Simple",
+        "operatorName": "NextUnchanged",
+        "type": "State"
+      },
+      {
+        "location": "line 82, col 1 to line 83, col 46 of module Simple",
+        "operatorName": "PCorrect",
+        "type": "State"
+      },
+      {
+        "location": "line 91, col 1 to line 93, col 52 of module Simple",
+        "operatorName": "TypeOK",
+        "type": "State"
+      },
+      {
+        "location": "line 115, col 1 to line 118, col 42 of module Simple",
+        "operatorName": "Inv",
+        "type": "State"
+      }
+    ]
+  }
+}

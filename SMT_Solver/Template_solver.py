@@ -1,7 +1,6 @@
 import random
 
 from z3 import *
-#todo z3求解器换成apalache或者翻译成smtlib
 
 set_param('parallel.enable', True)
 from SMT_Solver.Config import config

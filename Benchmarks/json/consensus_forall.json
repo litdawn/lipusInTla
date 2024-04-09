@@ -1,0 +1,160 @@
+{
+  "location": "line 1, col 1 to line 104, col 4 of module consensus_forall",
+  "moduleInfo": {
+    "location": "line 1, col 1 to line 1, col 33 of module consensus_forall",
+    "moduleName": "consensus_forall"
+  },
+  "extends": {
+    "extendedModuleNames": [
+      "TLC",
+      "Naturals",
+      "Randomization"
+    ],
+    "location": "line 4, col 1 to line 4, col 36 of module consensus_forall"
+  },
+  "body": {
+    "declaredParams": [
+      {
+        "location": "line 6, col 1 to line 6, col 26 of module consensus_forall",
+        "paramName": "Node"
+      }
+    ],
+    "definedVariables": [
+      {
+        "variableName": "vote_request_msg"
+      },
+      {
+        "variableName": "voted"
+      },
+      {
+        "variableName": "vote_msg"
+      },
+      {
+        "variableName": "votes"
+      },
+      {
+        "variableName": "leader"
+      },
+      {
+        "variableName": "voting_quorum"
+      },
+      {
+        "variableName": "decided"
+      }
+    ],
+    "location": "line 6, col 1 to line 102, col 31 of module consensus_forall",
+    "operatorDefinitions": [
+      {
+        "location": "line 16, col 1 to line 16, col 78 of module consensus_forall",
+        "operatorName": "vars",
+        "type": "State"
+      },
+      {
+        "location": "line 18, col 1 to line 20, col 74 of module consensus_forall",
+        "operatorName": "SendRequestVote",
+        "paramNum": 2,
+        "type": "Action"
+      },
+      {
+        "location": "line 22, col 1 to line 27, col 75 of module consensus_forall",
+        "operatorName": "SendVote",
+        "paramNum": 2,
+        "type": "Action"
+      },
+      {
+        "location": "line 29, col 1 to line 32, col 85 of module consensus_forall",
+        "operatorName": "RecvVote",
+        "paramNum": 2,
+        "type": "Action"
+      },
+      {
+        "location": "line 34, col 1 to line 38, col 77 of module consensus_forall",
+        "operatorName": "ChooseVotingQuorum",
+        "paramNum": 1,
+        "type": "Action"
+      },
+      {
+        "location": "line 40, col 1 to line 44, col 84 of module consensus_forall",
+        "operatorName": "BecomeLeader",
+        "paramNum": 1,
+        "type": "Action"
+      },
+      {
+        "location": "line 46, col 1 to line 50, col 84 of module consensus_forall",
+        "operatorName": "Decide",
+        "paramNum": 2,
+        "type": "Action"
+      },
+      {
+        "location": "line 52, col 1 to line 59, col 19 of module consensus_forall",
+        "operatorName": "Init",
+        "type": "State"
+      },
+      {
+        "location": "line 61, col 1 to line 61, col 63 of module consensus_forall",
+        "operatorName": "SendRequestVoteAction",
+        "type": "State"
+      },
+      {
+        "location": "line 62, col 1 to line 62, col 49 of module consensus_forall",
+        "operatorName": "SendVoteAction",
+        "type": "State"
+      },
+      {
+        "location": "line 63, col 1 to line 63, col 49 of module consensus_forall",
+        "operatorName": "RecvVoteAction",
+        "type": "State"
+      },
+      {
+        "location": "line 64, col 1 to line 64, col 65 of module consensus_forall",
+        "operatorName": "ChooseVotingQuorumAction",
+        "type": "State"
+      },
+      {
+        "location": "line 65, col 1 to line 65, col 53 of module consensus_forall",
+        "operatorName": "BecomeLeaderAction",
+        "type": "State"
+      },
+      {
+        "location": "line 66, col 1 to line 66, col 57 of module consensus_forall",
+        "operatorName": "DecideAction",
+        "type": "State"
+      },
+      {
+        "location": "line 68, col 1 to line 74, col 19 of module consensus_forall",
+        "operatorName": "Next",
+        "type": "State"
+      },
+      {
+        "location": "line 76, col 1 to line 83, col 41 of module consensus_forall",
+        "operatorName": "TypeOK",
+        "type": "State"
+      },
+      {
+        "location": "line 85, col 1 to line 92, col 59 of module consensus_forall",
+        "operatorName": "TypeOKRandom",
+        "type": "State"
+      },
+      {
+        "location": "line 94, col 1 to line 96, col 67 of module consensus_forall",
+        "operatorName": "Safety",
+        "type": "State"
+      },
+      {
+        "location": "line 98, col 1 to line 98, col 38 of module consensus_forall",
+        "operatorName": "NoLeader",
+        "type": "State"
+      },
+      {
+        "location": "line 100, col 1 to line 100, col 55 of module consensus_forall",
+        "operatorName": "Symmetry",
+        "type": "State"
+      },
+      {
+        "location": "line 102, col 1 to line 102, col 31 of module consensus_forall",
+        "operatorName": "NextUnchanged",
+        "type": "State"
+      }
+    ]
+  }
+}

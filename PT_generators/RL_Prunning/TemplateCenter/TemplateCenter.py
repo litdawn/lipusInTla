@@ -1,6 +1,6 @@
 import torch
 from torch import tensor
-from z3 import *
+# from z3 import *
 
 from PT_generators.RL_Prunning.Conifg import config
 
@@ -21,29 +21,29 @@ from PT_generators.RL_Prunning.Conifg import config
 #     'non_v': []  # dynamically initialize this one
 # }
 RULE = {
-    # and
-    'non_nc': [And(Bool('non_nd')), And(Bool('non_nd'), Bool('non_nd')),
-               And(Bool('non_nd'), Bool('non_nd'), Bool('non_nd'))],
-    # or
-    'non_nd': [Or(Bool('non_p')), Or(Bool('non_p'), Bool('non_p')), Or(Bool('non_p'), Bool('non_p'), Bool('non_p'))],
-    # < <= =
-    'non_p': [Int('non_t') < Int('non_s'),
-              Int('non_t') <= Int('non_s'),
-              Int('non_t') == Int('non_s')],
-    # +
-    'non_t': [Int('non_term'),
-              Int('non_term') + Int('non_term'),
-              Int('non_term') + Int('non_term') + Int('non_term'),
-              Int('non_term') + Int('non_term') + Int('non_term') + Int('non_term')],
-    # *
-    'non_term': [Int('non_v'),
-                 Int('non_s') * Int('non_v'),
-                 Int('non_s') * Int('non_v') * Int('non_v'),
-                 Int('non_s') * Int('non_v') * Int('non_v') * Int('non_v'),
-                 Int('non_s') * Int('non_v') * Int('non_v') * Int('non_v') * Int('non_v')],
-    'non_'
+    # # and
+    # 'non_nc': [And(Bool('non_nd')), And(Bool('non_nd'), Bool('non_nd')),
+    #            And(Bool('non_nd'), Bool('non_nd'), Bool('non_nd'))],
+    # # or
+    # 'non_nd': [Or(Bool('non_p')), Or(Bool('non_p'), Bool('non_p')), Or(Bool('non_p'), Bool('non_p'), Bool('non_p'))],
+    # # < <= =
+    # 'non_p': [Int('non_t') < Int('non_s'),
+    #           Int('non_t') <= Int('non_s'),
+    #           Int('non_t') == Int('non_s')],
+    # # +
+    # 'non_t': [Int('non_term'),
+    #           Int('non_term') + Int('non_term'),
+    #           Int('non_term') + Int('non_term') + Int('non_term'),
+    #           Int('non_term') + Int('non_term') + Int('non_term') + Int('non_term')],
+    # # *
+    # 'non_term': [Int('non_v'),
+    #              Int('non_s') * Int('non_v'),
+    #              Int('non_s') * Int('non_v') * Int('non_v'),
+    #              Int('non_s') * Int('non_v') * Int('non_v') * Int('non_v'),
+    #              Int('non_s') * Int('non_v') * Int('non_v') * Int('non_v') * Int('non_v')],
+    # 'non_'
     # 'non_op1': [-Int('non_t')],  # 'Rule_op1_abs'],
-    'non_s': [Int('undecided')],  # Int('non_decided')
+    # 'non_s': [Int('undecided')],  # Int('non_decided')
     # 'non_decided': ['VALUE'],
     'non_v': []  # dynamically initialize this one
 }
@@ -74,13 +74,13 @@ def AvailableActionSelection(left_handle):
     return config.SELECT_AN_ACTION, RULE[str(left_handle.decl())]
 
 
-def init_varSelection(vars):
-    RULE['non_v'] = [Int(v) for v in vars]
-    SIMPLEST_RULE['non_v'] = [Int(v) for v in vars]
-
-
-def init_constSelection(consts):
-    RULE['non_s'].extend([IntVal(s) for s in consts])
+# def init_varSelection(vars):
+#     RULE['non_v'] = [Int(v) for v in vars]
+#     SIMPLEST_RULE['non_v'] = [Int(v) for v in vars]
+#
+#
+# def init_constSelection(consts):
+#     RULE['non_s'].extend([IntVal(s) for s in consts])
 
 
 def substitute_the_leftmost_one(node, left_handle, replacer):
@@ -250,12 +250,12 @@ def LossnessDirtribution(lefthandle, Whom): #only S will ask it.
 #     'non_v': []  # dynamically initialize this one
 # }
 SIMPLEST_RULE = {
-    'non_nc': [And(Bool('non_nd'))],
-    'non_nd': [Or(Bool('non_p'))],
-    'non_p': [Int('non_t') < Int('non_s')],
-    'non_t': [Int('non_term')],
-    'non_term': [Int('non_v')],
-    'non_s': [Int('undecided')],
+    # 'non_nc': [And(Bool('non_nd'))],
+    # 'non_nd': [Or(Bool('non_p'))],
+    # 'non_p': [Int('non_t') < Int('non_s')],
+    # 'non_t': [Int('non_term')],
+    # 'non_term': [Int('non_v')],
+    # 'non_s': [Int('undecided')],
     'non_v': []  # dynamically initialize this one
 }
 
@@ -266,8 +266,8 @@ def simplestAction(left_handle):
 
 # liitel test
 if __name__ == "__main__":
-    exp = And(Int('x') + Int('y') < 3, Bool('non_p'), Int('non_t') < Int('non_t'))
-    print(exp)
-    exp = substitute_the_leftmost_one(exp, getLeftHandle(exp), Int('non_t') >= Int('non_t'))[1]
-    exp = substitute_the_leftmost_one(exp, getLeftHandle(exp), Int('z') % Int('q'))
-    print(exp[1])
+    # exp = And(Int('x') + Int('y') < 3, Bool('non_p'), Int('non_t') < Int('non_t'))
+    # print(exp)
+    # exp = substitute_the_leftmost_one(exp, getLeftHandle(exp), Int('non_t') >= Int('non_t'))[1]
+    # exp = substitute_the_leftmost_one(exp, getLeftHandle(exp), Int('z') % Int('q'))
+    # print(exp[1])

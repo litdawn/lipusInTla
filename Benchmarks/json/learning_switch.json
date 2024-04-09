@@ -1,0 +1,97 @@
+{
+    "location": "line 1, col 1 to line 91, col 4 of module learning_switch",
+    "moduleInfo": {
+        "location": "line 1, col 1 to line 1, col 32 of module learning_switch",
+        "moduleName": "learning_switch"
+    },
+    "extends": {
+        "extendedModuleNames": [
+            "TLC",
+            "Naturals",
+            "FiniteSets",
+            "Randomization"
+        ],
+        "location": "line 4, col 1 to line 4, col 48 of module learning_switch"
+    },
+    "body": {
+        "declaredParams": [
+            {
+                "location": "line 6, col 1 to line 8, col 8 of module learning_switch",
+                "paramName": "Node",
+                "typeComment":"\* @type: Set(Str);"
+            }
+        ],
+        "definedVariables": [
+            {
+                "typeComment":"\* @type: Set(<<Str, Str, Str>>);",
+                "variableName": "table"
+            },
+            {
+                "typeComment":"\* @type: Set(<<Str, Str, Str, Str>>);",
+                "variableName": "pending"
+            }
+        ],
+        "location": "line 6, col 1 to line 85, col 76 of module learning_switch",
+        "operatorDefinitions": [
+            {
+                "location": "line 18, col 1 to line 20, col 22 of module learning_switch",
+                "operatorName": "NewPacket",
+                "paramNum": 2,
+                "type": "Action",
+                "typeComment":"\* @type: (Str, Str) => Bool;"
+            },
+            {
+                "location": "line 23, col 1 to line 35, col 26 of module learning_switch",
+                "operatorName": "Forward",
+                "paramNum": 5,
+                "type": "Action",
+                "typeComment":"\* @type: (Str, Str, Str, Str, Str) => Bool;"
+            },
+            {
+                "location": "line 37, col 1 to line 39, col 71 of module learning_switch",
+                "operatorName": "Next",
+                "type": "State"
+            },
+            {
+                "location": "line 41, col 1 to line 43, col 19 of module learning_switch",
+                "operatorName": "Init",
+                "type": "State"
+            },
+            {
+                "location": "line 45, col 1 to line 45, col 44 of module learning_switch",
+                "operatorName": "NextUnchanged",
+                "type": "State"
+            },
+            {
+                "location": "line 47, col 1 to line 49, col 56 of module learning_switch",
+                "operatorName": "TypeOK",
+                "type": "State"
+            },
+            {
+                "location": "line 56, col 1 to line 62, col 121 of module learning_switch",
+                "operatorName": "Safety",
+                "type": "State"
+            },
+            {
+                "location": "line 71, col 1 to line 71, col 43 of module learning_switch",
+                "operatorName": "StateConstraint",
+                "type": "State"
+            },
+            {
+                "location": "line 73, col 1 to line 73, col 30 of module learning_switch",
+                "operatorName": "Symmetry",
+                "type": "State"
+            },
+            {
+                "location": "line 75, col 1 to line 75, col 32 of module learning_switch",
+                "operatorName": "Test",
+                "type": "State"
+            },
+            {
+                "location": "line 83, col 1 to line 85, col 76 of module learning_switch",
+                "operatorName": "TypeOKRandom",
+                "type": "State"
+            }
+        ]
+    }
+}

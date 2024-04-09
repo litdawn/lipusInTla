@@ -1,0 +1,84 @@
+{
+  "location": "line 1, col 1 to line 66, col 4 of module lockserver",
+  "moduleInfo": {
+    "location": "line 1, col 1 to line 1, col 27 of module lockserver",
+    "moduleName": "lockserver"
+  },
+  "extends": {
+    "extendedModuleNames": [
+      "TLC",
+      "Naturals"
+    ],
+    "location": "line 4, col 1 to line 4, col 21 of module lockserver"
+  },
+  "body": {
+    "declaredParams": [
+      {
+        "location": "line 14, col 1 to line 14, col 22 of module lockserver",
+        "paramName": "Server"
+      },
+      {
+        "location": "line 16, col 1 to line 16, col 12 of module lockserver",
+        "paramName": "Nil"
+      }
+    ],
+    "definedVariables": [
+      {
+        "variableName": "semaphore"
+      },
+      {
+        "variableName": "clientlocks"
+      }
+    ],
+    "location": "line 14, col 1 to line 64, col 78 of module lockserver",
+    "operatorDefinitions": [
+      {
+        "location": "line 21, col 1 to line 21, col 34 of module lockserver",
+        "operatorName": "vars",
+        "type": "State"
+      },
+      {
+        "location": "line 24, col 1 to line 29, col 51 of module lockserver",
+        "operatorName": "Connect",
+        "paramNum": 2,
+        "type": "Action"
+      },
+      {
+        "location": "line 33, col 1 to line 38, col 50 of module lockserver",
+        "operatorName": "Disconnect",
+        "paramNum": 2,
+        "type": "Action"
+      },
+      {
+        "location": "line 40, col 1 to line 44, col 42 of module lockserver",
+        "operatorName": "Init",
+        "type": "State"
+      },
+      {
+        "location": "line 46, col 1 to line 48, col 55 of module lockserver",
+        "operatorName": "Next",
+        "type": "State"
+      },
+      {
+        "location": "line 50, col 1 to line 50, col 31 of module lockserver",
+        "operatorName": "NextUnchanged",
+        "type": "State"
+      },
+      {
+        "location": "line 52, col 1 to line 54, col 48 of module lockserver",
+        "operatorName": "TypeOK",
+        "type": "State"
+      },
+      {
+        "location": "line 57, col 1 to line 57, col 85 of module lockserver",
+        "operatorName": "Inv",
+        "type": "State"
+      },
+      {
+        "location": "line 60, col 1 to line 64, col 78 of module lockserver",
+        "operatorName": "Ind",
+        "type": "State"
+      }
+    ]
+  }
+}

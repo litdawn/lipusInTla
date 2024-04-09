@@ -9,11 +9,10 @@ from SMT_Solver.SMT_verifier import SMT_verifier
 from Utilities.ArgParser import parseArgs
 
 
-
 def main(path2CFile, path2CFG, path2SMT):
     start_time = time.time()
     # Step 1. Input the three formation of the code.
-    #path2CFile, path2CFG, path2SMT = parseArgs()
+    # path2CFile, path2CFG, path2SMT = parseArgs()
     # Step 2. Load the Partial Template Generator.
     pT_generator = PT_generator(path2CFile, path2CFG, path2SMT)
     sMT_verifier = SMT_verifier()
@@ -28,17 +27,19 @@ def main(path2CFile, path2CFG, path2SMT):
         current_time = time.time()
         if current_time - start_time >= config.Limited_time:
             print("Loop invariant Inference is OOT")
-            return None,None
+            return None, None
         Iteration += 1
         # Step 3.1 Generate A partial template
+        # todo 1
         PT = pT_generator.generate_next(CE)
         if PT is None:
             print("The only way is to give up now")
-            return None,None
+            return None, None
         # Step 3.2 Solving the partial template
         try:
+            # todo 2
             Can_I = Template_solver.solve(PT, CE)
-            #raise TimeoutError # try this thing out
+            # raise TimeoutError # try this thing out
         except TimeoutError as OOT:  # Out Of Time, we punish
             pT_generator.punish('STRICT', 'VERY', 'S')
             continue
@@ -63,8 +64,10 @@ def main(path2CFile, path2CFG, path2SMT):
                 CE[Counter_example.kind].append(Counter_example.assignment)
             pT_generator.prise('LITTLE')
             continue
+
+
 if __name__ == "__main__":
-    path2CFile=r"Benchmarks/Linear/c/4.c"
-    path2CFG=r"Benchmarks/Linear/c_graph/4.c.json"
-    path2SMT=r"Benchmarks/Linear/c_smt2/4.c.smt"
+    path2CFile = r"Benchmarks/Linear/c/4.c"
+    path2CFG = r"Benchmarks/Linear/c_graph/4.c.json"
+    path2SMT = r"Benchmarks/Linear/c_smt2/4.c.smt"
     main(path2CFile, path2CFG, path2SMT)

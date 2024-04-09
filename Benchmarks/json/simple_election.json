@@ -1,0 +1,103 @@
+{
+  "location": "line 1, col 1 to line 57, col 4 of module simple_election",
+  "moduleInfo": {
+    "location": "line 1, col 1 to line 1, col 32 of module simple_election",
+    "moduleName": "simple_election"
+  },
+  "extends": {
+    "extendedModuleNames": [
+      "TLC"
+    ],
+    "location": "line 4, col 1 to line 4, col 11 of module simple_election"
+  },
+  "body": {
+    "declaredParams": [
+      {
+        "location": "line 6, col 1 to line 6, col 17 of module simple_election",
+        "paramName": "Acceptor"
+      },
+      {
+        "location": "line 7, col 1 to line 7, col 15 of module simple_election",
+        "paramName": "Quorum"
+      },
+      {
+        "location": "line 8, col 1 to line 8, col 17 of module simple_election",
+        "paramName": "Proposer"
+      }
+    ],
+    "definedVariables": [
+      {
+        "variableName": "start"
+      },
+      {
+        "variableName": "promise"
+      },
+      {
+        "variableName": "leader"
+      }
+    ],
+    "location": "line 6, col 1 to line 55, col 79 of module simple_election",
+    "operatorDefinitions": [
+      {
+        "location": "line 14, col 1 to line 14, col 32 of module simple_election",
+        "operatorName": "vars",
+        "type": "State"
+      },
+      {
+        "location": "line 16, col 1 to line 16, col 62 of module simple_election",
+        "operatorName": "DidNotPromise",
+        "paramNum": 1,
+        "type": "Action"
+      },
+      {
+        "location": "line 17, col 1 to line 17, col 50 of module simple_election",
+        "operatorName": "ChosenAt",
+        "paramNum": 2,
+        "type": "Action"
+      },
+      {
+        "location": "line 23, col 1 to line 25, col 35 of module simple_election",
+        "operatorName": "Send1a",
+        "paramNum": 1,
+        "type": "Action"
+      },
+      {
+        "location": "line 27, col 1 to line 31, col 34 of module simple_election",
+        "operatorName": "Send1b",
+        "paramNum": 2,
+        "type": "Action"
+      },
+      {
+        "location": "line 33, col 1 to line 36, col 35 of module simple_election",
+        "operatorName": "Decide",
+        "paramNum": 2,
+        "type": "Action"
+      },
+      {
+        "location": "line 38, col 1 to line 41, col 57 of module simple_election",
+        "operatorName": "Next",
+        "type": "State"
+      },
+      {
+        "location": "line 43, col 1 to line 46, col 18 of module simple_election",
+        "operatorName": "Init",
+        "type": "State"
+      },
+      {
+        "location": "line 48, col 1 to line 48, col 31 of module simple_election",
+        "operatorName": "NextUnchanged",
+        "type": "State"
+      },
+      {
+        "location": "line 50, col 1 to line 53, col 33 of module simple_election",
+        "operatorName": "TypeOK",
+        "type": "State"
+      },
+      {
+        "location": "line 55, col 1 to line 55, col 79 of module simple_election",
+        "operatorName": "Safety",
+        "type": "State"
+      }
+    ]
+  }
+}

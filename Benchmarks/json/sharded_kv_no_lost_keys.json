@@ -1,0 +1,106 @@
+{
+  "location": "line 1, col 1 to line 73, col 4 of module sharded_kv_no_lost_keys",
+  "moduleInfo": {
+    "location": "line 1, col 1 to line 1, col 40 of module sharded_kv_no_lost_keys",
+    "moduleName": "sharded_kv_no_lost_keys"
+  },
+  "extends": {
+    "extendedModuleNames": [
+      "TLC",
+      "Randomization"
+    ],
+    "location": "line 2, col 1 to line 2, col 26 of module sharded_kv_no_lost_keys"
+  },
+  "body": {
+    "declaredParams": [
+      {
+        "location": "line 4, col 1 to line 4, col 12 of module sharded_kv_no_lost_keys",
+        "paramName": "Key"
+      },
+      {
+        "location": "line 5, col 1 to line 5, col 14 of module sharded_kv_no_lost_keys",
+        "paramName": "Value"
+      },
+      {
+        "location": "line 6, col 1 to line 6, col 13 of module sharded_kv_no_lost_keys",
+        "paramName": "Node"
+      },
+      {
+        "location": "line 8, col 1 to line 8, col 12 of module sharded_kv_no_lost_keys",
+        "paramName": "Nil"
+      }
+    ],
+    "definedVariables": [
+      {
+        "variableName": "table"
+      },
+      {
+        "variableName": "owner"
+      },
+      {
+        "variableName": "transfer_msg"
+      }
+    ],
+    "location": "line 4, col 1 to line 71, col 31 of module sharded_kv_no_lost_keys",
+    "operatorDefinitions": [
+      {
+        "location": "line 19, col 1 to line 19, col 36 of module sharded_kv_no_lost_keys",
+        "operatorName": "vars",
+        "type": "State"
+      },
+      {
+        "location": "line 21, col 1 to line 25, col 56 of module sharded_kv_no_lost_keys",
+        "operatorName": "Reshard",
+        "paramNum": 4,
+        "type": "Action"
+      },
+      {
+        "location": "line 27, col 1 to line 32, col 55 of module sharded_kv_no_lost_keys",
+        "operatorName": "RecvTransferMsg",
+        "paramNum": 3,
+        "type": "Action"
+      },
+      {
+        "location": "line 34, col 1 to line 37, col 40 of module sharded_kv_no_lost_keys",
+        "operatorName": "Put",
+        "paramNum": 3,
+        "type": "Action"
+      },
+      {
+        "location": "line 39, col 1 to line 42, col 57 of module sharded_kv_no_lost_keys",
+        "operatorName": "Next",
+        "type": "State"
+      },
+      {
+        "location": "line 44, col 1 to line 52, col 52 of module sharded_kv_no_lost_keys",
+        "operatorName": "Init",
+        "type": "State"
+      },
+      {
+        "location": "line 54, col 1 to line 57, col 53 of module sharded_kv_no_lost_keys",
+        "operatorName": "TypeOK",
+        "type": "State"
+      },
+      {
+        "location": "line 59, col 1 to line 62, col 81 of module sharded_kv_no_lost_keys",
+        "operatorName": "TypeOKRandom",
+        "type": "State"
+      },
+      {
+        "location": "line 65, col 1 to line 67, col 52 of module sharded_kv_no_lost_keys",
+        "operatorName": "Safety",
+        "type": "State"
+      },
+      {
+        "location": "line 69, col 1 to line 69, col 78 of module sharded_kv_no_lost_keys",
+        "operatorName": "Symmetry",
+        "type": "State"
+      },
+      {
+        "location": "line 71, col 1 to line 71, col 31 of module sharded_kv_no_lost_keys",
+        "operatorName": "NextUnchanged",
+        "type": "State"
+      }
+    ]
+  }
+}

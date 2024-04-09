@@ -1,0 +1,125 @@
+{
+  "location": "line 1, col 1 to line 167, col 76 of module paxos_epr",
+  "moduleInfo": {
+    "location": "line 1, col 1 to line 1, col 81 of module paxos_epr",
+    "moduleName": "paxos_epr"
+  },
+  "extends": {
+    "extendedModuleNames": [
+      "Integers",
+      "FiniteSets",
+      "TLC",
+      "Randomization"
+    ],
+    "location": "line 12, col 1 to line 12, col 48 of module paxos_epr"
+  },
+  "body": {
+    "declaredParams": [
+      {
+        "location": "line 15, col 1 to line 15, col 28 of module paxos_epr",
+        "paramName": "Value"
+      }
+    ],
+    "definedVariables": [
+      {
+        "variableName": "one_a"
+      },
+      {
+        "variableName": "one_b_max_vote"
+      },
+      {
+        "variableName": "one_b"
+      },
+      {
+        "variableName": "left_rnd"
+      },
+      {
+        "variableName": "proposal"
+      },
+      {
+        "variableName": "vote"
+      },
+      {
+        "variableName": "decision"
+      }
+    ],
+    "location": "line 13, col 1 to line 165, col 75 of module paxos_epr",
+    "operatorDefinitions": [
+      {
+        "location": "line 20, col 1 to line 20, col 13 of module paxos_epr",
+        "operatorName": "Round",
+        "type": "State"
+      },
+      {
+        "location": "line 22, col 1 to line 22, col 10 of module paxos_epr",
+        "operatorName": "None",
+        "type": "State"
+      },
+      {
+        "location": "line 36, col 1 to line 36, col 70 of module paxos_epr",
+        "operatorName": "vars",
+        "type": "State"
+      },
+      {
+        "location": "line 64, col 1 to line 66, col 73 of module paxos_epr",
+        "operatorName": "Send1a",
+        "paramNum": 1,
+        "type": "Action"
+      },
+      {
+        "location": "line 68, col 1 to line 81, col 53 of module paxos_epr",
+        "operatorName": "JoinRound",
+        "paramNum": 2,
+        "type": "Action"
+      },
+      {
+        "location": "line 83, col 1 to line 92, col 74 of module paxos_epr",
+        "operatorName": "Propose",
+        "paramNum": 2,
+        "type": "Action"
+      },
+      {
+        "location": "line 94, col 1 to line 99, col 74 of module paxos_epr",
+        "operatorName": "CastVote",
+        "paramNum": 3,
+        "type": "Action"
+      },
+      {
+        "location": "line 102, col 1 to line 106, col 70 of module paxos_epr",
+        "operatorName": "Decide",
+        "paramNum": 4,
+        "type": "Action"
+      },
+      {
+        "location": "line 108, col 1 to line 115, col 20 of module paxos_epr",
+        "operatorName": "Init",
+        "type": "State"
+      },
+      {
+        "location": "line 120, col 1 to line 125, col 78 of module paxos_epr",
+        "operatorName": "Next",
+        "type": "State"
+      },
+      {
+        "location": "line 131, col 1 to line 131, col 29 of module paxos_epr",
+        "operatorName": "Spec",
+        "type": "State"
+      },
+      {
+        "location": "line 155, col 1 to line 155, col 55 of module paxos_epr",
+        "operatorName": "Symmetry",
+        "type": "State"
+      },
+      {
+        "location": "line 157, col 1 to line 157, col 31 of module paxos_epr",
+        "operatorName": "NextUnchanged",
+        "type": "State"
+      },
+      {
+        "location": "line 163, col 1 to line 165, col 75 of module paxos_epr",
+        "operatorName": "Safety",
+        "type": "State"
+      }
+    ]
+  }
+}
