@@ -85,7 +85,8 @@ class TLA:
     #       ['<<VARI,VARP>>', '\\in', 'response_sent']
     #   ]
     # ]
-    def parse_logic_expression(self, expression):
+    @staticmethod
+    def parse_logic_expression(expression):
 
         # 定义操作数、函数名和符号
         identifier = Word(alphanums + "_")

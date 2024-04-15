@@ -1,11 +1,13 @@
 import torch
 from torch import nn, tensor
 from torch.nn import Parameter
-
+from seedTemplate.tlaParser.tla import TLA
+from seedTemplate.tlaParser.type import Type
 from PT_generators.RL_Prunning.Conifg import *
 
 from PT_generators.RL_Prunning.NNs.SymbolEmbeddings import SymbolEmbeddings
 from PT_generators.RL_Prunning.NNs.Utility import getParFromModule
+
 
 # 原forward,做参考
 # def forward(self, z3_exp):
@@ -33,7 +35,7 @@ class TreeLSTM(nn.Module):
         self.vars = tla_ins.vars
         self.states = tla_ins.states
         # Lets give each sort of Z3 EXP an rnn
-        a = '\\cup,\\cap,\\X'.split(',')
+        a = '\\/,/\\,\\X'.split(',')
         b = '\\subseteq,\\in,[,('.split(',')
         c = '=,other'
         keys = []
@@ -54,23 +56,40 @@ class TreeLSTM(nn.Module):
     def forward_state(self, state):
         # if len(state.children()) > 0:
         state_rnn = ""
-        # self.tla_ins.
+        state_ele_list = TLA.parse_logic_expression(self.states[state].concrete_content)
         for k in self.keys:
-            if k in state:
+            if k in state_ele_list:
                 state_rnn = self.RNNS[k]
         if state_rnn == "":
             state_rnn = self.RNNS["other"]
-        child_feartures = torch.ones((1, config.SIZE_EXP_NODE_FEATURE))  # 创建一个 初始化均为1 的张量
+        child_features = torch.ones((1, config.SIZE_EXP_NODE_FEATURE))  # 创建一个 初始化均为1 的张量
         if torch.cuda.is_available():
-            child_feartures = child_feartures.cuda()
+            child_features = child_features.cuda()
+
         for var in self.vars.keys():
-            if var in self.states[state]:
-                child_feartures = torch.cat((child_feartures, self.forward_var(var)), 0)
-        feature, _ = state_rnn(child_feartures.reshape([-1, 1, config.SIZE_EXP_NODE_FEATURE]))
+            if var in state_ele_list:
+                child_features = torch.cat((child_features, self.forward_var(var, state_ele_list)), 0)
+        feature, _ = state_rnn(child_features.reshape([-1, 1, config.SIZE_EXP_NODE_FEATURE]))
         return feature[-1]
+
     # todo symbolembedding相关 nn的初始化 tc的选择策略更新 var
-    def forward_var(self, var):
-        return SymbolEmbeddings['?']
+    def forward_var(self, var, state):
+        if var.self_type == Type.BOOL:
+            name = "bool"
+        elif var.self_type == Type.ARRAY:
+            name = "array"
+        elif var.self_type == Type.SET:
+            name = "set"
+        elif var.self_type == Type.STRING:
+            name = "str"
+        else:
+            name = "?"
+        origin = SymbolEmbeddings[name]
+        for ele in state:
+            if type(ele) is 'list':
+                for var in self.vars.keys():
+                    if var in ele:
+                        return torch.cat((origin, self.forward_var(var, ele)), 0)
 
     # init next ind exp的特征
     def forward_three(self, init_exp, next_exp, ind_exp):
@@ -100,54 +119,5 @@ class TreeLSTM(nn.Module):
         for ky in self.RNNS.keys():
             self.RNNS[ky] = self.RNNS[ky].cuda()
 
-
-# # littel Test
+# # # littel Test
 # if __name__ == "__main__":
-#     from pyparsing import Forward, Combine, infixNotation, opAssoc, Keyword, Word, alphanums, Suppress, Optional,ZeroOrMore
-#
-#     # 定义操作数、函数名和符号
-#     identifier = Word(alphanums + "_")
-#     function_name = Word(alphanums + "_")
-#     keyword_not = Keyword("~")
-#     keyword_subset = Keyword("\\subseteq")
-#     keyword_belongs_to = Keyword("\\in")
-#     keyword_and = Keyword("/\\")
-#     keyword_or = Keyword("\\/")
-#
-#     # 定义括号
-#     LPAREN = Suppress("(")
-#     RPAREN = Suppress(")")
-#
-#     # 定义操作符优先级
-#     precedence = [
-#         (keyword_subset, 2, opAssoc.LEFT),
-#         (keyword_belongs_to, 2, opAssoc.LEFT),
-#         (keyword_and, 2, opAssoc.LEFT),
-#         (keyword_or, 2, opAssoc.LEFT),
-#
-#     ]
-#
-#     # 定义逻辑表达式
-#     expr = Forward()
-#     atom = Forward()
-#     identifiers = Combine(
-#         "<<" + Optional(keyword_not) + identifier + ZeroOrMore("," + Optional(keyword_not) + identifier) + ">>")
-#
-#     # 定义函数参数列表
-#     arg = (identifier | identifiers) | function_name | "~" + identifier
-#     args_list = arg + ZeroOrMore("," + arg)
-#
-#     # 定义函数调用表达式
-#     function_call = Combine(function_name + "(" + Optional(args_list) + ")")
-#     atom <<= "~" + LPAREN + expr + RPAREN | LPAREN + expr + RPAREN | function_call | identifiers | identifier
-#     expr <<= infixNotation(atom, precedence)
-#
-#
-#     # 解析逻辑表达式
-#     def parse_logic_expression(expression):
-#         return expr.parseString(expression)
-#
-#
-#     logic_expression = "(ResponseMatched(VARI,VARP)) \\/ (~(<<VARI,VARP>> \\in response_sent))"
-#     parsed_logic = parse_logic_expression(logic_expression)
-#     print(parsed_logic)
