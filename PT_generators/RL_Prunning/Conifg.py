@@ -1,4 +1,4 @@
-from z3 import If
+
 class Config:
     SELECT_AN_ACTION = 0
     SET_AN_VALUE = 1
@@ -17,6 +17,3 @@ class Config:
     LearningRate = 1e-6
 
 config = Config()
-
-def Z3_abs(x):
-    return If(x >= 0,x,-x)

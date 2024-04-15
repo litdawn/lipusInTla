@@ -1,97 +1,108 @@
 {
-    "location": "line 1, col 1 to line 91, col 4 of module learning_switch",
-    "moduleInfo": {
-        "location": "line 1, col 1 to line 1, col 32 of module learning_switch",
-        "moduleName": "learning_switch"
-    },
-    "extends": {
-        "extendedModuleNames": [
-            "TLC",
-            "Naturals",
-            "FiniteSets",
-            "Randomization"
-        ],
-        "location": "line 4, col 1 to line 4, col 48 of module learning_switch"
-    },
-    "body": {
-        "declaredParams": [
-            {
-                "location": "line 6, col 1 to line 8, col 8 of module learning_switch",
-                "paramName": "Node",
-                "typeComment":"\* @type: Set(Str);"
-            }
-        ],
-        "definedVariables": [
-            {
-                "typeComment":"\* @type: Set(<<Str, Str, Str>>);",
-                "variableName": "table"
-            },
-            {
-                "typeComment":"\* @type: Set(<<Str, Str, Str, Str>>);",
-                "variableName": "pending"
-            }
-        ],
-        "location": "line 6, col 1 to line 85, col 76 of module learning_switch",
-        "operatorDefinitions": [
-            {
-                "location": "line 18, col 1 to line 20, col 22 of module learning_switch",
-                "operatorName": "NewPacket",
-                "paramNum": 2,
-                "type": "Action",
-                "typeComment":"\* @type: (Str, Str) => Bool;"
-            },
-            {
-                "location": "line 23, col 1 to line 35, col 26 of module learning_switch",
-                "operatorName": "Forward",
-                "paramNum": 5,
-                "type": "Action",
-                "typeComment":"\* @type: (Str, Str, Str, Str, Str) => Bool;"
-            },
-            {
-                "location": "line 37, col 1 to line 39, col 71 of module learning_switch",
-                "operatorName": "Next",
-                "type": "State"
-            },
-            {
-                "location": "line 41, col 1 to line 43, col 19 of module learning_switch",
-                "operatorName": "Init",
-                "type": "State"
-            },
-            {
-                "location": "line 45, col 1 to line 45, col 44 of module learning_switch",
-                "operatorName": "NextUnchanged",
-                "type": "State"
-            },
-            {
-                "location": "line 47, col 1 to line 49, col 56 of module learning_switch",
-                "operatorName": "TypeOK",
-                "type": "State"
-            },
-            {
-                "location": "line 56, col 1 to line 62, col 121 of module learning_switch",
-                "operatorName": "Safety",
-                "type": "State"
-            },
-            {
-                "location": "line 71, col 1 to line 71, col 43 of module learning_switch",
-                "operatorName": "StateConstraint",
-                "type": "State"
-            },
-            {
-                "location": "line 73, col 1 to line 73, col 30 of module learning_switch",
-                "operatorName": "Symmetry",
-                "type": "State"
-            },
-            {
-                "location": "line 75, col 1 to line 75, col 32 of module learning_switch",
-                "operatorName": "Test",
-                "type": "State"
-            },
-            {
-                "location": "line 83, col 1 to line 85, col 76 of module learning_switch",
-                "operatorName": "TypeOKRandom",
-                "type": "State"
-            }
-        ]
-    }
+  "location": "line 1, col 1 to line 91, col 4 of module learning_switch",
+  "moduleInfo": {
+    "location": "line 1, col 1 to line 1, col 32 of module learning_switch",
+    "moduleName": "learning_switch"
+  },
+  "extends": {
+    "extendedModuleNames": [
+      "TLC",
+      "Naturals",
+      "FiniteSets",
+      "Randomization"
+    ],
+    "location": "line 4, col 1 to line 4, col 48 of module learning_switch"
+  },
+  "body": {
+    "declaredParams": [
+      {
+        "location": "line 6, col 1 to line 8, col 8 of module learning_switch",
+        "paramName": "Node",
+        "typeComment": "\\* @type: Set(Str);"
+      }
+    ],
+    "definedVariables": [
+      {
+        "typeComment": "\\* @type: Set(<<Str, Str, Str>>);",
+        "variableName": "table"
+      },
+      {
+        "typeComment": "\\* @type: Set(<<Str, Str, Str, Str>>);",
+        "variableName": "pending"
+      }
+    ],
+    "location": "line 6, col 1 to line 85, col 76 of module learning_switch",
+    "operatorDefinitions": [
+      {
+        "concreteContent": "NewPacket(ps,pd) ==\n    /\\ pending' = pending \\cup {<<ps,pd,ps,ps>>}\n    /\\ UNCHANGED table\n",
+        "location": "line 18, col 1 to line 20, col 22 of module learning_switch",
+        "operatorName": "NewPacket",
+        "paramNum": 2,
+        "type": "Action",
+        "typeComment": "\\* @type: (Str, Str) => Bool;"
+      },
+      {
+        "concreteContent": "Forward(ps,pd,sw0,sw1,nondet) ==\n    /\\ <<ps,pd,sw0,sw1>> \\in pending\n    \\* Remove all elements whose first element is not 'nondet',\n    \\* and also add elements for all d \\in Node.\n    /\\ pending' = \n        {<<psa,pda,sw1a,da>> \\in pending : psa = nondet} \\cup \n        {<<ps,pd,sw1,d>> : d \\in Node}\n    /\\ table' = IF ( (ps # sw1) /\\ (\\A w \\in Node : w # sw1 => <<ps,sw1,w>> \\notin table) )\n                THEN  table \\cup\n                      {<<px,n1,n2>> \\in Node \\X Node \\X Node : \n                            /\\ px = ps \n                            /\\ (<<ps,n1,sw1>> \\in table /\\ <<ps,sw0,n2>> \\in table) }\n                ELSE table\n",
+        "location": "line 23, col 1 to line 35, col 26 of module learning_switch",
+        "operatorName": "Forward",
+        "paramNum": 5,
+        "type": "Action",
+        "typeComment": "\\* @type: (Str, Str, Str, Str, Str) => Bool;"
+      },
+      {
+        "concreteContent": "Next == \n    \\/ \\E ps,pd \\in Node : NewPacket(ps,pd)\n    \\/ \\E ps,pd,sw0,sw1,nondet \\in Node : Forward(ps,pd,sw0,sw1,nondet)\n",
+        "location": "line 37, col 1 to line 39, col 71 of module learning_switch",
+        "operatorName": "Next",
+        "type": "State"
+      },
+      {
+        "concreteContent": "Init ==\n    /\\ table = {<<t,n1,n2>> \\in (Node \\X Node \\X Node) : n1 = n2}\n    /\\ pending = {}\n",
+        "location": "line 41, col 1 to line 43, col 19 of module learning_switch",
+        "operatorName": "Init",
+        "type": "State"
+      },
+      {
+        "concreteContent": "NextUnchanged == UNCHANGED <<table,pending>>",
+        "location": "line 45, col 1 to line 45, col 44 of module learning_switch",
+        "operatorName": "NextUnchanged",
+        "type": "State"
+      },
+      {
+        "concreteContent": "TypeOK == \n    /\\ table \\in SUBSET (Node \\X Node \\X Node)\n    /\\ pending \\in SUBSET (Node \\X Node \\X Node \\X Node)\n",
+        "location": "line 47, col 1 to line 49, col 56 of module learning_switch",
+        "operatorName": "TypeOK",
+        "type": "State"
+      },
+      {
+        "concreteContent": "Safety == \n    \\* /\\ TRUE\n    \\* /\\ TypeOK\n    /\\ \\A t,x \\in Node : <<t,x,x>> \\in table\n    /\\ \\A t,x,y,z \\in Node : (<<t,x,y>> \\in table /\\ <<t,y,z>> \\in table) => (<<t,x,z>> \\in table)\n    /\\ \\A t,x,y \\in Node : (<<t,x,y>> \\in table /\\ <<t,y,x>> \\in table) => (x = y)\n    /\\ \\A t,x,y,z \\in Node : (<<t,x,y>> \\in table /\\ <<t,x,z>> \\in table) => (<<t,y,z>> \\in table \\/ <<t,z,y>> \\in table)\n",
+        "location": "line 56, col 1 to line 62, col 121 of module learning_switch",
+        "operatorName": "Safety",
+        "type": "State"
+      },
+      {
+        "concreteContent": "StateConstraint == Cardinality(pending) < 5",
+        "location": "line 71, col 1 to line 71, col 43 of module learning_switch",
+        "operatorName": "StateConstraint",
+        "type": "State"
+      },
+      {
+        "concreteContent": "Symmetry == Permutations(Node)",
+        "location": "line 73, col 1 to line 73, col 30 of module learning_switch",
+        "operatorName": "Symmetry",
+        "type": "State"
+      },
+      {
+        "concreteContent": "Test == Cardinality(pending) < 3",
+        "location": "line 75, col 1 to line 75, col 32 of module learning_switch",
+        "operatorName": "Test",
+        "type": "State"
+      },
+      {
+        "concreteContent": "TypeOKRandom ==\n    /\\ table \\in RandomSetOfSubsets(80000, RandomElement(16..24), (Node \\X Node \\X Node))\n    /\\ pending \\in RandomSetOfSubsets(50, 8, (Node \\X Node \\X Node \\X Node))\n",
+        "location": "line 83, col 1 to line 85, col 76 of module learning_switch",
+        "operatorName": "TypeOKRandom",
+        "type": "State"
+      }
+    ]
+  }
 }

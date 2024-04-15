@@ -1,13 +1,14 @@
 from torch.optim import Adam
 
-from PT_generators.RL_Prunning.ExternalProcesses.CFG_parser import parseCFG
-from PT_generators.RL_Prunning.ExternalProcesses.SMT_parser import parseSMT
 from PT_generators.RL_Prunning.ExternalProcesses.Sampling import sampling
 from PT_generators.RL_Prunning.NNs.NeuralNetwork import *
-from PT_generators.RL_Prunning.TemplateCenter.TemplateCenter import InitPT, getLeftHandle, init_varSelection, \
+# from PT_generators.RL_Prunning.TemplateCenter.TemplateCenter import InitPT, getLeftHandle, init_varSelection, \
+#     AvailableActionSelection, update_PT_rule_selction, ShouldStrict, StrictnessDirtribution, simplestAction, \
+#     # init_constSelection, LossnessDirtribution
+from PT_generators.RL_Prunning.TemplateCenter.TemplateCenter import InitPT, getLeftHandle, \
     AvailableActionSelection, update_PT_rule_selction, ShouldStrict, StrictnessDirtribution, simplestAction, \
-    init_constSelection, LossnessDirtribution
-from seedTemplate.tlaParser.tlaparser import get_varnames_from_source_code, get_consts_from_source_code
+    LossnessDirtribution
+# from seedTemplate.tlaParser.tlaparser import get_varnames_from_source_code, get_consts_from_source_code
 import torch.nn.functional as F
 
 
@@ -21,7 +22,7 @@ class PT_generator:
     # 初始化学习器和参数：调用self.init_learner_par()
     # 和self.init_parameters()
     # 初始化学习器和参数。
-    def __init__(self):
+    def __init__(self, seed_tmpl):
         self.LR = config.LearningRate
         # Step1. Parse the inputs
         # self.cfg = parseCFG(path2CFG)
@@ -29,18 +30,15 @@ class PT_generator:
         # self.path2CFile = path2CFile
         # self.vars = get_varnames_from_source_code(self.path2CFile)
         # self.consts = get_consts_from_source_code(self.path2CFile)
-
-        init_varSelection(self.vars)
-
-        init_constSelection(self.consts)
+        self.seed_tmpl = seed_tmpl
 
         init_symbolEmbeddings()
 
         # Step2. Construct the NNs and Load the parameters
         # 在 NNs.NeuralNetwork 里
-        self.T = constructT()  # treeLSTM
+        self.T = constructT(seed_tmpl.tla_ins.variables)  # treeLSTM
         # self.G = constructG(self.cfg)  # CFG_Embedding
-        self.E = constructE(self.vars)  # CounterExample_Embedding
+        self.E = constructE(seed_tmpl.seeds)  # CounterExample_Embedding
         self.P = constructP()  # reward predictor
         self.pi = constructpi(self)  # policyNetwork
         self.distributionlize = construct_distributionlize()  # DistributionLize()
@@ -55,7 +53,7 @@ class PT_generator:
 
         # if config.CONTINUE_TRAINING:
         #     self.load_parameters(config.ppath)
-        self.init_parameters()
+        # self.init_parameters()
 
     # 它的主要功能是生成下一个程序树（Program Tree，PT）。以下是每个步骤的解释：
     #
@@ -85,17 +83,17 @@ class PT_generator:
         # CE = {'p': [],'n': [],'i': []}
         # 2
         emb_CE = self.E(CE)
-        # pre_exp, trans_exp, post_exp这三个是self.smt
-        # 3
-        self.emb_smt = self.T.forward_three(self.smt)
-        # 函数返回的是输入表达式 PT 中最左侧的句柄, non代表非终结符
+        # todo 3  states
+        tla_ins = self.seed_tmpl.tla_ins
+        self.emb_tla = self.T.forward_three(tla_ins.init, tla_ins.next, tla_ins.ind)
+        # 函数返回的是输入表达式 PT 中最左侧的句柄
         left_handle = getLeftHandle(PT)
         while left_handle is not None:
             left_handles.append(left_handle)
             # 在templatecenter的RULE里面随机选规则
             act_or_val, available_acts = AvailableActionSelection(left_handle)
             # 总体特征
-            overall_feature = self.G(self.emb_smt, emb_CE, self.stateVec)
+            overall_feature = self.G(self.emb_tla, emb_CE, self.stateVec)
             predicted_reward = self.P(self.stateVec, overall_feature)
             predicted_reward_list.append(predicted_reward)
             action_vector = self.pi(self.stateVec, overall_feature)
@@ -261,12 +259,12 @@ class PT_generator:
         self.adam = Adam(paras.values(), lr=self.LR)
         self.paras = paras
 
-    def init_parameters(self):
-        paradict = initialize_paramethers(self.path2CFile)
-        for parname in self.paras:
-            if parname in paradict:  # initialize
-                assert self.paras[parname].shape == paradict[parname].shape
-                self.paras[parname].data = paradict[parname].data
+    # def init_parameters(self):
+    #     paradict = initialize_paramethers(self.path2CFile)
+    #     for parname in self.paras:
+    #         if parname in paradict:  # initialize
+    #             assert self.paras[parname].shape == paradict[parname].shape
+    #             self.paras[parname].data = paradict[parname].data
 
     def gpulize(self):
         self.T.cudalize()

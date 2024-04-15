@@ -1,16 +1,11 @@
 # A pipeline framework to realize the RL Pruning Tool for loop invariant inference
-import argparse
-import subprocess
 import time
+import logging
 
-# from PT_generators.RL_Prunning.PT_generator import PT_generator
-from PT_generators.SimplestIteration.PT_generator import PT_generator
-from SMT_Solver import Template_solver
+from PT_generators.RL_Prunning.PT_generator import PT_generator
 from SMT_Solver.Config import config
 from SMT_Solver.SMT_verifier import SMT_verifier
 from seedTemplate.tlaParser import tlaparser
-from seedTemplate.SeedTemplate import SeedTemplate
-from Utilities.ArgParser import parseArgs
 
 
 def main(path2tla, path2cfg, path2json):
@@ -22,37 +17,32 @@ def main(path2tla, path2cfg, path2json):
     # Step 2. Load the Partial Template Generator.
 
     # todo: 第二步 生成seed和quants
-    fake_json = {}
-    tla_ins = tlaparser.parse_file(fake_json)
-    seed_template = SeedTemplate(tla_ins)
-    seeds, quants = seed_template.generate()
+    tla_ins, seed_tmpl = tlaparser.main(path2cfg, path2json)
 
     # todo: 第三步
 
-    pT_generator = PT_generator(path2tla)
-    sMT_verifier = SMT_verifier(pT_generator.var_names)
+    pT_generator = PT_generator(seed_tmpl)
+    sMT_verifier = SMT_verifier(tla_ins.variables)
     # Step 3. ENTER the ICE Solving Loop
     solved = False
-    CE = {'p': [],
-          'n': [],
-          'i': []}
-    print("Begin_process:   ", path2tla)
+    CE = {}
+    logging.info("Begin_process:   ", path2tla)
     Iteration = 0
     while not solved:
         current_time = time.time()
         if current_time - start_time >= config.Limited_time:
-            print("Loop invariant Inference is OOT")
+            logging.info("Loop invariant Inference is OOT")
             return None, None
         Iteration += 1
         # Step 3.1 Generate A partial template
         PT = pT_generator.generate_next(CE)
         if PT is None:
-            print("The only way is to give up now")
+            logging.info("The only way is to give up now")
             return None, None
         # Step 3.2 Solving the partial template
         try:
             Can_I = Template_solver.solve(PT, CE)
-            print(Can_I)
+            logging.info(f"find a candidate: {str(Can_I)}")
             # raise TimeoutError # try this thing out
         except TimeoutError as OOT:  # Out Of Time, we punish
             pT_generator.punish('STRICT', 'VERY', 'S')
@@ -66,12 +56,12 @@ def main(path2tla, path2cfg, path2json):
         except TimeoutError as OOT:  # Out Of Time, we punish
             pT_generator.punish('STRICT', 'LITTLE', 'V')
             continue
-        if Counter_example is None:  # Bingo, we prise
+        if Counter_example:  # Bingo, we prise
             solved = True
-            print("The answer is :  ", str(Can_I))
+            logging.info("The answer is :  ", str(Can_I))
             pT_generator.prise('VERY')
             current_time = time.time()
-            print("Time cost is :  ", str(current_time - start_time))
+            logging.info("Time cost is :  ", str(current_time - start_time))
             return current_time - start_time, str(Can_I)
         else:  # progressed anyway, we prise
             if Counter_example.assignment not in CE[Counter_example.kind]:

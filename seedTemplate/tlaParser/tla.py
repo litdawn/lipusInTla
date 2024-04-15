@@ -1,4 +1,5 @@
 from seedTemplate.SeedTemplate import Type
+from pyparsing import Forward, Combine, infixNotation, opAssoc, Keyword, Word, alphanums, Suppress, Optional, ZeroOrMore
 
 
 class Element(object):
@@ -13,6 +14,10 @@ class Element(object):
         self.param_type = ""
         self.param_num = 0
         self.result = None
+        self.concrete_content = ""
+
+        # state
+        self.real = ""
 
         # array有
         ''' 
@@ -29,18 +34,23 @@ class Element(object):
 # todo
 class TLA:
     def __init__(self):
-        self.variables = []
-        self.actions = []
-        self.constants = []
+        self.variables = {}
+        self.actions = {}
+        self.states = {}
+        self.constants = {}
+        self.init = ""
+        self.next = ""
+        self.inv = ""
 
-    def init_var(self, constants, variables, actions):
-
+    def init_var(self, constants, variables, actions, states):
         for var in variables:
-            self.variables.append(self.construct_var(var["name"], var["info"]))
+            self.variables.update({var["name"]: self.construct_var(var["name"], var["info"])})
         for act in actions:
-            self.actions.append(self.construct_var(act["name"], act["info"]))
+            self.actions.update({act["name"]: self.construct_var(act["name"], act["info"])})
         for cons in constants:
-            self.constants.append(self.construct_var(cons["name"], cons["info"]))
+            self.constants.update({cons["name"]: self.construct_var(cons["name"], cons["info"])})
+        for state in states:
+            self.constants.update({state["name"]: self.construct_var(state["name"], state["info"])})
 
     def construct_var(self, name, info):
         var = self.Variable()
@@ -68,6 +78,52 @@ class TLA:
             var.index_type = info.index_type
             var.content = info.content
         return var
+
+    # 解析逻辑表达式, 结果形如
+    # [
+    #   ['ResponseMatched(VARI,VARP)', '\\/', '~',
+    #       ['<<VARI,VARP>>', '\\in', 'response_sent']
+    #   ]
+    # ]
+    def parse_logic_expression(self, expression):
+
+        # 定义操作数、函数名和符号
+        identifier = Word(alphanums + "_")
+        function_name = Word(alphanums + "_")
+        keyword_not = Keyword("~")
+        keyword_subset = Keyword("\\subseteq")
+        keyword_belongs_to = Keyword("\\in")
+        keyword_and = Keyword("/\\")
+        keyword_or = Keyword("\\/")
+
+        # 定义括号
+        LPAREN = Suppress("(")
+        RPAREN = Suppress(")")
+
+        # 定义操作符优先级
+        precedence = [
+            (keyword_subset, 2, opAssoc.LEFT),
+            (keyword_belongs_to, 2, opAssoc.LEFT),
+            (keyword_and, 2, opAssoc.LEFT),
+            (keyword_or, 2, opAssoc.LEFT),
+        ]
+
+        # 定义逻辑表达式
+        expr = Forward()
+        atom = Forward()
+        identifiers = Combine(
+            "<<" + Optional(keyword_not) + identifier + ZeroOrMore("," + Optional(keyword_not) + identifier) + ">>")
+
+        # 定义函数参数列表
+        arg = (identifier | identifiers) | function_name | "~" + identifier
+        args_list = arg + ZeroOrMore("," + arg)
+
+        # 定义函数调用表达式
+        function_call = Combine(function_name + "(" + Optional(args_list) + ")")
+        atom <<= "~" + LPAREN + expr + RPAREN | LPAREN + expr + RPAREN | function_call | identifiers | identifier
+        expr <<= infixNotation(atom, precedence)
+
+        return  expr.parseString(expression)
 
     class Variable(Element):
         #

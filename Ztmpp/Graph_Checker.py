@@ -4,7 +4,6 @@ import torch.nn as nn
 
 from graphviz import Digraph
 
-from PT_generators.RL_Prunning.Conifg import Z3_abs
 from PT_generators.RL_Prunning.NNs.TreeLSTM import TreeLSTM
 
 

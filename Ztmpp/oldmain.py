@@ -1,12 +1,10 @@
 # A pipeline framework to realize the RL Pruning Tool for loop invariant inference
-import argparse
 import time
 
 from PT_generators.RL_Prunning.PT_generator import PT_generator
-from SMT_Solver import Template_solver
+from tmpp import Template_solver
 from SMT_Solver.Config import config
 from SMT_Solver.SMT_verifier import SMT_verifier
-from Utilities.ArgParser import parseArgs
 
 
 def main(path2CFile, path2CFG, path2SMT):

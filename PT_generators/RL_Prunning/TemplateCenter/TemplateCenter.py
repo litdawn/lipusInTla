@@ -1,59 +1,57 @@
 import torch
 from torch import tensor
-# from z3 import *
 
 from PT_generators.RL_Prunning.Conifg import config
 
+RULE = {
+    'un': ["~"],
+    'lemma': ["/\\", "\\/", "()"],
+    'quants': [""],
+    'candidate': ["\\/"],
+    'dynamic': []
+}
+# non_nc'：可能表示非 nullary (零元) 布尔运算的结果。其中，nullary 运算是指没有输入参数的运算，比如常量 true 或 false。
+# 'non_nd'：可能表示非 unary (一元) 布尔运算的结果。其中，unary 运算是指只有一个输入参数的运算，比如逻辑非操作。
+# 'non_p'：可能表示非二元布尔运算的结果。其中，binary 运算是指有两个输入参数的运算，比如逻辑与、逻辑或操作。
+# 'non_t'：可能表示非整数类型的变量。
+# 'non_op2'：可能表示非二元整数操作的结果。其中包括加法、减法、乘法、除法和取余等操作。
+# 'non_s'：可能表示非确定性整数。
+# 'non_v'：可能表示非特定的整数值。
 # RULE = {
-#     'non_nc': [And(Bool('non_nd')), And(Bool('non_nd'), Bool('non_nd')), And(Bool('non_nd'), Bool('non_nd'), Bool('non_nd'))],
-#     'non_nd': [Or(Bool('non_p')), Or(Bool('non_p'), Bool('non_p')), Or(Bool('non_p'), Bool('non_p'), Bool('non_p'))],
-#     'non_p': [Int('non_t') < Int('non_s'),
-#               Int('non_t') <= Int('non_s'),
-#               Int('non_t') == Int('non_s'),
-#               Int('non_t') > Int('non_s'),
-#               Int('non_t') >= Int('non_s')],
-#     'non_t': [Int('non_v'), Int('non_s'), Int('non_op2')],
-#     'non_op2': [Int('non_t') + Int('non_t'), Int('non_t') - Int('non_t'), Int('non_t') * Int('non_t'),
-#                 Int('non_t') / Int('non_t'), Int('non_t') % Int('non_t')],
-#     #'non_op1': [-Int('non_t')],  # 'Rule_op1_abs'],
-#     'non_s': [Int('undecided')], #Int('non_decided')
+#     # # and
+#     # 'non_nc': [And(Bool('non_nd')), And(Bool('non_nd'), Bool('non_nd')),
+#     #            And(Bool('non_nd'), Bool('non_nd'), Bool('non_nd'))],
+#     # # or
+#     # 'non_nd': [Or(Bool('non_p')), Or(Bool('non_p'), Bool('non_p')), Or(Bool('non_p'), Bool('non_p'), Bool('non_p'))],
+#     # # < <= =
+#     # 'non_p': [Int('non_t') < Int('non_s'),
+#     #           Int('non_t') <= Int('non_s'),
+#     #           Int('non_t') == Int('non_s')],
+#     # # +
+#     # 'non_t': [Int('non_term'),
+#     #           Int('non_term') + Int('non_term'),
+#     #           Int('non_term') + Int('non_term') + Int('non_term'),
+#     #           Int('non_term') + Int('non_term') + Int('non_term') + Int('non_term')],
+#     # # *
+#     # 'non_term': [Int('non_v'),
+#     #              Int('non_s') * Int('non_v'),
+#     #              Int('non_s') * Int('non_v') * Int('non_v'),
+#     #              Int('non_s') * Int('non_v') * Int('non_v') * Int('non_v'),
+#     #              Int('non_s') * Int('non_v') * Int('non_v') * Int('non_v') * Int('non_v')],
+#     # 'non_'
+#     # 'non_op1': [-Int('non_t')],  # 'Rule_op1_abs'],
+#     # 'non_s': [Int('undecided')],  # Int('non_decided')
 #     # 'non_decided': ['VALUE'],
 #     'non_v': []  # dynamically initialize this one
 # }
-RULE = {
-    # # and
-    # 'non_nc': [And(Bool('non_nd')), And(Bool('non_nd'), Bool('non_nd')),
-    #            And(Bool('non_nd'), Bool('non_nd'), Bool('non_nd'))],
-    # # or
-    # 'non_nd': [Or(Bool('non_p')), Or(Bool('non_p'), Bool('non_p')), Or(Bool('non_p'), Bool('non_p'), Bool('non_p'))],
-    # # < <= =
-    # 'non_p': [Int('non_t') < Int('non_s'),
-    #           Int('non_t') <= Int('non_s'),
-    #           Int('non_t') == Int('non_s')],
-    # # +
-    # 'non_t': [Int('non_term'),
-    #           Int('non_term') + Int('non_term'),
-    #           Int('non_term') + Int('non_term') + Int('non_term'),
-    #           Int('non_term') + Int('non_term') + Int('non_term') + Int('non_term')],
-    # # *
-    # 'non_term': [Int('non_v'),
-    #              Int('non_s') * Int('non_v'),
-    #              Int('non_s') * Int('non_v') * Int('non_v'),
-    #              Int('non_s') * Int('non_v') * Int('non_v') * Int('non_v'),
-    #              Int('non_s') * Int('non_v') * Int('non_v') * Int('non_v') * Int('non_v')],
-    # 'non_'
-    # 'non_op1': [-Int('non_t')],  # 'Rule_op1_abs'],
-    # 'non_s': [Int('undecided')],  # Int('non_decided')
-    # 'non_decided': ['VALUE'],
-    'non_v': []  # dynamically initialize this one
-}
+
 const_ID = 0
 
 
 def InitPT():
     global const_ID
     const_ID = 0
-    return Bool('non_nc')
+    return 0
 
 
 def getLeftHandle(PT):
@@ -114,19 +112,20 @@ def substitute_the_leftmost_one(node, left_handle, replacer):
 def update_PT_rule_selction(PT, left_handle, action_selected):
     assert str(action_selected) != 'VALUE'
     if str(action_selected) == 'undecided':
-        global const_ID
-        action_selected = Int('const_' + str(const_ID))
+        # global const_ID
+        # action_selected_selected =
+        # action_selected = Int('const_' + str(const_ID))
         const_ID += 1
     return substitute_the_leftmost_one(PT, left_handle, action_selected)[1]
 
 
-def update_PT_value(PT, left_handle, value_of_int):
-    if str(left_handle) == 'non_nc':
-        return And([Bool('non_nd')] * value_of_int)
-    elif str(left_handle) == 'non_nd':
-        return substitute_the_leftmost_one(PT, left_handle, Or([Bool('non_p')] * value_of_int))[1]
-    else:
-        return substitute_the_leftmost_one(PT, left_handle, IntVal(value_of_int))[1]
+# def update_PT_value(PT, left_handle, value_of_int):
+#     if str(left_handle) == 'non_nc':
+#         return And([Bool('non_nd')] * value_of_int)
+#     elif str(left_handle) == 'non_nd':
+#         return substitute_the_leftmost_one(PT, left_handle, Or([Bool('non_p')] * value_of_int))[1]
+#     else:
+#         return substitute_the_leftmost_one(PT, left_handle, IntVal(value_of_int))[1]
 
 
 # def ShouldStrict(lefthandle, Whom):
@@ -188,7 +187,7 @@ def StrictnessDirtribution(lefthandle, Whom):
         'non_s': [0]
     }
     if Whom == "S":
-        distri_dict['non_term'] = [0.99, 0.01, 0.0, 0.0,0.0]
+        distri_dict['non_term'] = [0.99, 0.01, 0.0, 0.0, 0.0]
 
     if (len(RULE['non_s']) - 1) > 0:
         distri_dict['non_s'].extend([1 / (len(RULE['non_s']) - 1)] * (len(RULE['non_s']) - 1))
@@ -207,7 +206,7 @@ def StrictnessDirtribution(lefthandle, Whom):
     return res
 
 
-def LossnessDirtribution(lefthandle, Whom): #only S will ask it.
+def LossnessDirtribution(lefthandle, Whom):  # only S will ask it.
     distri_dict = {
         'non_nc': [0.0, 0.25, 0.75],
         'non_nd': [0.0, 0.25, 0.75],
@@ -238,17 +237,6 @@ def LossnessDirtribution(lefthandle, Whom): #only S will ask it.
     return res
 
 
-# SIMPLEST_RULE = {
-#     'non_nc': [And(Bool('non_nd'))],
-#     'non_nd': [Or(Bool('non_p'))],
-#     'non_p': [Int('non_t') < Int('non_s')],
-#     'non_t': [Int('non_s')],
-#     'non_op2': [Int('non_t') + Int('non_t')],
-#     #'non_op1': [-Int('non_t')],  # 'Rule_op1_abs'],
-#     'non_s': [Int('undecided')],
-#     #'non_decided': ['VALUE'],
-#     'non_v': []  # dynamically initialize this one
-# }
 SIMPLEST_RULE = {
     # 'non_nc': [And(Bool('non_nd'))],
     # 'non_nd': [Or(Bool('non_p'))],
@@ -271,3 +259,16 @@ if __name__ == "__main__":
     # exp = substitute_the_leftmost_one(exp, getLeftHandle(exp), Int('non_t') >= Int('non_t'))[1]
     # exp = substitute_the_leftmost_one(exp, getLeftHandle(exp), Int('z') % Int('q'))
     # print(exp[1])
+    from sympy import Intersection, Union
+
+    # 定义集合
+    set1 = {1, 2, 3}
+    set2 = {2, 3, 4}
+
+    # 计算集合的交集和并集
+    intersection_set = Intersection(set1, set2)
+    union_set = Union(set1, set2)
+
+    # 打印结果
+    print("集合的交集:", str(intersection_set))
+    print("集合的并集:", str(union_set))

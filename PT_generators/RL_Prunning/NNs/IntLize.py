@@ -3,7 +3,6 @@ from torch import nn, tensor
 
 from PT_generators.RL_Prunning.Conifg import config
 from PT_generators.RL_Prunning.NNs.SymbolEmbeddings import SymbolEmbeddings
-from PT_generators.RL_Prunning.NNs.Utility import getParFromModule
 
 
 class IntLize(nn.Module):
@@ -27,15 +26,15 @@ class IntLize(nn.Module):
         #     return self.layer2(self.layer1(action_vector))
 
 
-    def GetParameters(self):
-        res = {}
-        PreFix = "IntLize_P_"
-
-        # res.update(getParFromModule(self.layer1, prefix=PreFix + "layer1"))
-        # res.update(getParFromModule(self.layer2, prefix=PreFix + "layer2"))
-        res.update(getParFromModule(self.layer1_n, prefix=PreFix + "layer1_n"))
-        res.update(getParFromModule(self.layer2_n, prefix=PreFix + "layer2_n"))
-        return res
+    # def GetParameters(self):
+    #     res = {}
+    #     PreFix = "IntLize_P_"
+    #
+    #     # res.update(getParFromModule(self.layer1, prefix=PreFix + "layer1"))
+    #     # res.update(getParFromModule(self.layer2, prefix=PreFix + "layer2"))
+    #     res.update(getParFromModule(self.layer1_n, prefix=PreFix + "layer1_n"))
+    #     res.update(getParFromModule(self.layer2_n, prefix=PreFix + "layer2_n"))
+    #     return res
 
 # 这是一个名为 IntLize 的 PyTorch 类，它继承了 nn.Module。这个类有两个线性层 layer1_n 和 layer2_n，并且在 forward 方法中，它会根据 action_vector 和 left_handle 的值来计算输出。
 #

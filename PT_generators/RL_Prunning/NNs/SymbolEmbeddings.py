@@ -10,9 +10,13 @@ SymbolEmbeddings = {}
 # for word in string.ascii_lowercase:  # variables
 #     SymbolEmbeddings[word] = Variable(torch.zeros((1, SIZE_EXP_NODE_FEATURE)), requires_grad=True)
 
-SymbolEmbeddings['Int'] = Parameter(torch.randn((1, config.SIZE_EXP_NODE_FEATURE)), requires_grad=True)  # const
+# SymbolEmbeddings['Int'] = Parameter(torch.randn((1, config.SIZE_EXP_NODE_FEATURE)), requires_grad=True)  # const
 # 需要梯度计算的张量。该张量是模型参数，需要根据反向传播算法进行更新。
 SymbolEmbeddings['?'] = Parameter(torch.randn((1, config.SIZE_EXP_NODE_FEATURE)), requires_grad=True)  # default
+SymbolEmbeddings['str'] = Parameter(torch.randn((1, config.SIZE_EXP_NODE_FEATURE)), requires_grad=True)
+SymbolEmbeddings['bool'] = Parameter(torch.randn((1, config.SIZE_EXP_NODE_FEATURE)), requires_grad=True)
+SymbolEmbeddings['set'] = Parameter(torch.randn((1, config.SIZE_EXP_NODE_FEATURE)), requires_grad=True)
+SymbolEmbeddings['array'] = Parameter(torch.randn((1, config.SIZE_EXP_NODE_FEATURE)), requires_grad=True)
 
 # SymbolEmbeddings['non_v'] = Variable(torch.zeros((1, SIZE_EXP_NODE_FEATURE)), requires_grad=True)  # non-determinals
 # SymbolEmbeddings['non_s'] = Variable(torch.zeros((1, SIZE_EXP_NODE_FEATURE)), requires_grad=True)  # non-determinals

@@ -5,7 +5,6 @@ from torch import tensor
 from torch.nn import Parameter
 
 from PT_generators.RL_Prunning.Conifg import config
-from PT_generators.RL_Prunning.NNs.CFG_Embedding import CFG_Embedding
 from PT_generators.RL_Prunning.NNs.CounterExampleEmbedding import CEEmbedding
 from PT_generators.RL_Prunning.NNs.DistributionLize import DistributionLize
 from PT_generators.RL_Prunning.NNs.IntLize import IntLize
@@ -16,12 +15,12 @@ from PT_generators.RL_Prunning.NNs.TreeLSTM import TreeLSTM
 from PT_generators.RL_Prunning.TemplateCenter.TemplateCenter import RULE
 
 
-def constructT():
-    treeLSTM = TreeLSTM()
+def constructT(vars):
+    treeLSTM = TreeLSTM(vars)
     return treeLSTM
 
-def constructG(cfg):
-    return CFG_Embedding(cfg)
+# def constructG(cfg):
+#     return CFG_Embedding(cfg)
 
 
 def constructE(vars):
@@ -41,29 +40,20 @@ def construct_intValuelzie():
 
 
 def init_symbolEmbeddings():
-    Rule_keys =RULE.keys()
+    Rule_keys = RULE.keys()
     for non_terminal in Rule_keys:
         SymbolEmbeddings[non_terminal] = Parameter(torch.randn((1, config.SIZE_EXP_NODE_FEATURE)), requires_grad=True)
         actions = RULE[non_terminal]
         for act in actions:
             SymbolEmbeddings[str(act)] = Parameter(torch.randn((1, config.SIZE_EXP_NODE_FEATURE)), requires_grad=True)
-    for problems in config.LinearPrograms:
-        for depth in range(config.MAX_DEPTH):
-            SymbolEmbeddings[problems + "_" + str(depth)] = Parameter(torch.randn((1, config.SIZE_EXP_NODE_FEATURE)), requires_grad=True)
-    for problems in config.NonLinearPrograms:
-        for depth in range(config.MAX_DEPTH):
-            SymbolEmbeddings[problems + "_" + str(depth)] = Parameter(torch.randn((1, config.SIZE_EXP_NODE_FEATURE)), requires_grad=True)
 
-def GetProgramFearture(path2CFile, depth):
-    problemID = path2CFile.split('/')[-1].split('.')[0]
-    if 'NL' in problemID:
-        problemStr = "Problem_NL" + problemID.split('NL')[-1]
-    else:
-        problemStr = "Problem_L" + problemID
+def GetProgramFearture(path2tla, depth):
+    problem_name = path2tla.split('/')[-1].split('.')[0]
     try:
-        return SymbolEmbeddings[problemStr + "_" + str(depth)]
+        return SymbolEmbeddings[problem_name]
     except:
-        return SymbolEmbeddings['?']
+        SymbolEmbeddings[problem_name] = Parameter(torch.randn((1, config.SIZE_EXP_NODE_FEATURE)), requires_grad=True)
+        return SymbolEmbeddings[problem_name]
 
 def GPUlizeSymbols():
     for keyname in SymbolEmbeddings.keys():
