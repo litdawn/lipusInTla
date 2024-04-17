@@ -18,7 +18,7 @@ class SeedTemplate:
 
     def fill_str(self, tla_ins):
         cons = tla_ins.constants
-        for con in cons:
+        for con in iter(cons):
             self.set.append(con)
             # try:
             #     if con["self_type"] == Type.STRING:
@@ -41,11 +41,11 @@ class SeedTemplate:
         # 处理常量
         self.fill_str(self.tla_ins)
         # 处理变量
-        for name, var in self.tla_ins.variables:
+        for var in self.tla_ins.variables.values():
             self.generate_special_body(var)
         # 处理状态转换行为
-        for action, var in self.tla_ins.actions:
-            self.generate_special_body(action)
+        for var in self.tla_ins.actions.values():
+            self.generate_special_body(var)
         # 生成"="
         self.generate_equal()
         # 生成\subseteq
@@ -61,7 +61,7 @@ class SeedTemplate:
     def generate_special_body(self, var):
         if var.self_type == Type.SET:
             # do in
-            self.set.append(var)
+            self.set.append(var.name)
             self.generate_IN(var)
         elif var.self_type == Type.ARRAY:
             # do []
@@ -102,10 +102,10 @@ class SeedTemplate:
         for i in combinations(self.str, 2):
             self.seeds.append("=".join(i))
         for i in combinations(self.set, 2):
-            self.seeds.append("=".join(ele.name for ele in i))
+            self.seeds.append("=".join(ele for ele in i))
         for i in self.set:
             # self.seeds.append(i.name + "=" + i.name)
-            self.seeds.append(i.name + "= {}")
+            self.seeds.append(i + "= {}")
         return 0
 
     def generate_notequal(self):
@@ -116,13 +116,13 @@ class SeedTemplate:
 
     def generate_subseteq(self):
         for i in permutations(self.set, 2):
-            self.seeds.append(" \\subseteq ".join(ele.name for ele in i))
+            self.seeds.append(" \\subseteq ".join(ele for ele in i))
 
     def generate_quants(self):
         for quant in self.def_var:
             for con in self.tla_ins.constants:
-                if con.self_type == Type.SET:
-                    self.quants.append(f"\\A {quant} in  {con.name} : ")
+                # if con.self_type == Type.SET:
+                self.quants.append(f"\\A {quant} in  {con} : ")
         return 0
 
     # 1. 生成seed

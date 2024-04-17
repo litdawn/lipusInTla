@@ -47,7 +47,7 @@ def parse_file(json_data, cfg_data):
         elif line.startswith("INVARIANT"):
             tla_ins.inv = line.split(" ")[-1]
         elif line.startswith("CONSTANT"):
-            if line.find("="):
+            if line.find("=") == 1:
                 name, value = (line.split(" ")[-1]).split("=")
                 tla_ins.constants[name].real_val = value[1:-1].split(",")
         elif line.startswith("\\*"):
@@ -56,10 +56,9 @@ def parse_file(json_data, cfg_data):
             tla_ins.sym = line.split(" ")[-1]
         else:
             line = line.strip()
-            if line.find("="):
+            if line.find("=") == 1:
                 name, value = line.split("=")
-                tla_ins.constants[name].real_val = value[1:-1].split(",")
-
+                tla_ins.constants[name.strip()].real_val = value[1:-1].split(",")
     return tla_ins
 
 
@@ -149,8 +148,10 @@ def parse_type(str="", concrete_content=""):
     #state
     if str == "":
         return {
+            "self_type":"state",
             "concrete_content": concrete_content
         }
 
-
+#
 # if __name__ == "__main__":
+#     main()

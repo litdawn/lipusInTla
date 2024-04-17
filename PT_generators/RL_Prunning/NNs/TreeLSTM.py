@@ -72,7 +72,6 @@ class TreeLSTM(nn.Module):
         feature, _ = state_rnn(child_features.reshape([-1, 1, config.SIZE_EXP_NODE_FEATURE]))
         return feature[-1]
 
-    # todo symbolembedding相关 nn的初始化 tc的选择策略更新 var
     def forward_var(self, var, state):
         if var.self_type == Type.BOOL:
             name = "bool"

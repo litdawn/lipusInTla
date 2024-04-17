@@ -50,14 +50,15 @@ class TLA:
         for cons in constants:
             self.constants.update({cons["name"]: self.construct_var(cons["name"], cons["info"])})
         for state in states:
-            self.constants.update({state["name"]: self.construct_var(state["name"], state["info"])})
+            self.states.update({state["name"]: self.construct_var(state["name"], state["info"])})
 
     def construct_var(self, name, info):
         var = self.Variable()
         var.self_type = info["self_type"]
         var.name = name
         if var.self_type == Type.ACTION:
-            var.index_type = info["index_type"]
+            var.index_type = info["param_type"]
+            var.param_num = info["param_num"]
             var.result = self.construct_var("result", info["result"])
         elif var.self_type == Type.SET:
             var.sub_num = info["sub_num"]
