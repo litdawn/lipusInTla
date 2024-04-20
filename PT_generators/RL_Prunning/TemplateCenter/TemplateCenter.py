@@ -10,7 +10,8 @@ RULE = {
     'candidate': ["\\/"],
     'dynamic': []
 }
-# non_nc'：可能表示非 nullary (零元) 布尔运算的结果。其中，nullary 运算是指没有输入参数的运算，比如常量 true 或 false。
+
+# 'non_nc'：可能表示非 nullary (零元) 布尔运算的结果。其中，nullary 运算是指没有输入参数的运算，比如常量 true 或 false。
 # 'non_nd'：可能表示非 unary (一元) 布尔运算的结果。其中，unary 运算是指只有一个输入参数的运算，比如逻辑非操作。
 # 'non_p'：可能表示非二元布尔运算的结果。其中，binary 运算是指有两个输入参数的运算，比如逻辑与、逻辑或操作。
 # 'non_t'：可能表示非整数类型的变量。
@@ -53,7 +54,6 @@ def InitPT():
     const_ID = 0
     return 0
 
-
 def getLeftHandle(PT):
     if 'non_' in str(PT.decl()):
         return PT
@@ -63,7 +63,6 @@ def getLeftHandle(PT):
             if l is not None:
                 return l
     return None
-
 
 def AvailableActionSelection(left_handle):
     # if len(RULE[str(left_handle.decl())]) == 1 and str(RULE[str(left_handle.decl())][0]) == 'VALUE':

@@ -5,13 +5,17 @@ import json
 import sys
 import subprocess
 
-# todo 本文件仍有一些路径混乱
-specdir = "/result"
+# 输入的tla/cfg在
+# 新tla: specdir//gen_tla_dir/{specname}_CTIGen_{ctiseed}.tla
+# 新cfg：specdir//gen_tla_dir/{specname}_CTIGen_{ctiseed}.cfg
+# 生成的cti文件在 Benchmarks/gen_tla/apalache-cti-ou
+specdir = os.getcwd() + "\\Result"
 GEN_TLA_DIR = "gen_tla"
 state_constraint = ""
-apalache_path = "apalache-0.44.2/lib/apalache.jar"
+apalache_path = os.getcwd() + "\\apalache-0.44.2\\lib\\apalache.jar"
 jvm_args = "JVM_ARGS='-Xss16M'"
 max_num_ctis = 250
+output_directory = os.getcwd() + "Benchmarks/gen_tla/apalache-cti-out"
 
 
 class CTI:
@@ -63,7 +67,7 @@ class CTI:
         return self.cti_str < other.cti_str
 
 
-def generate_ctis_tlc_run_async(specname, tla_ins, strengthening_conjuncts, path2cfg, num_traces_per_worker=15):
+def generate_ctis_tlc_run_async(specname, tla_ins, strengthening_conjuncts="", num_traces_per_worker=15):
     """ Starts a single instance of TLC to generate CTIs."""
 
     # Avoid TLC directory naming conflicts.
@@ -149,9 +153,9 @@ def generate_ctis_tlc_run_async(specname, tla_ins, strengthening_conjuncts, path
     # Apalache run.
     # if self.use_apalache_ctigen:
     # Clean the output directory.
-    os.system("rm -f benchmarks/gen_tla/apalache-cti-out/*")
+    os.system(f"rm -f {output_directory}/*")
 
-    cmd = f"java.exe -jar {apalache_path} check --run-dir={specdir}/{GEN_TLA_DIR}/apalache-cti-out --max-error={max_num_ctis} --init=IndCand --inv=IndCand --length=1 --config={indcheckcfgfilename} {indchecktlafilename}"
+    cmd = f"java.exe -jar {apalache_path} check --run-dir={output_directory} --max-error={max_num_ctis} --init=IndCand --inv=IndCand --length=1 --config={indcheckcfgfilename} {indchecktlafilename}"
     # cmd = self.java_exe + ' -Djava.io.tmpdir="%s" -cp tla2tools-checkall.jar tlc2.TLC -maxSetSize %d %s -depth %d -seed %d -noGenerateSpecTE -metadir states/indcheckrandom_%d -continue -deadlock -workers %d -config %s %s' % args
     logging.info("Apalache command: " + cmd)
     workdir = None
@@ -161,7 +165,7 @@ def generate_ctis_tlc_run_async(specname, tla_ins, strengthening_conjuncts, path
     return subproc
 
 
-def generate_ctis_apalache_run_await(subproc, ):
+def generate_ctis_apalache_run_await(subproc):
     """ Awaits completion of a CTI generation process, parses its results and returns the parsed CTIs."""
     tlc_out = subproc.stdout.read().decode(sys.stdout.encoding)
     # logging.debug(tlc_out)
@@ -169,11 +173,11 @@ def generate_ctis_apalache_run_await(subproc, ):
 
     all_tla_ctis = set()
     all_cti_objs = []
-    outfiles = os.listdir("benchmarks/gen_tla/apalache-cti-out")
+    outfiles = os.listdir(f"{output_directory}")
     for outf in outfiles:
         if "itf.json" in outf:
             # print(outf)
-            cti_obj = json.load(open(f"benchmarks/gen_tla/apalache-cti-out/{outf}"))
+            cti_obj = json.load(open(f"{output_directory}/{outf}"))
             # print(cti_obj)
             all_cti_objs.append(cti_obj)
 
@@ -210,7 +214,7 @@ def itf_json_state_to_tla(svars, state):
     return tla_state_form
 
 
-def generate_ctis():
+def generate_ctis(tla_ins, path2cfg):
     """ Generate CTIs for use in counterexample elimination. """
 
     all_ctis = set()
@@ -230,7 +234,9 @@ def generate_ctis():
         # if self.use_apalache_ctigen:
         # cti_subproc = self.generate_ctis_apalache_run_async(num_traces_per_tlc_instance)
         # else:
-        cti_subproc = generate_ctis_tlc_run_async(num_traces_per_tlc_instance)
+        cti_subproc = generate_ctis_tlc_run_async(specname=path2cfg.split("//")[-1].split(".")[0],
+                                                  tla_ins=tla_ins,
+                                                  num_traces_per_worker=num_traces_per_tlc_instance, )
 
         cti_subprocs.append(cti_subproc)
 

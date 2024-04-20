@@ -31,7 +31,6 @@ class Element(object):
         self.index_type = ""
 
 
-# todo
 class TLA:
     def __init__(self):
         self.variables = {}
