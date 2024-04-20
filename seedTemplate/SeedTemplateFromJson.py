@@ -3,7 +3,7 @@ import os.path
 
 
 class SeedTemplate:
-    def __init__(self, path2configDotJson):
+    def __init__(self, path2configDotJson, tla_ins=None):
         json_data = ""
         try:
             with open(path2configDotJson, 'r') as f:
@@ -23,6 +23,23 @@ class SeedTemplate:
         self.symmetry = json_data["symmetry"]
         self.typeok = json_data["typeok"]
         self.simulate = json_data["simulate"]
+        self.tla_ins = tla_ins
+        for preds in self.preds:
+            # 如果 preds 不以 ”~“ 开头
+            if preds[0] != "~":
+                self.preds_alt.append("~" + preds)
+                self.preds.append("~"+preds)
+
 
     def generate(self):
         return self.preds, self.quant_vars
+
+    def get_quants(self):
+        return self.quant_vars
+
+    def get_seeds(self):
+        return self.preds
+
+    def get_constants(self):
+        return self.constants
+
