@@ -30,6 +30,7 @@ def main(path2tla, path2cfg, path2json):
     # Step 3. ENTER the ICE Solving Loop
     solved = False
     CE = {}
+    # 原CE = {'p': [],'n': [],'i': []}
     logging.info("Begin_process:   ", path2tla)
     Iteration = 0
     while not solved:
@@ -68,7 +69,8 @@ def main(path2tla, path2cfg, path2json):
             logging.info("Time cost is :  ", str(current_time - start_time))
             return current_time - start_time, str(candidate)
         else:  # progressed anyway, we prise
-            ctis = generate_ctis(path2cfg, tla_ins)
+            ctis, cti_time = generate_ctis(path2cfg, tla_ins)
+            CE["i"].append(ctis)
             # if is_right.assignment not in CE[is_right.kind]:
             #     CE[is_right.kind].append(is_right.assignment)
             # pT_generator.prise('LITTLE')

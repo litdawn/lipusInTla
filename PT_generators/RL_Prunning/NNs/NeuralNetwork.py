@@ -6,6 +6,7 @@ from torch.nn import Parameter
 
 from PT_generators.RL_Prunning.Conifg import config
 from PT_generators.RL_Prunning.NNs.CounterExampleEmbedding import CEEmbedding
+from PT_generators.RL_Prunning.NNs.CFG_Embedding import CFG_Embedding
 from PT_generators.RL_Prunning.NNs.DistributionLize import DistributionLize
 from PT_generators.RL_Prunning.NNs.IntLize import IntLize
 from PT_generators.RL_Prunning.NNs.PolicyNetwork import PolicyNetwork
@@ -19,8 +20,8 @@ def constructT(vars):
     treeLSTM = TreeLSTM(vars)
     return treeLSTM
 
-# def constructG(cfg):
-#     return CFG_Embedding(cfg)
+def constructG():
+    return CFG_Embedding()
 
 
 def constructE(vars):

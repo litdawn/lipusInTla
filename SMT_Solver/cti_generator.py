@@ -4,6 +4,7 @@ import logging
 import json
 import sys
 import subprocess
+import time
 
 # 输入的tla/cfg在
 # 新tla: specdir//gen_tla_dir/{specname}_CTIGen_{ctiseed}.tla
@@ -71,7 +72,7 @@ def generate_ctis_tlc_run_async(specname, tla_ins, strengthening_conjuncts="", n
     """ Starts a single instance of TLC to generate CTIs."""
 
     # Avoid TLC directory naming conflicts.
-    tag = random.randint(0, 10000)
+    # tag = random.randint(0, 10000)
     ctiseed = random.randint(0, 10000)
 
     # Generate spec for generating CTIs.
@@ -162,12 +163,15 @@ def generate_ctis_tlc_run_async(specname, tla_ins, strengthening_conjuncts="", n
     if specdir != "":
         workdir = specdir
     subproc = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, cwd=workdir)
+
     return subproc
 
 
 def generate_ctis_apalache_run_await(subproc):
     """ Awaits completion of a CTI generation process, parses its results and returns the parsed CTIs."""
+    start_time = time.time()
     tlc_out = subproc.stdout.read().decode(sys.stdout.encoding)
+    end_time = time.time()
     # logging.debug(tlc_out)
     # lines = tlc_out.splitlines()
 
@@ -190,7 +194,7 @@ def generate_ctis_apalache_run_await(subproc):
 
     # parsed_ctis = self.parse_ctis(lines)
     # return parsed_ctis
-    return all_tla_ctis
+    return all_tla_ctis, end_time-start_time
 
 
 def itf_json_val_to_tla_val(itfval):
@@ -225,15 +229,13 @@ def generate_ctis(tla_ins, path2cfg):
     # in parallel, using a separate TLC instance.
     num_cti_worker_procs = 1
     cti_subprocs = []
+    all_time = 0.0
     num_traces_per_tlc_instance = 15
 
     # Start the TLC processes for CTI generation.
     logging.info(f"Running {num_cti_worker_procs} parallel CTI generation processes")
     for n in range(num_cti_worker_procs):
         logging.info(f"Starting CTI generation process {n}")
-        # if self.use_apalache_ctigen:
-        # cti_subproc = self.generate_ctis_apalache_run_async(num_traces_per_tlc_instance)
-        # else:
         cti_subproc = generate_ctis_tlc_run_async(specname=path2cfg.split("//")[-1].split(".")[0],
                                                   tla_ins=tla_ins,
                                                   num_traces_per_worker=num_traces_per_tlc_instance, )
@@ -242,10 +244,11 @@ def generate_ctis(tla_ins, path2cfg):
 
     # Await completion and parse results.
     for cti_subproc in cti_subprocs:
-        parsed_ctis = generate_ctis_apalache_run_await(cti_subproc)
+        parsed_ctis, times = generate_ctis_apalache_run_await(cti_subproc)
         all_ctis = all_ctis.union(parsed_ctis)
+        all_time += times
 
     # FOR DIAGNOSTICS.
     # for x in sorted(list(all_ctis))[:10]:
     # print(x)
-    return all_ctis
+    return all_ctis, all_time

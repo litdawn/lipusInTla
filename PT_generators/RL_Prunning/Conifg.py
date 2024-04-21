@@ -1,4 +1,3 @@
-
 class Config:
     SELECT_AN_ACTION = 0
     SET_AN_VALUE = 1
@@ -11,9 +10,15 @@ class Config:
 
     CONTINUE_TRAINING = True
 
-    LinearPrograms = ["Problem_L" + str(i) for i in range(1,134)]
-    NonLinearPrograms = ["Problem_NL" + str(i) for i in range(1,31)]
+    LinearPrograms = ["Problem_L" + str(i) for i in range(1, 134)]
+    NonLinearPrograms = ["Problem_NL" + str(i) for i in range(1, 31)]
 
     LearningRate = 1e-6
+
+    generate_time = {
+        "very": 5.0,
+        "little": 1.0
+    }
+
 
 config = Config()

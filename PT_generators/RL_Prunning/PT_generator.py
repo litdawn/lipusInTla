@@ -37,7 +37,7 @@ class PT_generator:
         # Step2. Construct the NNs and Load the parameters
         # 在 NNs.NeuralNetwork 里
         self.T = constructT(seed_tmpl.tla_ins.variables)  # treeLSTM
-        # self.G = constructG(self.cfg)  # CFG_Embedding
+        self.G = constructG()  # CFG_Embedding
         self.E = constructE(seed_tmpl.seeds)  # CounterExample_Embedding
         self.P = constructP()  # reward predictor
         self.pi = constructpi(self)  # policyNetwork
@@ -130,7 +130,7 @@ class PT_generator:
         return PT
 
     # 设置奖励和伽马值：根据Deg的值设置奖励和伽马值。
-    # 如果Deg是"VERY"，那么奖励是 - 10，伽马值是0.1。
+    # 如果Deg是 "VERY"，那么奖励是 -10，伽马值是0.1。
     # 如果Deg是 "MEDIUM"，那么奖励是 - 5，伽马值是0.05。
     # 如果Deg是 "LITTLE"，那么奖励是 - 1，伽马值是0.01。
     # 初始化严格损失：初始化严格损失为0。如果可以使用GPU，那么将严格损失转移到GPU上。
@@ -223,6 +223,13 @@ class PT_generator:
         # print("p_loss", p_loss)
         return (p_loss + mse_loss)
 
+    def judge_by_time(self, ge_time):
+        if ge_time > config.generate_time["very"]:
+            self.prise("VERY")
+        elif ge_time >config.generate_time["little"]:
+            self.prise("LITTLE")
+        else:
+            self.punish("LOOSE","LITTLE", "")
     def prise(self, Deg):
         if Deg == "VERY":
             reward = 10
@@ -247,7 +254,7 @@ class PT_generator:
         paras = {}
         paras.update(SymbolEmbeddings)
         paras.update(self.T.GetParameters())
-        paras.update(self.G.GetParameters())
+        # paras.update(self.G.GetParameters())
         paras.update(self.E.GetParameters())
         paras.update(self.P.GetParameters())
         paras.update(self.pi.GetParameters())
@@ -268,7 +275,7 @@ class PT_generator:
 
     def gpulize(self):
         self.T.cudalize()
-        self.G.cudalize()
+        # self.G.cudalize()
         self.E.cudalize()
         self.P.cudalize()
         self.pi.cudalize()
