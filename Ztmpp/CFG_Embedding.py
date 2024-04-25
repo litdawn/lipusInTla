@@ -23,7 +23,7 @@ class CFG_Embedding(nn.Module):
     # 一个可训练的向量attvec、
     # 一个softmax层softmaxer，
     # 以及一个GraphSample对象g_list
-    def __init__(self, cfg):
+    def __init__(self):
         super().__init__()
 
         # Need to prepare node type dict from the beginning.
@@ -37,7 +37,7 @@ class CFG_Embedding(nn.Module):
         #             v = len(node_type_dict)
         #             node_type_dict[node.node_type] = v
 
-        # 均值场
+        # 均值场 todo 更换encoder
         self.encoder = EmbedMeanField(config.SIZE_EXP_NODE_FEATURE, len(node_type_dict), max_lv=10)
         # 待优化参数
         self.attvec = Parameter(torch.randn((1,config.SIZE_EXP_NODE_FEATURE)), requires_grad=True) #Att3

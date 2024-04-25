@@ -145,10 +145,10 @@ def parse_type(str="", concrete_content=""):
             "self_type": Type.BOOL
         }
 
-    #state
+    # state
     if str == "":
         return {
-            "self_type":"state",
+            "self_type": "state",
             "concrete_content": concrete_content
         }
 

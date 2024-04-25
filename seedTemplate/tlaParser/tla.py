@@ -18,6 +18,7 @@ class Element(object):
 
         # state
         self.real = ""
+        # 和self.concrete_content = ""
 
         # array有
         ''' 
@@ -40,6 +41,7 @@ class TLA:
         self.init = ""
         self.next = ""
         self.inv = ""
+        self.type_ok = "TypeOK"
 
     def init_var(self, constants, variables, actions, states):
         for var in variables:
@@ -124,7 +126,7 @@ class TLA:
         atom <<= "~" + LPAREN + expr + RPAREN | LPAREN + expr + RPAREN | function_call | identifiers | identifier
         expr <<= infixNotation(atom, precedence)
 
-        return  expr.parseString(expression)
+        return expr.parseString(expression)
 
     class Variable(Element):
         #

@@ -32,7 +32,7 @@ class TreeLSTM(nn.Module):
         super().__init__()
         self.RNNS = {}
         self.tla_ins = tla_ins
-        self.vars = tla_ins.vars
+        self.vars = tla_ins.variables
         self.states = tla_ins.states
         # Lets give each sort of Z3 EXP an rnn
         a = '\\/,/\\,\\X'.split(',')

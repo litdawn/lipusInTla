@@ -1,7 +1,6 @@
 import torch
 from torch import nn
 
-from PT_generators.RL_Prunning.Conifg import config
 from PT_generators.RL_Prunning.NNs.SymbolEmbeddings import SymbolEmbeddings
 
 
@@ -14,7 +13,7 @@ class DistributionLize(nn.Module):
         rawness = torch.cat([torch.mm(SymbolEmbeddings[str(x)], action_vector.transpose(0, 1)) for x in available_acts],
                             1)
         likenesses = torch.softmax(rawness, 1)
-        return (likenesses, rawness)
+        return likenesses, rawness
 
     def GetParameters(self):
         res = {}

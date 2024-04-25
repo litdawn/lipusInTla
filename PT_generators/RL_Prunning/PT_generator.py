@@ -2,14 +2,46 @@ from torch.optim import Adam
 
 from PT_generators.RL_Prunning.ExternalProcesses.Sampling import sampling
 from PT_generators.RL_Prunning.NNs.NeuralNetwork import *
-# from PT_generators.RL_Prunning.TemplateCenter.TemplateCenter import InitPT, getLeftHandle, init_varSelection, \
-#     AvailableActionSelection, update_PT_rule_selction, ShouldStrict, StrictnessDirtribution, simplestAction, \
-#     # init_constSelection, LossnessDirtribution
-from PT_generators.RL_Prunning.TemplateCenter.TemplateCenter import InitPT, getLeftHandle, \
-    AvailableActionSelection, update_PT_rule_selction, ShouldStrict, StrictnessDirtribution, simplestAction, \
-    LossnessDirtribution
+from PT_generators.RL_Prunning.Template.Seed2Lemma import generate_lemmas
+from PT_generators.RL_Prunning.Template.Lemma2Candidate import Lemma2Candidate
 # from seedTemplate.tlaParser.tlaparser import get_varnames_from_source_code, get_consts_from_source_code
 import torch.nn.functional as F
+
+
+# generate_next中的选择动作，供参考
+# 函数返回的是输入表达式 PT 中最左侧的句柄
+# left_handle = getLeftHandle(PT)
+# find_next_lemma = True
+# while find_next_lemma is not None:
+#     # left_handles.append(left_handle)
+#     # 在templatecenter的RULE里面随机选规则
+#     act_or_val, available_acts = AvailableActionSelection(left_handle)
+#     # 总体特征
+#     overall_feature = self.G(self.emb_tla, emb_ce, self.stateVec)
+#     predicted_reward = self.P(self.stateVec, overall_feature)
+#     predicted_reward_list.append(predicted_reward)
+#     action_vector = self.pi(self.stateVec, overall_feature)
+#     if act_or_val == config.SELECT_AN_ACTION:
+#         action_distribution, action_raw = self.distributionlize(action_vector, available_acts)
+#         action_selected = sampling(action_distribution, available_acts)
+#
+#         if self.depth >= config.MAX_DEPTH:
+#             action_selected = simplestAction(left_handle)
+#         action_selected_list.append(action_selected)
+#         outputed_list.append(action_raw)
+#
+#         PT = update_PT_rule_selction(PT, left_handle, action_selected)
+#
+#     else:
+#         assert False  # should not be here now
+#
+#     action_or_value.append(act_or_val)
+#     left_handle = getLeftHandle(PT)
+#     self.stateVec = self.T(PT)
+#     self.depth += 1
+
+# left_handles.append(left_handle)
+# 在templatecenter的RULE里面随机选规则
 
 
 class PT_generator:
@@ -23,20 +55,21 @@ class PT_generator:
     # 和self.init_parameters()
     # 初始化学习器和参数。
     def __init__(self, seed_tmpl):
+        self.emb_tla = None
+        self.adam = None
+        self.paras = None
+        self.stateVec = dict()  # key: lemma_name val:lemma_tensor
+
+        self.depth = 0
         self.LR = config.LearningRate
         # Step1. Parse the inputs
-        # self.cfg = parseCFG(path2CFG)
-        # self.smt = parseSMT(path2SMT)
-        # self.path2CFile = path2CFile
-        # self.vars = get_varnames_from_source_code(self.path2CFile)
-        # self.consts = get_consts_from_source_code(self.path2CFile)
         self.seed_tmpl = seed_tmpl
 
         init_symbolEmbeddings()
 
         # Step2. Construct the NNs and Load the parameters
         # 在 NNs.NeuralNetwork 里
-        self.T = constructT(seed_tmpl.tla_ins.variables)  # treeLSTM
+        self.T = constructT(seed_tmpl.tla_ins)  # treeLSTM
         self.G = constructG()  # CFG_Embedding
         self.E = constructE(seed_tmpl.seeds)  # CounterExample_Embedding
         self.P = constructP()  # reward predictor
@@ -55,12 +88,14 @@ class PT_generator:
         #     self.load_parameters(config.ppath)
         # self.init_parameters()
 
-    # 它的主要功能是生成下一个程序树（Program Tree，PT）。以下是每个步骤的解释：
-    #
-    # 初始化：设置深度为0，初始化程序树PT，计算状态向量self.stateVec，并初始化一些将在后续使用的列表。
-    # 嵌入代码元素：使用self.E(CE)
-    # 和self.T.forward_three(self.smt)
-    # 将代码元素和SMT公式嵌入到向量空间，并分别存储在emb_CE和self.emb_smt中。
+        self.candidate = set()
+        self.init_candidate()
+
+    def init_candidate(self):
+        self.candidate.clear()
+        self.candidate.add(self.seed_tmpl.tla_ins.inv)
+        self.candidate.add(self.seed_tmpl.tla_ins.type_ok)
+
     # 处理程序树：在程序树PT的左句柄不为空的情况下，进行以下操作：
     # 获取可用的动作和动作或值的类型。
     # 计算整体特征和预测的奖励。
@@ -71,63 +106,63 @@ class PT_generator:
     # 返回结果：返回更新后的程序树PT。
     def generate_next(self, CE):
         self.depth = 0
-        PT = InitPT()  # Bool('non_nc')
-        # 1
-        self.stateVec = self.T(PT)
+
+        # 1 初始化
+        candidate = []
         # the lists will be used when punish or prised.
-        predicted_reward_list = []
+        predicted_reward_list = dict()
         action_selected_list = []
         outputed_list = []
         action_or_value = []
-        left_handles = []
-        # CE = {'p': [],'n': [],'i': []}
-        # 2
-        emb_CE = self.E(CE)
-        # todo 3  states
+
+        # 2 embedding counter example, state
+        emb_ce = self.E(CE)
         tla_ins = self.seed_tmpl.tla_ins
         self.emb_tla = self.T.forward_three(tla_ins.init, tla_ins.next, tla_ins.ind)
-        # 函数返回的是输入表达式 PT 中最左侧的句柄
-        left_handle = getLeftHandle(PT)
-        while left_handle is not None:
-            left_handles.append(left_handle)
-            # 在templatecenter的RULE里面随机选规则
-            act_or_val, available_acts = AvailableActionSelection(left_handle)
-            # 总体特征
-            overall_feature = self.G(self.emb_tla, emb_CE, self.stateVec)
+
+        # 3. 生成lemma, 嵌入lemma todo 看endive思考quants如何添加
+        lemmas = generate_lemmas(self.seed_tmpl.seeds)
+        for name, content in lemmas:
+            self.stateVec.update({name: self.T(content)})
+
+        # 4. 总体特征并打分 todo 这里是不是embed太多东西了
+        for name, stateVec in self.stateVec.items():
+            overall_feature = self.G(self.emb_tla, emb_ce, stateVec)
             predicted_reward = self.P(self.stateVec, overall_feature)
-            predicted_reward_list.append(predicted_reward)
-            action_vector = self.pi(self.stateVec, overall_feature)
-            if act_or_val == config.SELECT_AN_ACTION:
-                action_dirtibution, action_raw = self.distributionlize(action_vector, available_acts)
-                action_selected = sampling(action_dirtibution, available_acts)
+            predicted_reward_list.update({name: predicted_reward})
 
-                if self.depth >= config.MAX_DEPTH:
-                    action_selected = simplestAction(left_handle)
-                action_selected_list.append(action_selected)
-                outputed_list.append(action_raw)
+        # 选择lemma
+        result = Lemma2Candidate.select(predicted_reward_list)
+        real_candidate = []
+        for name in result.keys():
+            real_candidate.append(lemmas[name])
 
-                PT = update_PT_rule_selction(PT, left_handle, action_selected)
+        # act_or_val, available_acts = AvailableActionSelection(left_handle)
+        # action_vector = self.pi(self.stateVec, overall_feature)
+        # if act_or_val == config.SELECT_AN_ACTION:
+        #     action_distribution, action_raw = self.distributionlize(action_vector, available_acts)
+        #     action_selected = sampling(action_distribution, available_acts)
+        #
+        #     if self.depth >= config.MAX_DEPTH:
+        #         action_selected = simplestAction(left_handle)
+        #     action_selected_list.append(action_selected)
+        #     outputed_list.append(action_raw)
+        #
+        #     PT = update_PT_rule_selction(PT, left_handle, action_selected)
+        #
+        # else:
+        #     assert False  # should not be here now
 
-            else:
-                assert False  # should not be here now
-                # value = self.intValuelzie(action_vector, left_handle)
-                # value_of_int = int(value)
-                # action_selected_list.append(value_of_int)
-                # outputed_list.append(value)
-                #
-                # PT = update_PT_value(PT, left_handle, value_of_int)
-
-            action_or_value.append(act_or_val)
-            left_handle = getLeftHandle(PT)
-            self.stateVec = self.T(PT)
-            self.depth += 1
-
-        self.last_predicted_reward_list = predicted_reward_list
-        self.last_action_selected_list = action_selected_list
-        self.last_outputed_list = outputed_list
-        self.last_action_or_value = action_or_value
-        self.last_left_handles = left_handles
-        return PT
+        # action_or_value.append(act_or_val)
+        # left_handle = getLeftHandle(PT)
+        # self.stateVec = self.T(candidate)
+        # self.depth += 1
+        # self.last_predicted_reward_list = predicted_reward_list
+        # self.last_action_selected_list = action_selected_list
+        # self.last_outputed_list = outputed_list
+        # self.last_action_or_value = action_or_value
+        # self.last_left_handles = left_handles
+        return real_candidate
 
     # 设置奖励和伽马值：根据Deg的值设置奖励和伽马值。
     # 如果Deg是 "VERY"，那么奖励是 -10，伽马值是0.1。
@@ -160,24 +195,24 @@ class PT_generator:
         if torch.cuda.is_available():
             strict_loss = strict_loss.cuda()
         counter = 0
-        for i in range(len(self.last_action_or_value)):
-            if ShouldStrict(self.last_left_handles[i], Whom):
-                if self.last_action_or_value[i] == config.SELECT_AN_ACTION:
-                    if SorL == 'STRICT':
-                        SD = StrictnessDirtribution(self.last_left_handles[i], Whom)
-                    else:
-                        assert SorL == 'LOOSE'
-                        SD = LossnessDirtribution(self.last_left_handles[i], Whom)
-                    Loss_strictness = -torch.mm(SD, torch.log_softmax(self.last_outputed_list[i].reshape(1, -1),
-                                                                      1).transpose(0,
-                                                                                   1)) * gama
-                else:
-                    assert False  # should not be here
-                    # Loss_strictness = F.mse_loss(self.last_outputed_list[i],
-                    #                              torch.tensor([1], dtype=torch.float32)) * gama / 4
-
-                strict_loss += Loss_strictness.reshape([1, 1])
-                counter += 1
+        # for i in range(len(self.last_action_or_value)):
+        #     if ShouldStrict(self.last_left_handles[i], Whom):
+        #         if self.last_action_or_value[i] == config.SELECT_AN_ACTION:
+        #             if SorL == 'STRICT':
+        #                 SD = StrictnessDirtribution(self.last_left_handles[i], Whom)
+        #             else:
+        #                 assert SorL == 'LOOSE'
+        #                 SD = LossnessDirtribution(self.last_left_handles[i], Whom)
+        #             Loss_strictness = -torch.mm(SD, torch.log_softmax(self.last_outputed_list[i].reshape(1, -1),
+        #                                                               1).transpose(0,
+        #                                                                            1)) * gama
+        #         else:
+        #             assert False  # should not be here
+        #             # Loss_strictness = F.mse_loss(self.last_outputed_list[i],
+        #             #                              torch.tensor([1], dtype=torch.float32)) * gama / 4
+        #
+        #         strict_loss += Loss_strictness.reshape([1, 1])
+        #         counter += 1
         if counter != 0:
             strict_loss /= counter
         a_loss = self.ALoss(reward)
@@ -226,10 +261,11 @@ class PT_generator:
     def judge_by_time(self, ge_time):
         if ge_time > config.generate_time["very"]:
             self.prise("VERY")
-        elif ge_time >config.generate_time["little"]:
+        elif ge_time > config.generate_time["little"]:
             self.prise("LITTLE")
         else:
-            self.punish("LOOSE","LITTLE", "")
+            self.punish("LOOSE", "LITTLE", "")
+
     def prise(self, Deg):
         if Deg == "VERY":
             reward = 10
@@ -254,7 +290,7 @@ class PT_generator:
         paras = {}
         paras.update(SymbolEmbeddings)
         paras.update(self.T.GetParameters())
-        # paras.update(self.G.GetParameters())
+        paras.update(self.G.GetParameters())
         paras.update(self.E.GetParameters())
         paras.update(self.P.GetParameters())
         paras.update(self.pi.GetParameters())
@@ -275,7 +311,7 @@ class PT_generator:
 
     def gpulize(self):
         self.T.cudalize()
-        # self.G.cudalize()
+        self.G.cudalize()
         self.E.cudalize()
         self.P.cudalize()
         self.pi.cudalize()

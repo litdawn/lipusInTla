@@ -26,19 +26,19 @@ def main(path2tla, path2cfg, path2json):
     # # todo: 第三步
     #
     pT_generator = PT_generator(seed_tmpl)
-    sMT_verifier = SMT_verifier(tla_ins.variables)
+    smt_verifier = SMT_verifier(tla_ins.variables)
     # Step 3. ENTER the ICE Solving Loop
     solved = False
     CE = {}
     # 原CE = {'p': [],'n': [],'i': []}
     logging.info("Begin_process:   ", path2tla)
-    Iteration = 0
+    iteration = 0
     while not solved:
         current_time = time.time()
         if current_time - start_time >= config.Limited_time:
             logging.info("Loop invariant Inference is OOT")
             return None, None
-        Iteration += 1
+        iteration += 1
         # Step 3.1 生成candidate
         candidate = pT_generator.generate_next(CE)
         if candidate is None:
@@ -55,9 +55,11 @@ def main(path2tla, path2cfg, path2json):
         #     pT_generator.punish('LOOSE', 'MEDIUM', 'S')
         #     continue
         # # Step 3.3 Check if we bingo
-        logging.info(f"find a candidate: {str(candidate)}")
+        candidate = "\n/\\ ".join(candidate)
+        logging.info(f"find a candidate: {candidate}")
+
         try:
-            is_right = sMT_verifier.verify(candidate, path2tla)
+            is_right = smt_verifier.verify(candidate, path2tla)
         except TimeoutError as OOT:  # Out Of Time, we punish
             pT_generator.punish('STRICT', 'LITTLE', 'V')
             continue
@@ -79,7 +81,6 @@ def main(path2tla, path2cfg, path2json):
 
 if __name__ == "__main__":
     name = "learning_switch"
-    print()
     path2tla = os.getcwd() + f"\\Benchmarks\\protocols\\{name}.tla"
     path2cfg = os.getcwd() + f"\\Benchmarks\\cfg\\{name}.cfg"
     path2json = os.getcwd() + f"\\Benchmarks\\json\\{name}.json"

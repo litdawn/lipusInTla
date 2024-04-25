@@ -26,10 +26,10 @@ class RewardPredictor(nn.Module):
 
     def GetParameters(self):
         res = {}
-        PreFix = "RewardPredictor_P_"
-        res.update(getParFromModule(self.layer1, prefix=PreFix + "layer1"))
-        res.update(getParFromModule(self.layer2, prefix=PreFix + "layer2"))
-        res.update(getParFromModule(self.layer3, prefix=PreFix + "layer3"))
+        prefix = "RewardPredictor_P_"
+        res.update(getParFromModule(self.layer1, prefix=prefix + "layer1"))
+        res.update(getParFromModule(self.layer2, prefix=prefix + "layer2"))
+        res.update(getParFromModule(self.layer3, prefix=prefix + "layer3"))
 
         return res
 
