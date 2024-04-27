@@ -55,8 +55,8 @@ def main(path2tla, path2cfg, path2json):
         #     pT_generator.punish('LOOSE', 'MEDIUM', 'S')
         #     continue
         # # Step 3.3 Check if we bingo
-        candidate = "\n/\\ ".join(candidate)
-        logging.info(f"find a candidate: {candidate}")
+        candidate = "\n/\\ ".join(candidate.values())
+        logging.info(f"find a candidate: {str(candidate)}")
 
         try:
             is_right = smt_verifier.verify(candidate, path2tla)

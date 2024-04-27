@@ -85,7 +85,7 @@ class OverallEmbedding(nn.Module):
         overall_feature = torch.mm(swis, three_emb)
         return overall_feature
 
-    def GetParameters(self):
+    def get_parameters(self):
         res = {}
         PreFix = "CFG_Embedding_P_"
         res[PreFix + "attvec"] = self.attvec

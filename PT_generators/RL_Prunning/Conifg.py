@@ -19,6 +19,8 @@ class Config:
         "very": 5.0,
         "little": 1.0
     }
+    min_num_conjuncts = 2
+    max_num_conjuncts = 3
 
 
 config = Config()

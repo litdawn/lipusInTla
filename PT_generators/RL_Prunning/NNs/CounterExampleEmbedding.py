@@ -124,7 +124,7 @@ class CEEmbedding(nn.Module):
 
         return ce_emb
 
-    def GetParameters(self):
+    def get_parameters(self):
         res = {}
         PreFix = "CounterExample_P_"
         res[PreFix + "attvec"] = self.attvec

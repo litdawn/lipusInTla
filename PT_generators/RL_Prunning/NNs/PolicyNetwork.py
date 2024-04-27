@@ -7,11 +7,11 @@ from PT_generators.RL_Prunning.NNs.Utility import getParFromModule
 
 
 class PolicyNetwork(nn.Module):
-    def __init__(self, ptg, func):
+    def __init__(self, ptg, get_program_feature):
         super().__init__()
         self.layer = nn.Linear(config.SIZE_EXP_NODE_FEATURE * 3, config.SIZE_EXP_NODE_FEATURE)
         self.ptg = ptg  # PT_generator 实例
-        self.func = func
+        self.get_program_feature = get_program_feature # from symbol embedding
 
     # func 是这个
     # def GetProgramFearture(path2CFile, depth):
@@ -25,14 +25,14 @@ class PolicyNetwork(nn.Module):
     #     except:
     #         return SymbolEmbeddings['?']
     def forward(self, stateVec, overall_feature):
-        programFearture = self.func(self.ptg.path2CFile, self.ptg.depth)
-        l1out = self.layer(torch.cat([stateVec, overall_feature, programFearture], 1))
+        program_feature = self.get_program_feature(self.ptg.path2CFile, self.ptg.depth)
+        l1out = self.layer(torch.cat([stateVec, overall_feature, program_feature], 1))
         return l1out
 
-    def GetParameters(self):
+    def get_parameters(self):
         res = {}
-        PreFix = "PolicyNetwork_P_"
-        res.update(getParFromModule(self.layer, prefix=PreFix + "layer"))
+        prefix = "PolicyNetwork_P_"
+        res.update(getParFromModule(self.layer, prefix=prefix + "layer"))
         return res
 
     def cudalize(self):

@@ -91,7 +91,7 @@ class TLA:
     def parse_logic_expression(expression):
 
         # 定义操作数、函数名和符号
-        identifier = Word(alphanums + "_")
+        identifier = Word(alphanums + "_"+"[]")
         function_name = Word(alphanums + "_")
         keyword_not = Keyword("~")
         keyword_subset = Keyword("\\subseteq")

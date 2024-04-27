@@ -105,12 +105,12 @@ class TreeLSTM(nn.Module):
         smt_emb = torch.mm(swis, three_emb)  # 矩阵乘法
         return smt_emb
 
-    def GetParameters(self):
+    def get_parameters(self):
         res = {}
-        PreFix = "Tree_LSTM_P_"
-        res[PreFix + "attvec"] = self.attvec
+        prefix = "Tree_LSTM_P_"
+        res[prefix + "attvec"] = self.attvec
         for ky in self.RNNS.keys():
-            res.update(getParFromModule(self.RNNS[ky], prefix=PreFix + str(ky)))
+            res.update(getParFromModule(self.RNNS[ky], prefix=prefix + str(ky)))
         return res
 
     def cudalize(self):

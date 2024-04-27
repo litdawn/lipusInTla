@@ -24,7 +24,7 @@ class RewardPredictor(nn.Module):
             p10 = p10.cuda()
         return torch.min(torch.cat([torch.max(torch.cat([self.layer3(self.layer2(l1out)), m10], 1)).reshape(1,1), p10], 1)).reshape(1,1)
 
-    def GetParameters(self):
+    def get_parameters(self):
         res = {}
         prefix = "RewardPredictor_P_"
         res.update(getParFromModule(self.layer1, prefix=prefix + "layer1"))
