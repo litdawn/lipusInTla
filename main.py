@@ -7,8 +7,10 @@ import logging
 from PT_generators.RL_Prunning.PT_generator import PT_generator
 from SMT_Solver.Config import config
 from SMT_Solver.SMT_verifier import SMT_verifier
+
 from seedTemplate.tlaParser import tlaparser
 from SMT_Solver.cti_generator import generate_ctis
+from SMT_Solver.inv_checker import check_invariants
 
 
 def main(path2tla, path2cfg, path2json):
@@ -48,17 +50,24 @@ def main(path2tla, path2cfg, path2json):
         # try:
         #     logging.info(f"find a candidate: {str(candidate)}")
         #     # raise TimeoutError # try this thing out
-        # except TimeoutError as OOT:  # Out Of Time, we punish
+        # except TimeoutError as OOT:  # Out Of Time, we punish #超时，认为太宽松
         #     pT_generator.punish('STRICT', 'VERY', 'S')
         #     continue
-        # if candidate is None:  # Specified too much, we loose.
+        # if candidate is None:  # Specified too much, we loose. 没找到candidate，认为模板太严格
         #     pT_generator.punish('LOOSE', 'MEDIUM', 'S')
         #     continue
         # # Step 3.3 Check if we bingo
-        candidate = "\n/\\ ".join(candidate.values())
+
         logging.info(f"find a candidate: {str(candidate)}")
 
+        is_inv = check_invariants(candidate.values(), specname=name, tla_ins=tla_ins)
+        if len(is_inv) <= 2:
+            # 如果没通过不变式的检查，应该宽松一点
+            pT_generator.punish('LOOSE', 'VERY', 'V')
+            continue
+
         try:
+            candidate = "\n/\\ ".join(candidate.values())
             is_right = smt_verifier.verify(candidate, path2tla)
         except TimeoutError as OOT:  # Out Of Time, we punish
             pT_generator.punish('STRICT', 'LITTLE', 'V')
@@ -70,7 +79,9 @@ def main(path2tla, path2cfg, path2json):
             current_time = time.time()
             logging.info("Time cost is :  ", str(current_time - start_time))
             return current_time - start_time, str(candidate)
-        else:  # progressed anyway, we prise
+        else:
+            # 如果被之前的candidate蕴含了，应该严格一点
+            pT_generator.punish('STRICT', 'VERY', 'V')
             ctis, cti_time = generate_ctis(path2cfg, tla_ins)
             CE["i"].append(ctis)
             # if is_right.assignment not in CE[is_right.kind]:

@@ -12,8 +12,8 @@ class RewardPredictor(nn.Module):
         self.layer2 = nn.Linear(config.SIZE_EXP_NODE_FEATURE, config.SIZE_EXP_NODE_FEATURE // 2)
         self.layer3 = nn.Linear(config.SIZE_EXP_NODE_FEATURE // 2, 1)
 
-    def forward(self, stateVec, overall_feature):
-        tensorflow = tensor(torch.cat([stateVec, overall_feature], 1))
+    def forward(self, state_vec, overall_feature):
+        tensorflow = tensor(torch.cat([state_vec, overall_feature], 1))
         if torch.cuda.is_available():
             tensorflow = tensorflow.cuda()
         l1out = self.layer1(tensorflow)
@@ -22,7 +22,9 @@ class RewardPredictor(nn.Module):
         if torch.cuda.is_available():
             m10 = m10.cuda()
             p10 = p10.cuda()
-        return torch.min(torch.cat([torch.max(torch.cat([self.layer3(self.layer2(l1out)), m10], 1)).reshape(1,1), p10], 1)).reshape(1,1)
+        return torch.min(
+            torch.cat([torch.max(torch.cat([self.layer3(self.layer2(l1out)), m10], 1)).reshape(1, 1), p10], 1)).reshape(
+            1, 1)
 
     def get_parameters(self):
         res = {}
@@ -40,13 +42,12 @@ class RewardPredictor(nn.Module):
 
 
 # little test
-
-if __name__ == "__main__":
-    stateVec = torch.randn([1, config.SIZE_EXP_NODE_FEATURE])
-    overall_feature = torch.randn([1, config.SIZE_EXP_NODE_FEATURE])
-    rp = RewardPredictor()
-    print(rp(stateVec, overall_feature))
-
+#
+# if __name__ == "__main__":
+#     stateVec = torch.randn([1, config.SIZE_EXP_NODE_FEATURE])
+#     overall_feature = torch.randn([1, config.SIZE_EXP_NODE_FEATURE])
+#     rp = RewardPredictor()
+#     print(rp(stateVec, overall_feature))
 
 # 这是一个名为 RewardPredictor 的 PyTorch 类。这个类似乎是在某种上下文中预测奖励的模型，可能是一个强化学习场景。
 #

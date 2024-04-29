@@ -73,15 +73,16 @@ class OverallEmbedding(nn.Module):
     # 方法返回
     # overall_feature，这是经过编码、加权、相似度计算和融合的综合特征向量，可以用于后续的处理或作为模型的最终输出。
 
-    def forward(self, emb_smt, emb_CE, stateVec):
-        # cfg_emb = self.encoder(stateVec)
-        # weighted1 = torch.mm(self.cfg_emb, stateVec.transpose(0, 1)).transpose(0, 1)
-        # cfg_emb = torch.mm(weighted1, cfg_emb)
+    def forward(self, emb_can, emb_smt, emb_ce, state_vec):
+        cfg_emb = self.encoder(state_vec)
+        weighted1 = torch.mm(self.cfg_emb, state_vec.transpose(0, 1)).transpose(0, 1)
+        cfg_emb = torch.mm(weighted1, cfg_emb)
         weis = torch.cat([
             torch.cosine_similarity(emb_smt, self.attvec),
-            torch.cosine_similarity(emb_CE, self.attvec)], 0).reshape([1, 2])
+            torch.cosine_similarity(emb_ce, self.attvec),
+            torch.cosine_similarity(emb_can, self.attvec)], 0).reshape([1, 3])
         swis = self.softmaxer(weis)
-        three_emb = torch.cat((emb_smt, emb_CE), 0).reshape([2, config.SIZE_EXP_NODE_FEATURE])
+        three_emb = torch.cat((emb_smt, emb_ce, emb_can), 0).reshape([3, config.SIZE_EXP_NODE_FEATURE])
         overall_feature = torch.mm(swis, three_emb)
         return overall_feature
 

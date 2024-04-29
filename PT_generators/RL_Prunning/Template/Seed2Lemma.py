@@ -34,8 +34,13 @@ op_and.__str__ = op_and_str
 op_or.__str__ = op_or_str
 op_neg_str.__str__ = op_neg_str
 
+# RULE = {
+#     "all": [op_and, op_or, op_neg]
+# }
+
 RULE = {
-    "all": [op_and, op_or, op_neg]
+    "all": [2, 3, 4, 5, 6, 7]
+    # todo 应该是in/ subseteq/ = /[]/ ()几类
 }
 
 
@@ -63,8 +68,8 @@ def generate_lemmas(seeds: list, min_num_conjuncts=2, max_num_conjuncts=5, num_i
     seed_id = {p: k for (k, p) in enumerate(seeds)}
 
     invs = dict()
-    invs_symb = []
-    invs_symb_strs = []
+    invs_sym = []
+    invs_sym_strs = []
 
     for inv_id in range(num_invs):
         conjuncts = list(seeds)
@@ -108,53 +113,43 @@ def generate_lemmas(seeds: list, min_num_conjuncts=2, max_num_conjuncts=5, num_i
 
         if inv not in invs:
             invs.update({inv_id: f"inv_{inv_id} == {inv}"})
-            # invs_symb.append(pyeda.inter.expr(symb_inv_str))
-            # print(type(invs_symb[-1]))
-            invs_symb_strs.append(symb_inv_str)
+            # invs_sym.append(pyeda.inter.expr(symb_inv_str))
+            # print(type(invs_sym[-1]))
+            invs_sym_strs.append(symb_inv_str)
 
     logging.info(f"number of invs: {len(invs)}")
 
     # # Do CNF based equivalence reduction.
-    # invs = symb_equivalence_reduction(invs, invs_symb)
+    # invs = symb_equivalence_reduction(invs, invs_sym)
     # logging.info(f"number of invs post CNF based equivalence reduction: {len(invs)}")
 
     # if len(quant_vars):
     # invs = pred_symmetry_reduction(invs, quant_vars)
     logging.info(f"number of post symmetry invs: {len(invs)}")
 
-    # return invs_symb
-    # return invs_symb_strs
-    # return set(map(str, invs_symb))
-    # return {"raw_invs": set(invs), "pred_invs": invs_symb_strs}
+    # return invs_sym
+    # return invs_sym_strs
+    # return set(map(str, invs_sym))
+    # return {"raw_invs": set(invs), "pred_invs": invs_sym_strs}
     return invs
 
 
-def loss_distribution(lefthandle, Whom):  # only S will ask it.
+def strictness_distribution(seed, whom):
     distri_dict = {
-        'non_nc': [0.0, 0.25, 0.75],
-        'non_nd': [0.0, 0.25, 0.75],
-        'non_t': [0.05,
-                  0.15,
-                  0.2,
-                  0.6],
-        'non_term': [0.0,
-                     0.8,
-                     0.19,
-                     0.009,
-                     0.001],
-        'non_s': [1]
+        "all": [0, 0, 0.2, 0.4, 0.3, 0.1]
     }
-    if (len(RULE['non_s']) - 1) > 0:
-        distri_dict['non_s'].extend([0] * (len(RULE['non_s']) - 1))
+    res = tensor([distri_dict["all"]], dtype=torch.float32)
+    if torch.cuda.is_available():
+        res = res.cuda()
+    return res
 
-    for kk in distri_dict:
-        try:
-            assert len(distri_dict[kk]) == len(RULE[kk])
-        except Exception as e:
-            print(e)
-            raise e
 
-    res = tensor([distri_dict[str(lefthandle)]], dtype=torch.float32)
+def looseness_distribution(seed):
+    distri_dict = {
+        "all": [0.1, 0.2, 0.3, 0.4, 0, 0]
+    }
+
+    res = tensor([distri_dict["all"]], dtype=torch.float32)
     if torch.cuda.is_available():
         res = res.cuda()
     return res
