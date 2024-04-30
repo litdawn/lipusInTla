@@ -53,9 +53,7 @@ TypeOK ==
 \* (forall T, X, Y, Z. table(T,X,Y) & table(T,Y,Z) -> table(T,X,Z)) &
 \* (forall T, X, Y. table(T,X,Y) & table(T,Y,X) -> X = Y) & 
 \* (forall T, X, Y, Z. table(T,X,Y) & table(T,X,Z) -> table(T,Y,Z) | table(T,Z,Y))
-Safety == 
-    \* /\ TRUE
-    \* /\ TypeOK
+Safety ==
     /\ \A t,x \in Node : <<t,x,x>> \in table
     /\ \A t,x,y,z \in Node : (<<t,x,y>> \in table /\ <<t,y,z>> \in table) => (<<t,x,z>> \in table)
     /\ \A t,x,y \in Node : (<<t,x,y>> \in table /\ <<t,y,x>> \in table) => (x = y)

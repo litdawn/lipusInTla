@@ -7,7 +7,7 @@ from seedTemplate.tlaParser.type import Type
 
 class SeedTemplate:
     def __init__(self, tla_ins):
-        self.quants = []
+        self.quants = dict()
         self.seeds = []
         self.set = []
         self.array = []
@@ -53,19 +53,19 @@ class SeedTemplate:
         # 生成量词
         self.generate_quants()
 
-        print("seeds", self.seeds)
-        print("quants", self.quants)
-        print("str", self.str)
+        # print("seeds", self.seeds)
+        # print("quants", self.quants)
+        # print("str", self.str)
         return self.seeds, self.quants
 
     def generate_special_body(self, var):
         if var.self_type == Type.SET:
             # do in
             self.set.append(var.name)
-            self.generate_IN(var)
+            self.generate_in(var)
         elif var.self_type == Type.ARRAY:
             # do []
-            self.generate_BOX(var)
+            self.generate_box(var)
         elif var.self_type == Type.ACTION:
             # do ()
             self.generate_action(var)
@@ -75,14 +75,14 @@ class SeedTemplate:
         return 0
 
     #  in
-    def generate_IN(self, var):
+    def generate_in(self, var):
         for i in combinations(self.def_var, var.sub_num):
             name = "<<" + ', '.join(i) + ">> \\in " + var.name
             self.seeds.append(name)
         return 0
 
     # []
-    def generate_BOX(self, var):
+    def generate_box(self, var):
         for i in self.str:
             if "[" not in i:
                 name = var.name + "[" + i + "]"
@@ -119,10 +119,14 @@ class SeedTemplate:
             self.seeds.append(" \\subseteq ".join(ele for ele in i))
 
     def generate_quants(self):
-        for quant in self.def_var:
+        for var in self.def_var:
             for con in self.tla_ins.constants:
                 # if con.self_type == Type.SET:
-                self.quants.append(f"\\A {quant} in  {con} : ")
+                quant_var = []
+                if var in self.quants:
+                    quant_var = self.quants[var]
+                quant_var.append(f"\\A {var} in  {con}")
+                self.quants.update({var: quant_var})
         return 0
 
     # 1. 生成seed

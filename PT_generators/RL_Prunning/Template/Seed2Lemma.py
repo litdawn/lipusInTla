@@ -55,6 +55,17 @@ def get_available_rule():
     return RULE["all"]
 
 
+def get_action_index(last_left_handle, last_action):
+    for i, action in enumerate(RULE["all"]):
+        if str(action) == str(last_action):
+            if torch.cuda.is_available():
+                return tensor([i]).cuda()
+            else:
+                return tensor([i])
+
+    assert False  # should not be here
+
+
 def generate_lemmas(seeds: list, min_num_conjuncts=2, max_num_conjuncts=5, num_invs=1):
     """ Generate 'num_invs' random invariants with the specified number of conjuncts. """
     # Pick some random conjunct.
@@ -112,7 +123,7 @@ def generate_lemmas(seeds: list, min_num_conjuncts=2, max_num_conjuncts=5, num_i
             # symb_inv_str = fn + "(" + pred_id_var + ")" + " " + fop + " (" + symb_inv_str + ")"
 
         if inv not in invs:
-            invs.update({inv_id: f"inv_{inv_id} == {inv}"})
+            invs.update({inv_id: inv})
             # invs_sym.append(pyeda.inter.expr(symb_inv_str))
             # print(type(invs_sym[-1]))
             invs_sym_strs.append(symb_inv_str)
@@ -159,19 +170,23 @@ def normalization(dist):
     lister = [float(x) for x in list(dist[0])]
     sumer = sum(lister)
     lister = [x / sumer for x in lister]
+    # print("lister ",lister)
     return lister
 
 
-def sampling(action_distribution, sample_list: list, seeds_num=5, best=config.BEST):
+def sampling(action_distribution, sample_list: list, seeds_num=5):
     seeds_selected = []
-    if best:
-        xx = np.asarray(action_distribution[0])
-        top_idx = xx.argsort()[-1:(-seeds_num - 1):-1]
-        seeds_selected = sample_list[top_idx]
-    else:
-        try:
-            seeds_selected = np.random.choice(RULE, p=normalization(action_distribution))
-        except Exception as e:
-            print("shit", e)
-            raise e
+    # print(action_distribution.shape)
+    # if best:
+    #     xx = np.asarray(action_distribution[0])
+    #     top_idx = xx.argsort()[-1:(-seeds_num - 1):-1]
+    #     seeds_selected = sample_list[top_idx]
+    # else:
+    try:
+        # print(sample_list)
+        seeds_selected = np.random.choice(sample_list, size=seeds_num, replace=False, p=normalization(action_distribution))
+        print(seeds_selected)
+    except Exception as e:
+        print("shit", e)
+        raise e
     return generate_lemmas(seeds_selected)

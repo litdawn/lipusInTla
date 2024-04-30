@@ -5,11 +5,9 @@ import os
 import time
 import subprocess
 import re
-import json
-import argparse
-import platform
-from datetime import datetime
 import tempfile
+
+logging.basicConfig(level=logging.INFO)
 
 TLC_MAX_SET_SIZE = 10 ** 8
 JAVA_EXE = "java"
@@ -20,7 +18,7 @@ JAVA_EXE = "java"
 # 新cfg：specdir//gen_tla_dir/{specname}_CTIGen_{ctiseed}.cfg
 # 生成的cti文件在 Benchmarks/gen_tla/apalache-cti-ou
 specdir = os.getcwd() + "\\Result"
-GEN_TLA_DIR = "gen_tla"
+GEN_TLA_DIR = "gen_tla_dir"
 state_constraint = ""
 apalache_path = os.getcwd() + "\\apalache-0.44.2\\lib\\apalache.jar"
 jvm_args = "JVM_ARGS='-Xss16M'"
@@ -29,17 +27,18 @@ output_directory = os.getcwd() + "Benchmarks/gen_tla/apalache-cti-out"
 
 
 def check_invariants(invs: list, specname, tla_ins, strengthening_conjuncts="", tlc_workers=6):
-    seed = time.time()
+    seed = random.randint(0,10000)
     """ Check which of the given invariants are valid. """
     ta = time.time()
     invcheck_tla = "---- MODULE %s_InvCheck_%d ----\n" % (specname, seed)
     invcheck_tla += "EXTENDS %s\n\n" % specname
-    invcheck_tla += self.model_consts + "\n"
+
+    invcheck_tla += tla_ins.model_const + "\n"
 
     all_inv_names = set()
     for i, inv in enumerate(invs):
-        sinv = ("Inv%d == " % i) + self.quant_inv(inv)
-        all_inv_names.add("Inv%d" % i)
+        sinv = inv
+        all_inv_names.add(inv.split("==")[0])
         invcheck_tla += sinv + "\n"
 
     invcheck_tla += "===="
@@ -54,20 +53,17 @@ def check_invariants(invs: list, specname, tla_ins, strengthening_conjuncts="", 
     invcheck_cfg = "INIT Init\n"
     invcheck_cfg += "NEXT Next\n"
 
-    if type(tla_ins.constants) == list:
-        constants = "\n".join(tla_ins.constants)
-    else:
-        constants = tla_ins.constants
-
-    invcheck_cfg += constants
+    const = "".join(tla_ins.constants.keys())
+    invcheck_cfg += f"CONSTANT = {const}"
     invcheck_cfg += "\n"
     invcheck_cfg += state_constraint
     invcheck_cfg += "\n"
     # if self.symmetry:
     #     invcheck_cfg += "SYMMETRY Symmetry\n"
 
-    for invi in range(len(invs)):
-        sinv = "INVARIANT Inv" + str(invi)
+    for i,inv_content in enumerate(invs):
+        real_content = inv_content.split("==")[0].strip()
+        sinv = f"INVARIANT {real_content}"
         invcheck_cfg += sinv + "\n"
 
     invcheck_cfg_file = f"{os.path.join(specdir, GEN_TLA_DIR)}/{specname}_InvCheck_{seed}.cfg"
@@ -81,7 +77,7 @@ def check_invariants(invs: list, specname, tla_ins, strengthening_conjuncts="", 
     logging.info("Checking %d candidate invariants in spec file '%s'" % (len(invs), invcheck_spec_name))
     workdir = None if specdir == "" else specdir
     violated_invs = runtlc_check_violated_invariants(invcheck_spec_name, config=invcheck_cfg_filename,
-                                                     tlc_workers=tlc_workers, cwd=workdir, java=java_exe)
+                                                     tlc_workers=tlc_workers, cwd=workdir, java=JAVA_EXE)
     sat_invs = (all_inv_names - violated_invs)
     logging.info(
         f"Found {len(sat_invs)} / {len(invs)} candidate invariants satisfied in {round(time.time() - ta, 2)}s.")
@@ -112,24 +108,25 @@ def run_tlc(spec, config=None, tlc_workers=6, cwd=None, java="java", tlc_flags="
     # instances of TLC running on the same machine.
     dirpath = tempfile.mkdtemp()
     metadir_path = f"states/states_{random.randint(0, 1000000000)}"
-    cmd = java + (
-        f' -Djava.io.tmpdir="{dirpath}" -cp tla2tools-checkall.jar tlc2.TLC {tlc_flags} -maxSetSize {TLC_MAX_SET_SIZE} -metadir {metadir_path} -noGenerateSpecTE -checkAllInvariants -deadlock -continue -workers {tlc_workers}')
+    cmd = (
+        f' java -cp tla2tools.jar tlc2.TLC  -maxSetSize {TLC_MAX_SET_SIZE} -metadir {metadir_path}'
+        f'-noGenerateSpecTE -checkAllInvariants -deadlock -continue -workers {tlc_workers}')
     if config:
         cmd += " -config " + config
     cmd += " " + spec
     logging.info("TLC command: " + cmd)
-    subproc = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, cwd=cwd)
-    tlc_raw_out = ""
+    subproc = subprocess.run(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, cwd=cwd)
     line_str = ""
     tlc_lines = []
-    while True:
-        new_stdout = subproc.stdout.read(1).decode(sys.stdout.encoding)
-        if new_stdout == "":  # reached end of file.
-            break
-        if new_stdout == os.linesep:
-            logging.debug("[TLC Output] " + line_str)
-            tlc_lines.append(line_str)
-            line_str = ""
-        else:
-            line_str += new_stdout
+    # new_stdout = subproc.stdout.read(1).decode(sys.stdout.encoding)
+    new_stdout = subproc.stderr.decode("gbk")
+    print("new_stderr", new_stdout)
+    if new_stdout == "":  # reached end of file.
+        return []
+    if new_stdout == os.linesep:
+        logging.info("[TLC Output] " + line_str)
+        tlc_lines.append(line_str)
+        line_str = ""
+    else:
+        line_str += new_stdout
     return tlc_lines

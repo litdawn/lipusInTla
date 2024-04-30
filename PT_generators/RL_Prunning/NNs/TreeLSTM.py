@@ -1,3 +1,5 @@
+import logging
+
 import torch
 from torch import nn, tensor
 from torch.nn import Parameter
@@ -30,20 +32,20 @@ from PT_generators.RL_Prunning.NNs.Utility import getParFromModule
 class TreeLSTM(nn.Module):
     def __init__(self, tla_ins):  # vars 来自tla_ins.variables
         super().__init__()
-        self.RNNS = {}
+        self.rnns = {}
         self.tla_ins = tla_ins
         self.vars = tla_ins.variables
         self.states = tla_ins.states
-        # Lets give each sort of Z3 EXP an rnn
+        # Lets give each sort of EXP an rnn
         a = '\\/,/\\,\\X'.split(',')
         b = '\\subseteq,\\in,[,('.split(',')
-        c = '=,other'
-        keys = []
-        keys.extend(a)
-        keys.extend(b)
-        keys.extend(c)
-        for k in keys:
-            self.RNNS[k] = nn.LSTM(config.SIZE_EXP_NODE_FEATURE, config.SIZE_EXP_NODE_FEATURE, 2)
+        c = '=,other'.split(',')
+        self.keys = []
+        self.keys.extend(a)
+        self.keys.extend(b)
+        self.keys.extend(c)
+        for k in self.keys:
+            self.rnns[k] = nn.LSTM(config.SIZE_EXP_NODE_FEATURE, config.SIZE_EXP_NODE_FEATURE, 2)
 
         self.attvec = Parameter(torch.randn((1, config.SIZE_EXP_NODE_FEATURE)), requires_grad=True)  # Att1
         self.softmaxer = nn.Softmax(dim=1)
@@ -53,15 +55,24 @@ class TreeLSTM(nn.Module):
         state: 一个init/ind/next的名字
     '''
 
-    def forward_state(self, state):
+    def forward(self, state):
         # if len(state.children()) > 0:
         state_rnn = ""
-        state_ele_list = TLA.parse_logic_expression(self.states[state].concrete_content)
-        for k in self.keys:
-            if k in state_ele_list:
-                state_rnn = self.RNNS[k]
+        try:
+            content = self.states[state].concrete_content
+            if len(content) == 0:
+                state_ele_list = []
+            else:
+                state_ele_list = TLA.parse_logic_expression(content)
+            for k in self.keys:
+                if k in state_ele_list:
+                    state_rnn = self.rnns[k]
+        except:
+            state_ele_list = []
+            pass
+
         if state_rnn == "":
-            state_rnn = self.RNNS["other"]
+            state_rnn = self.rnns["other"]
         child_features = torch.ones((1, config.SIZE_EXP_NODE_FEATURE))  # 创建一个 初始化均为1 的张量
         if torch.cuda.is_available():
             child_features = child_features.cuda()
@@ -92,9 +103,9 @@ class TreeLSTM(nn.Module):
 
     # init next ind exp的特征
     def forward_three(self, init_exp, next_exp, ind_exp):
-        init_emb = self.forward_state(init_exp)
-        next_emb = self.forward_state(next_exp)
-        ind_emb = self.forward_state(ind_exp)
+        init_emb = self.forward(init_exp)
+        next_emb = self.forward(next_exp)
+        ind_emb = self.forward(ind_exp)
 
         weis = torch.cat([torch.cosine_similarity(init_emb, self.attvec),
                           torch.cosine_similarity(next_emb, self.attvec),
@@ -109,14 +120,14 @@ class TreeLSTM(nn.Module):
         res = {}
         prefix = "Tree_LSTM_P_"
         res[prefix + "attvec"] = self.attvec
-        for ky in self.RNNS.keys():
-            res.update(getParFromModule(self.RNNS[ky], prefix=prefix + str(ky)))
+        for ky in self.rnns.keys():
+            res.update(getParFromModule(self.rnns[ky], prefix=prefix + str(ky)))
         return res
 
     def cudalize(self):
         self.attvec = Parameter(self.attvec.cuda())
-        for ky in self.RNNS.keys():
-            self.RNNS[ky] = self.RNNS[ky].cuda()
+        for ky in self.rnns.keys():
+            self.rnns[ky] = self.rnns[ky].cuda()
 
 # # # littel Test
 # if __name__ == "__main__":

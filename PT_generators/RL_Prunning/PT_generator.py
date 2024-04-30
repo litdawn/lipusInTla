@@ -1,6 +1,7 @@
 from torch.optim import Adam
 from PT_generators.RL_Prunning.NNs.NeuralNetwork import *
 from PT_generators.RL_Prunning.Template.Seed2Lemma import *
+from PT_generators.RL_Prunning.Template.Lemma2Candidate import *
 import torch.nn.functional as f
 
 
@@ -14,9 +15,10 @@ class PT_generator:
     # 初始化学习器和参数：调用self.init_learner_par()
     # 和self.init_parameters()
     # 初始化学习器和参数。
-    def __init__(self, seed_tmpl):
+    def __init__(self, seed_tmpl, name):
         self.last_predicted_reward_list = None
         self.last_selected_lemma = None
+        self.last_distribution_output = None
 
         self.emb_tla = None
         self.adam = None
@@ -24,6 +26,7 @@ class PT_generator:
         self.state_vec = dict()  # key: lemma_name val:lemma_tensor
 
         self.depth = 0
+        self.specname = name
         self.LR = config.LearningRate
         # Step1. Parse the inputs
         self.seed_tmpl = seed_tmpl
@@ -37,7 +40,7 @@ class PT_generator:
         self.E = constructE(seed_tmpl.seeds)  # CounterExample_Embedding
         self.P = constructP()  # reward predictor
         self.pi = constructpi(self)  # policyNetwork
-        self.distributionlize = construct_distributionlize()  # DistributionLize()
+        self.distributionlize = construct_distributionlize()  # Distributionlize()
 
         # if we can use gpu
         if torch.cuda.is_available():
@@ -59,6 +62,11 @@ class PT_generator:
         self.candidate.update({"Safety": self.seed_tmpl.tla_ins.inv})
         self.candidate.update({"Typeok": self.seed_tmpl.tla_ins.type_ok})
 
+    def concat_state_vec(self):
+        suma = torch.cat(list(self.state_vec.values()), dim=0)
+        concatenated_features = torch.mean(suma, dim=0, keepdim=True)
+        return concatenated_features
+
     def generate_next(self, ce):
         self.depth = 0
 
@@ -71,13 +79,14 @@ class PT_generator:
         tla_ins = self.seed_tmpl.tla_ins
         self.emb_tla = self.T.forward_three(tla_ins.init, tla_ins.next, tla_ins.inv)
 
-        # 3. 嵌入seed todo 这里是不是embed太多东西了
+        # 3. 嵌入seed
         for seed in self.seed_tmpl.seeds:
             self.state_vec.update({seed: self.T(seed)})
 
         # for name, content in lemmas:
         #     self.stateVec.update({name: self.T(content)})
 
+        # todo seed2lemma的rule应该和distribution一一对应。
         # 4. 总体特征并打分
         # todo 具体逻辑仍需优化，包括
         # todo 1. statevec 每次更新为lemma和已选择的seed
@@ -85,22 +94,27 @@ class PT_generator:
 
         for name, state_vec in self.state_vec.items():
             overall_feature = self.G(self.emb_tla, emb_ce, state_vec)
-            predicted_reward = self.P(self.state_vec, overall_feature)
+            predicted_reward = self.P(state_vec, overall_feature)
             predicted_reward_list.update({name: predicted_reward})
 
         # 选择seeds, 生成一条lemma
-        action_vector = self.pi(self.state_vec, overall_feature)
-        action_distribution, action_raw = self.distributionlize(action_vector, self.state_vec.values())
-        new_candidate = sampling(action_distribution, self.seed_tmpl.seeds, seeds_num=random.choice(RULE["all"]))
+        action_vector = self.pi(self.concat_state_vec(), overall_feature)
+        action_distribution, action_raw = self.distributionlize(action_vector, list(self.state_vec.values()))
+
+        seeds_num = random.randint(3, 7)
+        new_candidate = sampling(action_distribution, self.seed_tmpl.seeds, seeds_num)
 
         # 将lemma加入candidates
         self.candidate.update({f"inv_{self.lemma_pointer}": new_candidate[0]})
         self.lemma_pointer += 1
 
         self.last_predicted_reward_list = predicted_reward_list
-        self.last_selected_lemma = new_candidate
+        self.last_selected_lemma = new_candidate[0]
+        self.last_distribution_output = action_raw
 
-        return self.candidate
+        lemmas = Lemma2Candidate.add_quant(f"inv_{self.lemma_pointer - 1}", new_candidate[0], self.seed_tmpl.quants)
+
+        return self.candidate, lemmas, self.lemma_pointer - 1
 
     # 设置奖励和伽马值：根据Deg的值设置奖励和伽马值。
     # 如果Deg是 "VERY"，那么奖励是 -10，伽马值是0.1。
@@ -137,8 +151,7 @@ class PT_generator:
             else:  # loose倾向于选择更短的子句
                 sd = looseness_distribution(self.last_selected_lemma[i])
             loss_strictness = -torch.mm(sd, torch.log_softmax(
-                # todo 这里真的能reshape吗，，，
-                self.last_selected_lemma[i].reshape(1, -1), 1).transpose(0, 1)) * gama
+                self.last_distribution_output.reshape(1, -1), 1).transpose(0, 1)) * gama
             strict_loss += loss_strictness.reshape([1, 1])
             counter += 1
         if counter != 0:
@@ -166,8 +179,7 @@ class PT_generator:
             else:
                 pr_i_1 = tensor([reward_list[i - 1]], dtype=torch.float32)
             losser = f.cross_entropy(self.last_selected_lemma[i].reshape(1, -1),
-                                     # todo getActionIndex的修改：返回rule中的一个？
-                                     GetActionIndex(self.last_selected_lemma[i], self.last_selected_lemma[i]))
+                                     get_action_index(self.last_selected_lemma[i], self.last_selected_lemma[i]))
 
             if torch.cuda.is_available():
                 p_loss += (tensor(r_i, dtype=torch.float32) - pr_i_1).cuda() * losser.reshape([1, 1])

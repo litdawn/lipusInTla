@@ -11,7 +11,7 @@ class DistributionLize(nn.Module):
     def forward(self, action_vector, seeds_vec):
         # construt the available action vectors
         rawness = torch.cat(
-            [torch.mm(seeds_vec, action_vector.transpose(0, 1)) for x in seeds_vec],
+            [torch.mm(x, action_vector.transpose(0, 1)) for x in seeds_vec],
             1)
         likenesses = torch.softmax(rawness, 1)
         return likenesses, rawness

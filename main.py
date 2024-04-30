@@ -27,7 +27,7 @@ def main(path2tla, path2cfg, path2json):
 
     # # todo: 第三步
     #
-    pT_generator = PT_generator(seed_tmpl)
+    pt_generator = PT_generator(seed_tmpl, name)
     smt_verifier = SMT_verifier(tla_ins.variables)
     # Step 3. ENTER the ICE Solving Loop
     solved = False
@@ -42,7 +42,7 @@ def main(path2tla, path2cfg, path2json):
             return None, None
         iteration += 1
         # Step 3.1 生成candidate
-        candidate = pT_generator.generate_next(CE)
+        candidate, lemmas, index = pt_generator.generate_next(CE)
         if candidate is None:
             logging.info("The only way is to give up now")
             return None, None
@@ -51,42 +51,43 @@ def main(path2tla, path2cfg, path2json):
         #     logging.info(f"find a candidate: {str(candidate)}")
         #     # raise TimeoutError # try this thing out
         # except TimeoutError as OOT:  # Out Of Time, we punish #超时，认为太宽松
-        #     pT_generator.punish('STRICT', 'VERY', 'S')
+        #     pt_generator.punish('STRICT', 'VERY', 'S')
         #     continue
         # if candidate is None:  # Specified too much, we loose. 没找到candidate，认为模板太严格
-        #     pT_generator.punish('LOOSE', 'MEDIUM', 'S')
+        #     pt_generator.punish('LOOSE', 'MEDIUM', 'S')
         #     continue
         # # Step 3.3 Check if we bingo
 
         logging.info(f"find a candidate: {str(candidate)}")
+        print(str(candidate))
 
-        is_inv = check_invariants(candidate.values(), specname=name, tla_ins=tla_ins)
+        is_inv = check_invariants(lemmas, specname=name, tla_ins=tla_ins)
         if len(is_inv) <= 2:
             # 如果没通过不变式的检查，应该宽松一点
-            pT_generator.punish('LOOSE', 'VERY', 'V')
+            pt_generator.punish('LOOSE', 'VERY', 'V')
             continue
 
         try:
             candidate = "\n/\\ ".join(candidate.values())
             is_right = smt_verifier.verify(candidate, path2tla)
         except TimeoutError as OOT:  # Out Of Time, we punish
-            pT_generator.punish('STRICT', 'LITTLE', 'V')
+            pt_generator.punish('STRICT', 'LITTLE', 'V')
             continue
         if is_right:  # Bingo, we prise
             solved = True
             logging.info("The answer is :  ", str(candidate))
-            pT_generator.prise('VERY')
+            pt_generator.prise('VERY')
             current_time = time.time()
             logging.info("Time cost is :  ", str(current_time - start_time))
             return current_time - start_time, str(candidate)
         else:
             # 如果被之前的candidate蕴含了，应该严格一点
-            pT_generator.punish('STRICT', 'VERY', 'V')
+            pt_generator.punish('STRICT', 'VERY', 'V')
             ctis, cti_time = generate_ctis(path2cfg, tla_ins)
             CE["i"].append(ctis)
             # if is_right.assignment not in CE[is_right.kind]:
             #     CE[is_right.kind].append(is_right.assignment)
-            # pT_generator.prise('LITTLE')
+            # pt_generator.prise('LITTLE')
             continue
 
 

@@ -1,5 +1,6 @@
 from seedTemplate.SeedTemplate import Type
 from pyparsing import Forward, Combine, infixNotation, opAssoc, Keyword, Word, alphanums, Suppress, Optional, ZeroOrMore
+import re
 
 
 class Element(object):
@@ -58,6 +59,7 @@ class TLA:
         var.self_type = info["self_type"]
         var.name = name
         if var.self_type == Type.ACTION:
+            var.concrete_content = info["concrete_content"]
             var.index_type = info["param_type"]
             var.param_num = info["param_num"]
             var.result = self.construct_var("result", info["result"])
@@ -67,6 +69,9 @@ class TLA:
         elif var.self_type == Type.ARRAY:
             var.index_type = info["index_type"]
             var.content = self.construct_var("content", info["content"])
+        elif var.self_type == Type.State:
+            var.index_type = 0
+            var.concrete_content = info["concrete_content"]
         return var
 
     def duplicate_var(self, name, info):
@@ -90,14 +95,23 @@ class TLA:
     @staticmethod
     def parse_logic_expression(expression):
 
+        quant_reg = re.compile(r"\\[AE](.*?):")
+        expression = expression[-1].strip()[2:]
+        expression = quant_reg.sub("", expression)
+        print(expression)
+
+        if len(expression) == 0:
+            return []
+
         # 定义操作数、函数名和符号
-        identifier = Word(alphanums + "_"+"[]")
+        identifier = Word(alphanums + "_" + "[]")
         function_name = Word(alphanums + "_")
         keyword_not = Keyword("~")
         keyword_subset = Keyword("\\subseteq")
         keyword_belongs_to = Keyword("\\in")
         keyword_and = Keyword("/\\")
         keyword_or = Keyword("\\/")
+        keyword_x = Keyword("\\X")
 
         # 定义括号
         LPAREN = Suppress("(")
@@ -105,6 +119,7 @@ class TLA:
 
         # 定义操作符优先级
         precedence = [
+            (keyword_x, 2, opAssoc.LEFT),
             (keyword_subset, 2, opAssoc.LEFT),
             (keyword_belongs_to, 2, opAssoc.LEFT),
             (keyword_and, 2, opAssoc.LEFT),
@@ -123,6 +138,8 @@ class TLA:
 
         # 定义函数调用表达式
         function_call = Combine(function_name + "(" + Optional(args_list) + ")")
+
+        # 整体表达式
         atom <<= "~" + LPAREN + expr + RPAREN | LPAREN + expr + RPAREN | function_call | identifiers | identifier
         expr <<= infixNotation(atom, precedence)
 
@@ -143,3 +160,18 @@ class TLA:
     class Action(Element):
         def __init__(self, ):
             super(Element, self).__init__()
+
+
+# if __name__ == "__main__":
+#     # quant_reg = re.compile(r"\\[AE](.*?):")
+#     # inputs = (
+#     #              "Safety == \n /\\ \\A t,x \\in Node : <<t,x,x>> \\in table\n    /\\ \\A t,x,y,z \\in Node : (<<t,"
+#     #              "x,y>> \\in table /\\ <<t,y,z>> \\in table) => (<<t,x,z>> \\in table)\n    /\\ \\A t,x,y \\in Node : "
+#     #              "(<<t,x,y>> \\in table /\\ <<t,y,x>> \\in table) => (x = y)\n    /\\ \\A t,x,y,z \\in Node : (<<t,x,"
+#     #              "y>> \\in table /\\ <<t,x,z>> \\in table) => (<<t,y,z>> \\in table \\/ <<t,z,y>> \\in table)\n").split(
+#     #     "==")[-1].strip()[2:]
+#
+#     inputs = quant_reg.sub("", inputs)
+#     print(inputs)
+#     a = TLA.parse_logic_expression(inputs)
+#     print(a)

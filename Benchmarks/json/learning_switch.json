@@ -74,7 +74,7 @@
         "type": "State"
       },
       {
-        "concreteContent": "Safety == \n    \\* /\\ TRUE\n    \\* /\\ TypeOK\n    /\\ \\A t,x \\in Node : <<t,x,x>> \\in table\n    /\\ \\A t,x,y,z \\in Node : (<<t,x,y>> \\in table /\\ <<t,y,z>> \\in table) => (<<t,x,z>> \\in table)\n    /\\ \\A t,x,y \\in Node : (<<t,x,y>> \\in table /\\ <<t,y,x>> \\in table) => (x = y)\n    /\\ \\A t,x,y,z \\in Node : (<<t,x,y>> \\in table /\\ <<t,x,z>> \\in table) => (<<t,y,z>> \\in table \\/ <<t,z,y>> \\in table)\n",
+        "concreteContent": "Safety == \n    /\\ \\A t,x \\in Node : <<t,x,x>> \\in table\n    /\\ \\A t,x,y,z \\in Node : (<<t,x,y>> \\in table /\\ <<t,y,z>> \\in table) => (<<t,x,z>> \\in table)\n    /\\ \\A t,x,y \\in Node : (<<t,x,y>> \\in table /\\ <<t,y,x>> \\in table) => (x = y)\n    /\\ \\A t,x,y,z \\in Node : (<<t,x,y>> \\in table /\\ <<t,x,z>> \\in table) => (<<t,y,z>> \\in table \\/ <<t,z,y>> \\in table)\n",
         "location": "line 56, col 1 to line 62, col 121 of module learning_switch",
         "operatorName": "Safety",
         "type": "State"

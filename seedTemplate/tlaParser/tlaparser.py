@@ -47,17 +47,22 @@ def parse_file(json_data, cfg_data):
         elif line.startswith("INVARIANT"):
             tla_ins.inv = line.split(" ")[-1]
         elif line.startswith("CONSTANT"):
-            if line.find("=") == 1:
-                name, value = (line.split(" ")[-1]).split("=")
-                tla_ins.constants[name].real_val = value[1:-1].split(",")
+            if line.find("=") != 0:
+                name = line.split("=")[0]
+                value = line.split("=")[1]
+                tla_ins.constants[name.replace("CONSTANT", "").strip()].real_val = value[1:-1].split(",")
+                tla_ins.model_const = line
         elif line.startswith("\\*"):
             continue
         elif line.startswith("SYMMETRY"):
             tla_ins.sym = line.split(" ")[-1]
+        elif line.startswith("CONSTRAINT"):
+            tla_ins.constraint = line.split(" ")[-1]
         else:
             line = line.strip()
-            if line.find("=") == 1:
-                name, value = line.split("=")
+            if line.find("=") != 0:
+                name = line.split("=")[0]
+                value = line.split("=")[1]
                 tla_ins.constants[name.strip()].real_val = value[1:-1].split(",")
     return tla_ins
 
@@ -148,7 +153,7 @@ def parse_type(str="", concrete_content=""):
     # state
     if str == "":
         return {
-            "self_type": "state",
+            "self_type": Type.State,
             "concrete_content": concrete_content
         }
 

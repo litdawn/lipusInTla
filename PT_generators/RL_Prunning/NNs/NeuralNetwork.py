@@ -78,15 +78,7 @@ def GPUlizeSymbols():
 #         return dict
 
 
-def GetActionIndex(last_left_handle, last_action):
-    for i, action in enumerate(RULE[str(last_left_handle)]):
-        if str(action) == str(last_action):
-            if torch.cuda.is_available():
-                return tensor([i]).cuda()
-            else:
-                return tensor([i])
 
-    assert False  # should not be here
 
 # constructT()：这个函数用于构建一个树状长短期记忆网络（TreeLSTM）。TreeLSTM是一种特殊的递归神经网络，它能够在树形结构数据上进行高效的特征学习。
 # constructG(cfg)：这个函数接收一个控制流图（Control Flow Graph，CFG）作为输入，返回一个CFG的嵌入表示。这个嵌入表示可以捕获CFG的结构和属性，用于后续的学习任务。

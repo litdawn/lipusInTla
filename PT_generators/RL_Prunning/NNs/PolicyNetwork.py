@@ -24,9 +24,9 @@ class PolicyNetwork(nn.Module):
     #         return SymbolEmbeddings[problemStr + "_" + str(depth)]
     #     except:
     #         return SymbolEmbeddings['?']
-    def forward(self, stateVec, overall_feature):
-        program_feature = self.get_program_feature(self.ptg.path2CFile, self.ptg.depth)
-        l1out = self.layer(torch.cat([stateVec, overall_feature, program_feature], 1))
+    def forward(self, state_vec, overall_feature):
+        program_feature = self.get_program_feature(self.ptg.specname, self.ptg.depth)
+        l1out = self.layer(torch.cat([state_vec, overall_feature, program_feature], 1))
         return l1out
 
     def get_parameters(self):
