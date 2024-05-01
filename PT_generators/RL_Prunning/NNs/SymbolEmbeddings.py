@@ -21,6 +21,14 @@ SymbolEmbeddings['array'] = Parameter(torch.randn((1, config.SIZE_EXP_NODE_FEATU
 SymbolEmbeddings['Rule_and'] = Parameter(torch.randn((1, config.SIZE_EXP_NODE_FEATURE)), requires_grad=True)
 SymbolEmbeddings['Rule_or'] = Parameter(torch.randn((1, config.SIZE_EXP_NODE_FEATURE)), requires_grad=True)
 SymbolEmbeddings['Rule_neg'] = Parameter(torch.randn((1, config.SIZE_EXP_NODE_FEATURE)), requires_grad=True)
+
+# SymbolEmbeddings['in'] = Parameter(torch.randn((1, config.SIZE_EXP_NODE_FEATURE)), requires_grad=True)
+# SymbolEmbeddings['[]'] = Parameter(torch.randn((1, config.SIZE_EXP_NODE_FEATURE)), requires_grad=True)
+# SymbolEmbeddings['subseteq'] = Parameter(torch.randn((1, config.SIZE_EXP_NODE_FEATURE)), requires_grad=True)
+# SymbolEmbeddings['()'] = Parameter(torch.randn((1, config.SIZE_EXP_NODE_FEATURE)), requires_grad=True)
+# SymbolEmbeddings['='] = Parameter(torch.randn((1, config.SIZE_EXP_NODE_FEATURE)), requires_grad=True)
+
+
 # SymbolEmbeddings['non_v'] = Variable(torch.zeros((1, SIZE_EXP_NODE_FEATURE)), requires_grad=True)  # non-determinals
 # SymbolEmbeddings['non_s'] = Variable(torch.zeros((1, SIZE_EXP_NODE_FEATURE)), requires_grad=True)  # non-determinals
 # SymbolEmbeddings['non_p'] = Variable(torch.zeros((1, SIZE_EXP_NODE_FEATURE)), requires_grad=True)  # non-determinals

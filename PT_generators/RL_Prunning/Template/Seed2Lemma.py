@@ -3,6 +3,7 @@ import random
 import torch
 from torch import tensor
 import numpy as np
+from PT_generators.RL_Prunning.NNs.SymbolEmbeddings import SymbolEmbeddings
 from PT_generators.RL_Prunning.Conifg import config
 
 
@@ -55,9 +56,9 @@ def get_available_rule():
     return RULE["all"]
 
 
-def get_action_index(last_left_handle, last_action):
-    for i, action in enumerate(RULE["all"]):
-        if str(action) == str(last_action):
+def get_action_index(last_seed, seed_list):
+    for i, action in enumerate(seed_list):
+        if str(action) == str(last_seed):
             if torch.cuda.is_available():
                 return tensor([i]).cuda()
             else:
@@ -145,22 +146,32 @@ def generate_lemmas(seeds: list, min_num_conjuncts=2, max_num_conjuncts=5, num_i
     return invs
 
 
-def strictness_distribution(seed, whom):
+def strictness_distribution(seed_list, seed, length):
     distri_dict = {
-        "all": [0, 0, 0.2, 0.4, 0.3, 0.1]
+        "all": [0.05, 0.05, 0.2, 0.3, 0.3, 0.1]
     }
-    res = tensor([distri_dict["all"]], dtype=torch.float32)
+    gamma = distri_dict["all"][length - 2]
+    res = torch.ones(len(seed_list), 1, dtype=torch.float32)
+    for i, every_seed in enumerate(seed_list.keys()):
+        if every_seed == seed:
+            res[i, 0] = res[i, 0] * gamma
+
     if torch.cuda.is_available():
         res = res.cuda()
     return res
 
 
-def looseness_distribution(seed):
+def looseness_distribution(seed_list, seed, length):
     distri_dict = {
-        "all": [0.1, 0.2, 0.3, 0.4, 0, 0]
+        "all": [0.1, 0.2, 0.3, 0.3, 0.05, 0.05]
     }
+    print(length)
+    gamma = distri_dict["all"][length - 2]
+    res = torch.ones( 1, len(seed_list), dtype=torch.float32)
+    for i, every_seed in enumerate(seed_list):
+        if every_seed == seed:
+            res[0, i] = res[0, i] * gamma
 
-    res = tensor([distri_dict["all"]], dtype=torch.float32)
     if torch.cuda.is_available():
         res = res.cuda()
     return res
@@ -184,9 +195,10 @@ def sampling(action_distribution, sample_list: list, seeds_num=5):
     # else:
     try:
         # print(sample_list)
-        seeds_selected = np.random.choice(sample_list, size=seeds_num, replace=False, p=normalization(action_distribution))
-        print(seeds_selected)
+        seeds_selected = np.random.choice(sample_list, size=seeds_num, replace=False,
+                                          p=normalization(action_distribution))
+        # print(seeds_selected)
     except Exception as e:
         print("shit", e)
         raise e
-    return generate_lemmas(seeds_selected)
+    return generate_lemmas(seeds_selected), seeds_selected

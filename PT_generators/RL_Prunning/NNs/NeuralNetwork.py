@@ -1,7 +1,6 @@
 import pickle
 
 import torch
-from torch import tensor
 from torch.nn import Parameter
 
 from PT_generators.RL_Prunning.Conifg import config

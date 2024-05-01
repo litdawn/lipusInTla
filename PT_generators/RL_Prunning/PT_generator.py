@@ -6,15 +6,6 @@ import torch.nn.functional as f
 
 
 class PT_generator:
-
-    #
-    # 解析输入：使用parseCFG和parseSMT函数解析输入的CFG和SMT文件，并将结果分别存储在self.cfg和self.smt中。同时，从源代码中获取变量名和常量，并分别存储在self.vars和self.consts中。
-    # 初始化选择：使用init_varSelection，init_constSelection和init_symbolEmbeddings函数初始化变量选择，常量选择和符号嵌入。
-    # 构造神经网络并加载参数：使用constructT，constructG，constructE，constructP，constructpi，construct_distributionlize函数构造各个神经网络并加载参数。如果可以使用GPU，则调用self.gpulize()
-    # 将神经网络转移到GPU上。
-    # 初始化学习器和参数：调用self.init_learner_par()
-    # 和self.init_parameters()
-    # 初始化学习器和参数。
     def __init__(self, seed_tmpl, name):
         self.last_predicted_reward_list = None
         self.last_selected_lemma = None
@@ -102,14 +93,14 @@ class PT_generator:
         action_distribution, action_raw = self.distributionlize(action_vector, list(self.state_vec.values()))
 
         seeds_num = random.randint(3, 7)
-        new_candidate = sampling(action_distribution, self.seed_tmpl.seeds, seeds_num)
+        new_candidate, raw_lemmas = sampling(action_distribution, self.seed_tmpl.seeds, seeds_num)
 
         # 将lemma加入candidates
         self.candidate.update({f"inv_{self.lemma_pointer}": new_candidate[0]})
         self.lemma_pointer += 1
 
         self.last_predicted_reward_list = predicted_reward_list
-        self.last_selected_lemma = new_candidate[0]
+        self.last_selected_lemma = raw_lemmas
         self.last_distribution_output = action_raw
 
         lemmas = Lemma2Candidate.add_quant(f"inv_{self.lemma_pointer - 1}", new_candidate[0], self.seed_tmpl.quants)
@@ -140,16 +131,18 @@ class PT_generator:
             reward = -1
             gama = 0.01
         else:
-            reward = 1
+            reward = 0
             gama = 0.01
 
         strict_loss = tensor([[0]], dtype=torch.float32)
         counter = 0
-        for i in range(len(self.last_selected_lemma)):
+        length = len(self.last_selected_lemma)
+        print(self.last_selected_lemma)
+        for i in range(length):
             if s_or_l == 'STRICT':  # strict倾向于选择更长的子句
-                sd = strictness_distribution(self.last_selected_lemma[i], whom)
+                sd = strictness_distribution(self.seed_tmpl.seeds, self.last_selected_lemma[i], length)
             else:  # loose倾向于选择更短的子句
-                sd = looseness_distribution(self.last_selected_lemma[i])
+                sd = looseness_distribution(self.seed_tmpl.seeds, self.last_selected_lemma[i], length)
             loss_strictness = -torch.mm(sd, torch.log_softmax(
                 self.last_distribution_output.reshape(1, -1), 1).transpose(0, 1)) * gama
             strict_loss += loss_strictness.reshape([1, 1])
@@ -172,14 +165,15 @@ class PT_generator:
             reward_list.append(final_reward * discounter ** i)
         reward_list = reward_list[::-1]
         p_loss = 0
-        for i in range(len(self.last_predicted_reward_list)):
+        for i in range(len(self.last_selected_lemma)):
             r_i = reward_list[i]
             if i == 0:
                 pr_i_1 = tensor([[0]], dtype=torch.float32)
             else:
                 pr_i_1 = tensor([reward_list[i - 1]], dtype=torch.float32)
-            losser = f.cross_entropy(self.last_selected_lemma[i].reshape(1, -1),
-                                     get_action_index(self.last_selected_lemma[i], self.last_selected_lemma[i]))
+
+            losser = f.cross_entropy(self.last_distribution_output.reshape(1, -1),
+                                     get_action_index(self.last_selected_lemma[i], self.seed_tmpl.seeds))
 
             if torch.cuda.is_available():
                 p_loss += (tensor(r_i, dtype=torch.float32) - pr_i_1).cuda() * losser.reshape([1, 1])
@@ -188,10 +182,10 @@ class PT_generator:
         p_loss = p_loss / len(reward_list)
         if torch.cuda.is_available():
             mse_loss = f.mse_loss(tensor([reward_list], dtype=torch.float32).cuda(),
-                                  torch.cat(self.last_predicted_reward_list, 1)).reshape([1, 1])
+                                  torch.cat(list(self.last_predicted_reward_list.values()), 1)).reshape([1, 1])
         else:
             mse_loss = f.mse_loss(tensor([reward_list], dtype=torch.float32),
-                                  torch.cat(self.last_predicted_reward_list, 1)).reshape([1, 1])
+                                  torch.cat(list(self.last_predicted_reward_list.values()), 1)).reshape([1, 1])
         # print("mse_loss", mse_loss)
         # print("p_loss", p_loss)
         return p_loss + mse_loss
@@ -237,13 +231,6 @@ class PT_generator:
 
         self.adam = Adam(paras.values(), lr=self.LR)
         self.paras = paras
-
-    # def init_parameters(self):
-    #     paradict = initialize_paramethers(self.path2CFile)
-    #     for parname in self.paras:
-    #         if parname in paradict:  # initialize
-    #             assert self.paras[parname].shape == paradict[parname].shape
-    #             self.paras[parname].data = paradict[parname].data
 
     def gpulize(self):
         self.T.cudalize()
