@@ -17,10 +17,10 @@ JAVA_EXE = "java"
 # 新tla: specdir//gen_tla_dir/{specname}_CTIGen_{ctiseed}.tla
 # 新cfg：specdir//gen_tla_dir/{specname}_CTIGen_{ctiseed}.cfg
 # 生成的cti文件在 Benchmarks/gen_tla/apalache-cti-ou
-specdir = os.getcwd() + "\\Result"
+specdir = os.getcwd() + "/Result"
 GEN_TLA_DIR = "gen_tla_dir"
 state_constraint = ""
-apalache_path = os.getcwd() + "\\apalache-0.44.2\\lib\\apalache.jar"
+apalache_path = os.getcwd() + "/apalache-0.44.2/lib/apalache.jar"
 jvm_args = "JVM_ARGS='-Xss16M'"
 max_num_ctis = 250
 output_directory = os.getcwd() + "Benchmarks/gen_tla/apalache-cti-out"
@@ -33,7 +33,8 @@ def check_invariants(invs: list, specname, tla_ins, strengthening_conjuncts="", 
     invcheck_tla = "---- MODULE %s_InvCheck_%d ----\n" % (specname, seed)
     invcheck_tla += "EXTENDS %s\n\n" % specname
 
-    invcheck_tla += tla_ins.model_const + "\n"
+    # invcheck_tla += tla_ins.model_const + "\n"
+    invcheck_tla += "CONSTANT "+ "".join(tla_ins.constants.keys()) +"\n"
 
     all_inv_names = set()
     for i, inv in enumerate(invs):
@@ -53,8 +54,8 @@ def check_invariants(invs: list, specname, tla_ins, strengthening_conjuncts="", 
     invcheck_cfg = "INIT Init\n"
     invcheck_cfg += "NEXT Next\n"
 
-    const = "".join(tla_ins.constants.keys())
-    invcheck_cfg += f"CONSTANT = {const}"
+
+    invcheck_cfg += tla_ins.model_const
     invcheck_cfg += "\n"
     invcheck_cfg += state_constraint
     invcheck_cfg += "\n"
@@ -76,7 +77,7 @@ def check_invariants(invs: list, specname, tla_ins, strengthening_conjuncts="", 
     # Check invariants.
     logging.info("Checking %d candidate invariants in spec file '%s'" % (len(invs), invcheck_spec_name))
     workdir = None if specdir == "" else specdir
-    violated_invs = runtlc_check_violated_invariants(invcheck_spec_name, config=invcheck_cfg_filename,
+    violated_invs = runtlc_check_violated_invariants(invcheck_spec_filename, config=invcheck_cfg_file,
                                                      tlc_workers=tlc_workers, cwd=workdir, java=JAVA_EXE)
     sat_invs = (all_inv_names - violated_invs)
     logging.info(
@@ -106,14 +107,15 @@ def runtlc_check_violated_invariants(spec, config=None, tlc_workers=6, cwd=None,
 def run_tlc(spec, config=None, tlc_workers=6, cwd=None, java="java", tlc_flags=""):
     # Make a best effort to attempt to avoid collisions between different
     # instances of TLC running on the same machine.
-    dirpath = tempfile.mkdtemp()
+    # dirpath = tempfile.mkdtemp()
     metadir_path = f"states/states_{random.randint(0, 1000000000)}"
     cmd = (
-        f' java -cp tla2tools.jar tlc2.TLC  -maxSetSize {TLC_MAX_SET_SIZE} -metadir {metadir_path}'
-        f'-noGenerateSpecTE -checkAllInvariants -deadlock -continue -workers {tlc_workers}')
+        # ' -metadir {metadir_path} -noGenerateSpecTE '
+        f' java -cp tla2tools.jar tlc2.TLC  -maxSetSize {TLC_MAX_SET_SIZE}'
+        f' -checkAllInvariants -deadlock -continue -workers {tlc_workers}')
     if config:
         cmd += " -config " + config
-    cmd += " " + spec
+    cmd += " " + spec + ".tla"
     logging.info("TLC command: " + cmd)
     subproc = subprocess.run(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, cwd=cwd)
     line_str = ""

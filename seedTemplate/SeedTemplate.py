@@ -125,7 +125,7 @@ class SeedTemplate:
                 quant_var = []
                 if var in self.quants:
                     quant_var = self.quants[var]
-                quant_var.append(f"\\A {var} in  {con}")
+                quant_var.append(f"\\A {var} in  {con} :")
                 self.quants.update({var: quant_var})
         return 0
 

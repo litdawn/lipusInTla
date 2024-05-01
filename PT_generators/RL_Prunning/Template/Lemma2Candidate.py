@@ -17,6 +17,6 @@ class Lemma2Candidate:
         all_tuples = list(itertools.product(*quants.values()))
         ans = []
         for i, i_tuple in enumerate(all_tuples):
-            quant = ",".join(i_tuple)
-            ans.append(f"{inv_name}_{i} == {quant} : {inv}")
+            quant = " ".join(i_tuple)
+            ans.append(f"{inv_name}_{i} == {quant} {inv}")
         return ans

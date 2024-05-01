@@ -93,9 +93,9 @@ def main(path2tla, path2cfg, path2json):
 
 if __name__ == "__main__":
     name = "learning_switch"
-    path2tla = os.getcwd() + f"\\Benchmarks\\protocols\\{name}.tla"
-    path2cfg = os.getcwd() + f"\\Benchmarks\\cfg\\{name}.cfg"
-    path2json = os.getcwd() + f"\\Benchmarks\\json\\{name}.json"
+    path2tla = os.getcwd() + f"/Benchmarks/protocols/{name}.tla"
+    path2cfg = os.getcwd() + f"/Benchmarks/cfg/{name}.cfg"
+    path2json = os.getcwd() + f"/Benchmarks/json/{name}.json"
     # path2config = path2tla[:-3] + "cfg"
     # command = f"java.exe -jar apalache-0.44.2/lib/apalache.jar check --inv=Inv --run-dir=gen_tla/apalache-cti-out --config={path2config} {path2tla} "
     # result = subprocess.run(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
