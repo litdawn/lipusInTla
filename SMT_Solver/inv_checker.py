@@ -109,9 +109,10 @@ def run_tlc(spec, config=None, tlc_workers=6, cwd=None, java="java", tlc_flags="
     # instances of TLC running on the same machine.
     # dirpath = tempfile.mkdtemp()
     metadir_path = f"states/states_{random.randint(0, 1000000000)}"
+    from main import TLC_PATH
     cmd = (
         # ' -metadir {metadir_path} -noGenerateSpecTE '
-        f' java -cp tla2tools.jar tlc2.TLC  -maxSetSize {TLC_MAX_SET_SIZE}'
+        f' java -cp {TLC_PATH} tlc2.TLC  -maxSetSize {TLC_MAX_SET_SIZE}'
         f' -checkAllInvariants -deadlock -continue -workers {tlc_workers}')
     if config:
         cmd += " -config " + config

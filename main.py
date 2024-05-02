@@ -12,6 +12,7 @@ from seedTemplate.tlaParser import tlaparser
 from SMT_Solver.cti_generator import generate_ctis
 from SMT_Solver.inv_checker import check_invariants
 
+TLC_PATH = os.path.join(os.getcwd(), "tla2tools.jar")
 
 def main(path2tla, path2cfg, path2json):
     start_time = time.time()
