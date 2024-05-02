@@ -87,6 +87,7 @@ def generate_lemmas(seeds: list, min_num_conjuncts=2, max_num_conjuncts=5, num_i
         conjuncts = list(seeds)
         # conjuncts = list(map(str, range(len(preds))))
         num_conjuncts = random.randint(min_num_conjuncts, max_num_conjuncts)
+        num_conjuncts = min(num_conjuncts, len(seeds))
 
         # Select first atomic term of overall predicate.
         c = random.choice(conjuncts)
