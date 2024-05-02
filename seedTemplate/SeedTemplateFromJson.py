@@ -15,7 +15,7 @@ class SeedTemplate:
         self.preds_alt = json_data["preds_alt"]
         self.safety = json_data["safety"]
         self.constants = json_data["constants"]
-        self.constraints = json_data["constraints"]
+        self.constraints = json_data["constraint"]
         self.quant_inv = json_data["quant_inv"]
         self.quant_inv_alt = json_data["quant_inv_alt"]
         self.quant_vars = json_data["quant_vars"]
@@ -24,11 +24,7 @@ class SeedTemplate:
         self.typeok = json_data["typeok"]
         self.simulate = json_data["simulate"]
         self.tla_ins = tla_ins
-        for preds in self.preds:
-            # 如果 preds 不以 ”~“ 开头
-            if preds[0] != "~":
-                self.preds_alt.append("~" + preds)
-                self.preds.append("~" + preds)
+        self.seeds = self.preds
 
     def generate(self):
         return self.preds, self.quant_vars
