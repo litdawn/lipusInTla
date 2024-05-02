@@ -15,6 +15,18 @@ def main(path2cfg, path2json):
             return tla_ins, seed_tmpl
 
 
+def main_from_json(path2cfg, path2json, path2config_json):
+    from seedTemplate.SeedTemplateFromJson import SeedTemplate
+    with open(path2json, "r") as semantics, open(path2config_json, "r") as config, open(path2cfg, "r") as cfg:
+        semantics_data = json.load(semantics)
+        config_json_data = json.load(config)
+        cfg_data = cfg.read().split("\n")
+        tla_ins = parse_file(semantics_data, cfg_data)
+        seed_tmpl = SeedTemplate(tla_ins, config_json_data)
+        seed_tmpl.generate()
+        return tla_ins, seed_tmpl
+
+
 # 主函数，输入一个json对象
 def parse_file(json_data, cfg_data):
     content = json_data['body']
