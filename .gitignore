@@ -1,3 +1,7 @@
 .idea
 
 Benchmarks/gen_tla/apalache-cti-out
+
+Result/gen_tla_dir
+Result/Linear
+Result/NonLinear
