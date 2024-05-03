@@ -14,7 +14,7 @@ from SMT_Solver.inv_checker import check_invariants
 
 TLC_PATH = os.path.join(os.getcwd(), "tla2tools.jar")
 
-def main(path2tla, path2cfg, path2json):
+def main(path2tla, path2cfg, path2json, path2config):
     start_time = time.time()
     # Step 1. Input the three formation of the code.
     # todo: 第一步：tla静态检查
@@ -23,7 +23,8 @@ def main(path2tla, path2cfg, path2json):
     # Step 2. Load the Partial Template Generator.
 
     # todo: 第二步 生成seed和quants
-    tla_ins, seed_tmpl = tlaparser.main(path2cfg, path2json)
+    # tla_ins, seed_tmpl = tlaparser.main(path2cfg, path2json)
+    tla_ins, seed_tmpl = tlaparser.main_from_json(path2cfg, path2json, path2config)
     print(seed_tmpl.seeds)
 
     # # todo: 第三步
@@ -97,10 +98,11 @@ if __name__ == "__main__":
     path2tla = os.getcwd() + f"/Benchmarks/protocols/{name}.tla"
     path2cfg = os.getcwd() + f"/Benchmarks/cfg/{name}.cfg"
     path2json = os.getcwd() + f"/Benchmarks/json/{name}.json"
+    path2config = os.getcwd() + f"/Benchmarks/{name}.config.json"
     # path2config = path2tla[:-3] + "cfg"
     # command = f"java.exe -jar apalache-0.44.2/lib/apalache.jar check --inv=Inv --run-dir=gen_tla/apalache-cti-out --config={path2config} {path2tla} "
     # result = subprocess.run(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     # print(result)
     # path2CFG=r"Benchmarks/Linear/c_graph/2.c.json"
     # path2SMT=r"Benchmarks/Linear/c_smt2/2.c.smt"
-    main(path2tla, path2cfg, path2json)
+    main(path2tla, path2cfg, path2json, path2config)
