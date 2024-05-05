@@ -28,7 +28,7 @@ def check_invariants(invs: list, seed_tmpl, strengthening_conjuncts="", tlc_work
     all_inv_names = set()
     for i, inv in enumerate(invs):
         sinv = inv
-        all_inv_names.add(inv.split("==")[0])
+        all_inv_names.add(inv.split("==")[0].strip())
         invcheck_tla += sinv + "\n"
 
     invcheck_tla += "===="
@@ -93,7 +93,7 @@ def run_tlc(spec, cfg=None, tlc_workers=6, cwd=None, java="java", tlc_flags=""):
     # Make a best effort to attempt to avoid collisions between different
     # instances of TLC running on the same machine.
     dirpath = tempfile.mkdtemp()
-    metadir_path = f"states/states_{random.randint(0, 1000000000)}"
+    metadir_path = f"states\\states_{random.randint(0, 1000000000)}"
 
     cmd = (
         # ' -metadir {metadir_path} -noGenerateSpecTE '

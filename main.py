@@ -62,8 +62,8 @@ def main(path2tla, path2cfg, path2json, path2config):
         #     pt_generator.punish('LOOSE', 'MEDIUM', 'S')
         #     continue
         # # Step 3.3 Check if we bingo
-
-        logging.info(f"==============iteration {iteration}: 找到了一些候选者 {str(candidate)}，开始检查==================")
+        logging.info("==============================================================================================")
+        logging.info(f"step 1 iteration {iteration}: 找到了一些候选者 {str(candidate)}，开始检查")
         is_inv = list(check_invariants(lemmas, seed_tmpl=seed_tmpl))
         logging.info(f"find a {is_inv}")
         if len(is_inv) < 1:
@@ -76,11 +76,18 @@ def main(path2tla, path2cfg, path2json, path2config):
                 if lemma_name != "Safety" and lemma_name != "Typeok" and ":" not in lemma:
                     candidate.update({lemma_name: seed_tmpl.quant_inv + lemma})
             # 如果被之前的candidate蕴含了，应该严格一点
-            new_eliminate_cti = eliminate_ctis(is_inv, ctis, seed_tmpl)
-            if len(new_eliminate_cti[is_inv[-1]]) == 0 and iteration > 1:
+            can2test = dict()
+            for raw_name, raw_can in candidate.items():
+                if raw_name in is_inv:
+                    can2test.update({raw_name: raw_can})
+            print(f"can2test只让最后一个不变式{can2test}参与消除")
+            new_eliminate_cti = eliminate_ctis(can2test, ctis, seed_tmpl)
+            logging.info(f"消除了一些cti，分别是{new_eliminate_cti}")
+            if (len(new_eliminate_cti) == 0 or len(new_eliminate_cti[is_inv[-1]]) == 0) and iteration > 1:
                 logging.info(f">>>iteration {iteration}: 被之前的candidate蕴含了，应该严格一点")
                 pt_generator.punish('STRICT', 'VERY', 'V')
-                continue
+                if len(ctis) != 0:
+                    continue
             elif len(new_eliminate_cti) < len(ctis) and iteration > 1:
                 logging.info(f">>>iteration {iteration}: 找到了一个正确的不变式，继续")
                 pt_generator.prise('MEDIUM')
@@ -111,7 +118,7 @@ def main(path2tla, path2cfg, path2json, path2config):
             ctis = ctis.union(new_ctis)
             ctis_str = "\n".join(cti.get_cti_state_string() for cti in ctis)
             logging.info(f">>>iteration {iteration}: 新找到了{len(new_ctis)}个CTI, 目前CTI的总数是{len(ctis)}")
-            logging.info(f"{ ctis_str }")
+            logging.info(f"{ctis_str}")
             continue
 
 
