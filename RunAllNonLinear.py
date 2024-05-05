@@ -4,7 +4,7 @@ from SMT_Solver.Config import config
 
 if __name__ == "__main__":
 
-    result_file = open(r"Result/RL_Prunning_NL.txt", "w")
+    result_file = open(r"Benchmarks/Result/RL_Prunning_NL.txt", "w")
     benchmarks_c_path = r"Benchmarks/NL/c/"
     benchmarks_g_path = r"Benchmarks/NL/c_graph/"
     benchmarks_s_path = r"Benchmarks/NL/c_smt/"

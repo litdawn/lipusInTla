@@ -13,10 +13,11 @@ class Lemma2Candidate:
     #     return ans
 
     @staticmethod
-    def add_quant(inv_name, inv, quants: dict):
+    def add_quant(inv_name, inv, quants:dict):
         all_tuples = list(itertools.product(*quants.values()))
         ans = []
         for i, i_tuple in enumerate(all_tuples):
             quant = " ".join(i_tuple)
             ans.append(f"{inv_name}_{i} == {quant} {inv}")
         return ans
+

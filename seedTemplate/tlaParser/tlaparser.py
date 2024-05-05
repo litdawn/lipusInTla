@@ -1,6 +1,7 @@
 from seedTemplate.tlaParser.tla import TLA
 from seedTemplate.SeedTemplate import Type
 import json
+from PT_generators.RL_Prunning.Conifg import config
 
 
 def main(path2cfg, path2json):
@@ -39,13 +40,14 @@ def parse_file(json_data, cfg_data):
         constants.append({"name": param['paramName'], "info": parse_type(param['typeComment'])})
     for var in content['definedVariables']:
         variables.append({"name": var['variableName'], "info": parse_type(var['typeComment'])})
-    for operator in content['operatorDefinitions']:
-        if operator['type'] == "Action":
-            actions.append({"name": operator['operatorName'],
-                            "info": parse_type(operator['typeComment'], operator['concreteContent'])})
-        if operator['type'] == "State":
-            states.append(
-                {"name": operator['operatorName'], "info": parse_type(concrete_content=operator['concreteContent'])})
+    if config.use_self_generate:
+        for operator in content['operatorDefinitions']:
+            if operator['type'] == "Action":
+                actions.append({"name": operator['operatorName'],
+                                "info": parse_type(operator['typeComment'], operator['concreteContent'])})
+            if operator['type'] == "State":
+                states.append(
+                    {"name": operator['operatorName'], "info": parse_type(concrete_content=operator['concreteContent'])})
 
     tla_ins = TLA()
     tla_ins.init_var(constants, variables, actions, states)
@@ -58,7 +60,7 @@ def parse_file(json_data, cfg_data):
         elif line.startswith("INVARIANT"):
             tla_ins.inv = line.split(" ")[-1]
         elif line.startswith("CONSTANT"):
-            if line.find("=") != 0:
+            if line.find("=") != -1:
                 name = line.split("=")[0]
                 value = line.split("=")[1]
                 tla_ins.constants[name.replace("CONSTANT", "").strip()].real_val = value[1:-1].split(",")
@@ -71,7 +73,7 @@ def parse_file(json_data, cfg_data):
             tla_ins.constraint = line.split(" ")[-1]
         else:
             line = line.strip()
-            if line.find("=") != 0:
+            if line.find("=") != -1:
                 name = line.split("=")[0]
                 value = line.split("=")[1]
                 tla_ins.constants[name.strip()].real_val = value[1:-1].split(",")

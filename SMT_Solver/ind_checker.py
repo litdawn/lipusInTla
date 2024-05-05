@@ -7,7 +7,7 @@ import subprocess
 apalache_bin = "apalache-0.44.2/bin/apalache-mc"
 # jvm_args = "JVM_ARGS='-Xss16M'"
 
-cmd = 'java.exe -jar -Xss16M -Djava.io.tmpdir="test" -cp tla2tools-checkall.jar tlc2.TLC -continue -deadlock -config {path2config} {path2tla}'
+cmd = 'java.exe -jar -Xss16M -Djava.io.tmpdir="test" -cp tla2tools.jar tlc2.TLC -continue -deadlock -config {path2config} {path2tla}'
 
 
 class SMT_verifier:
@@ -18,13 +18,13 @@ class SMT_verifier:
         self.varnames = varnames
         self.replacement = "abcdefghijklmnopqrstuvwxyz"
 
-    def verify(self, Can_I, path2tla,):
+    def verify(self, Can_I, path2tla):
         # 执行命令
         self.write2tla(Can_I, path2tla)
         path2config = path2tla[:-3] + "cfg"
         path2dump = path2tla[:path2tla.find("/") + 1] + path2tla[path2tla.find("/") + 1:-3] + "json"
         command = (
-            f'java -cp tla2tools.jar tlc2.TLC -continue -deadlock -workers 4 -config {path2config} -dump {path2dump} {path2tla}')
+            f'java -cp {config.TLC_PATH} tlc2.TLC -continue -deadlock -workers 4 -config {path2config} -dump {path2dump} {path2tla}')
         # command = f"java.exe -jar apalache-0.44.2/lib/apalache.jar check --inv=IndCand --run-dir=gen_tla/apalache-cti-out --config={path2config} {path2tla} "
         result = subprocess.run(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         # 输出结果
@@ -35,12 +35,13 @@ class SMT_verifier:
         else:
             return False
 
-    def write2tla(self, Can_I, path2tla):
+    def write2tla(self, candidate, path2tla):
         self.readTLA(path2tla)
         reg = "/const_[0-9]+/"
-        for i in range(0, len(self.tla)):
-            if self.tla[i].startWith("IndCand"):
-                self.tla[i] = ("IndCand == " + str(Can_I) + "\n")
+
+        # for i in range(0, len(self.tla)):
+            # if self.tla[i].startWith("IndCand"):
+            #     self.tla[i] = ("IndCand == " + str(Can_I) + "\n")
         with open(path2tla, 'w') as f:
             f.writelines(self.tla)
 

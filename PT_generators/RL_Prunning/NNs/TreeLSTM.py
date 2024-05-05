@@ -69,7 +69,6 @@ class TreeLSTM(nn.Module):
                     state_rnn = self.rnns[k]
         except:
             state_ele_list = []
-            pass
 
         if state_rnn == "":
             state_rnn = self.rnns["other"]

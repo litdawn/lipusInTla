@@ -1,5 +1,5 @@
 ---- MODULE consensus_epr ----
-EXTENDS TLC, Naturals, FiniteSets, Sequences, Randomization
+EXTENDS TLC, Naturals, FiniteSets, Sequences, Randomization, Integers
 
 CONSTANT 
     \* @type: Set(Str);
@@ -118,4 +118,62 @@ SafetyWithTypeOK ==
 
 
 NextUnchanged == UNCHANGED vars
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 ====

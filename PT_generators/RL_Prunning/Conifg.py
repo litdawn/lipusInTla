@@ -1,4 +1,5 @@
 class Config:
+    use_self_generate = False
     SELECT_AN_ACTION = 0
     SET_AN_VALUE = 1
 

@@ -1,7 +1,7 @@
 ---- MODULE learning_switch ----
 \* benchmark: pyv-learning-switch
 
-EXTENDS TLC, Naturals, FiniteSets, Randomization
+EXTENDS TLC, Naturals, FiniteSets, Randomization, Integers
 
 CONSTANT 
     \* @type: Set(Str);
@@ -85,5 +85,7 @@ TypeOKRandom ==
 \* \* A1 == <<s2,s1,s0>> \notin table
 \* Test == Cardinality(pending) < 2
 \* A2 == Cardinality(table) = 16
+
+
 
 ====

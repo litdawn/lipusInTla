@@ -50,8 +50,12 @@ class PT_generator:
 
     def init_candidate(self):
         self.candidate.clear()
-        self.candidate.update({"Safety": self.seed_tmpl.tla_ins.inv})
-        self.candidate.update({"Typeok": self.seed_tmpl.tla_ins.type_ok})
+        if config.use_self_generate:
+            self.candidate.update({"Safety": self.seed_tmpl.tla_ins.inv})
+            self.candidate.update({"Typeok": self.seed_tmpl.tla_ins.type_ok})
+        else:
+            self.candidate.update({"Safety":self.seed_tmpl.safety})
+            self.candidate.update({"Typeok": self.seed_tmpl.typeok})
 
     def concat_state_vec(self):
         suma = torch.cat(list(self.state_vec.values()), dim=0)
@@ -102,9 +106,10 @@ class PT_generator:
         self.last_predicted_reward_list = predicted_reward_list
         self.last_selected_lemma = raw_lemmas
         self.last_distribution_output = action_raw
-
-        lemmas = Lemma2Candidate.add_quant(f"inv_{self.lemma_pointer - 1}", new_candidate[0], self.seed_tmpl.quants)
-
+        if config.use_self_generate:
+            lemmas = Lemma2Candidate.add_quant(f"inv_{self.lemma_pointer - 1}", new_candidate[0], self.seed_tmpl.quants)
+        else:
+            lemmas = [f"inv_{self.lemma_pointer - 1} ==  {self.seed_tmpl.quant_inv} {new_candidate[0]}"]
         return self.candidate, lemmas, self.lemma_pointer - 1
 
     # 设置奖励和伽马值：根据Deg的值设置奖励和伽马值。
@@ -202,7 +207,7 @@ class PT_generator:
         if deg == "VERY":
             reward = 10
         elif deg == "LITTLE":
-            reward = 1
+            reward = 3
         else:
             reward = 0
         a_loss = self.a_loss(reward)

@@ -4,7 +4,7 @@ import time
 from PT_generators.RL_Prunning.PT_generator import PT_generator
 from tmpp import Template_solver
 from SMT_Solver.Config import config
-from SMT_Solver.SMT_verifier import SMT_verifier
+from SMT_Solver.ind_checker import SMT_verifier
 
 
 def main(path2CFile, path2CFG, path2SMT):

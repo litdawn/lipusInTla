@@ -1,1 +1,154 @@
-{"location":"line 1, col 1 to line 121, col 4 of module consensus_epr","moduleInfo":{"location":"line 1, col 1 to line 1, col 30 of module consensus_epr","moduleName":"consensus_epr"},"extends":{"extendedModuleNames":["TLC","Naturals","FiniteSets","Sequences","Randomization"],"location":"line 2, col 1 to line 2, col 59 of module consensus_epr"},"body":{"declaredParams":[{"location":"line 4, col 1 to line 10, col 9 of module consensus_epr","paramName":"Node","typeComment":"\\* @type: Set(Str);"}],"definedVariables":[{"typeComment":"\\* @type: Set(<<Str,Str>>);","variableName":"vote_request_msg"},{"typeComment":"\\* @type: Str -> Str;","variableName":"voted"},{"typeComment":"\\* @type: Set(<<Str,Str>>)","variableName":"vote_msg"},{"typeComment":"\\* @type: Str -> Set(Str)","variableName":"votes"},{"typeComment":"\\* @type: Str -> Bool","variableName":"leader"},{"typeComment":"\\* @type: Str -> Set(Str)","variableName":"decided"}],"location":"line 4, col 1 to line 120, col 31 of module consensus_epr","operatorDefinitions":[{"concreteContent":"vars == <<vote_request_msg,voted,vote_msg,votes,leader,decided>>","location":"line 27, col 1 to line 27, col 64 of module consensus_epr","operatorName":"vars","type":"State"},{"concreteContent":"SendRequestVote(src, dst) == \n    /\\ vote_request_msg' = vote_request_msg \\cup {<<src, dst>> }\n    /\\ UNCHANGED <<voted,vote_msg,votes,leader,decided>>\n","location":"line 29, col 1 to line 31, col 56 of module consensus_epr","operatorName":"SendRequestVote","paramNum":2,"type":"Action"},{"concreteContent":"SendVote(src, dst) == \n    /\\ ~voted[src]\n    /\\ <<dst,src>> \\in vote_request_msg\n    /\\ vote_msg' = vote_msg \\cup {<<src,dst>>}\n    /\\ voted' = [voted EXCEPT ![src] = TRUE]\n    /\\ \\/ vote_request_msg' = vote_request_msg \\cup {<<src,dst>>}\n       \\/ vote_request_msg' = vote_request_msg \\ {<<src,dst>>}\n    /\\ UNCHANGED <<votes, leader, decided>>\n","location":"line 33, col 1 to line 40, col 43 of module consensus_epr","operatorName":"SendVote","paramNum":2,"type":"Action"},{"concreteContent":"RecvVote(n, sender) == \n    /\\ <<sender,n>> \\in vote_msg\n    /\\ votes' = [votes EXCEPT ![n] = votes[n] \\cup {sender}]\n    /\\ UNCHANGED <<vote_request_msg,voted,vote_msg,leader,decided>>\n","location":"line 42, col 1 to line 45, col 67 of module consensus_epr","operatorName":"RecvVote","paramNum":2,"type":"Action"},{"concreteContent":"BecomeLeader(n, Q) == \n    /\\ Q \\subseteq votes[n]\n    /\\ leader' = [leader EXCEPT ![n] = TRUE]\n    /\\ UNCHANGED <<vote_request_msg,voted,vote_msg,votes,decided>>\n","location":"line 47, col 1 to line 50, col 66 of module consensus_epr","operatorName":"BecomeLeader","paramNum":2,"type":"Action"},{"concreteContent":"Decide(n, v) == \n    /\\ leader[n]\n    /\\ decided[n] = {}\n    /\\ decided' = [decided EXCEPT ![n] = decided[n] \\cup {v}]\n    /\\ UNCHANGED <<vote_request_msg,voted,vote_msg,votes,leader>>\n","location":"line 52, col 1 to line 56, col 65 of module consensus_epr","operatorName":"Decide","paramNum":2,"type":"Action"},{"concreteContent":"Init == \n    /\\ vote_request_msg = {}\n    /\\ voted = [i \\in Node |-> FALSE]\n    /\\ vote_msg = {}\n    /\\ votes = [i \\in Node |-> {}]\n    /\\ leader = [i \\in Node |-> FALSE]\n    /\\ decided = [i \\in Node |-> {}]\n","location":"line 58, col 1 to line 64, col 36 of module consensus_epr","operatorName":"Init","type":"State"},{"concreteContent":"Next == \n    \\/ \\E i,j \\in Node : SendRequestVote(i,j)\n    \\/ \\E i,j \\in Node : SendVote(i,j)\n    \\/ \\E i,j \\in Node : RecvVote(i,j)\n    \\/ \\E i \\in Node, Q \\in Quorum : BecomeLeader(i,Q)\n    \\/ \\E i,j \\in Node, v \\in Value : Decide(i,v)\n","location":"line 66, col 1 to line 71, col 49 of module consensus_epr","operatorName":"Next","type":"State"},{"concreteContent":"Symmetry == Permutations(Node) \\cup Permutations(Value)","location":"line 73, col 1 to line 73, col 55 of module consensus_epr","operatorName":"Symmetry","type":"State"},{"concreteContent":"TypeOK == \n    /\\ vote_request_msg \\in SUBSET(Node \\X Node)\n    /\\ voted \\in [Node -> BOOLEAN]\n    /\\ vote_msg \\in SUBSET(Node \\X Node)\n    /\\ votes \\in [Node -> SUBSET Node]\n    /\\ leader \\in [Node -> BOOLEAN]\n    /\\ decided \\in [Node -> SUBSET Value]\n","location":"line 75, col 1 to line 81, col 41 of module consensus_epr","operatorName":"TypeOK","type":"State"},{"concreteContent":"TypeOKRandom ==\n    /\\ vote_request_msg \\in RandomSubset(40, SUBSET (Node \\X Node)) \n    /\\ voted \\in RandomSubset(7, [Node -> BOOLEAN])\n    /\\ vote_msg \\in RandomSubset(40, SUBSET(Node \\X Node)) \n    /\\ votes \\in RandomSubset(10, [Node -> SUBSET Node]) \n    /\\ leader \\in RandomSubset(4, [Node -> BOOLEAN])\n    /\\ decided \\in RandomSubset(10, [Node -> SUBSET Value])\n","location":"line 83, col 1 to line 89, col 59 of module consensus_epr","operatorName":"TypeOKRandom","type":"State"},{"concreteContent":"Safety ==\n    \\A n1,n2 \\in Node, v1,v2 \\in Value : \n        (v1 \\in decided[n1] /\\ v2 \\in decided[n2]) => (v1 = v2)\n","location":"line 110, col 1 to line 112, col 63 of module consensus_epr","operatorName":"Safety","type":"State"},{"concreteContent":"SafetyWithTypeOK ==\n    /\\ TypeOK \n    /\\ \\A n1,n2 \\in Node, v1,v2 \\in Value : \n        (v1 \\in decided[n1] /\\ v2 \\in decided[n2]) => (v1 = v2)\n","location":"line 114, col 1 to line 117, col 63 of module consensus_epr","operatorName":"SafetyWithTypeOK","type":"State"},{"concreteContent":"NextUnchanged == UNCHANGED vars","location":"line 120, col 1 to line 120, col 31 of module consensus_epr","operatorName":"NextUnchanged","type":"State"}]}}
+{
+    "location": "line 1, col 1 to line 121, col 4 of module consensus_epr",
+    "moduleInfo": {
+        "location": "line 1, col 1 to line 1, col 30 of module consensus_epr",
+        "moduleName": "consensus_epr"
+    },
+    "extends": {
+        "extendedModuleNames": [
+            "TLC",
+            "Naturals",
+            "FiniteSets",
+            "Sequences",
+            "Randomization"
+        ],
+        "location": "line 2, col 1 to line 2, col 59 of module consensus_epr"
+    },
+    "body": {
+        "declaredParams": [
+            {
+                "location": "line 6, col 5 to line 6, col 8 of module consensus_epr",
+                "paramName": "Node",
+                "typeComment": "\\* @type: Set(Str);"
+            },
+            {
+                "location": "line 8, col 5 to line 8, col 10 of module consensus_epr",
+                "paramName": "Quorum",
+                "typeComment": "\\* @type: Set(Str);"
+            },
+            {
+                "location": "line 10, col 5 to line 10, col 9 of module consensus_epr",
+                "paramName": "Value",
+                "typeComment": "\\* @type: Set(Str);"
+            }
+        ],
+        "definedVariables": [
+            {
+                "typeComment": "\\* @type: Set(<<Str,Str>>);",
+                "variableName": "vote_request_msg"
+            },
+            {
+                "typeComment": "\\* @type: Str -> Str;",
+                "variableName": "voted"
+            },
+            {
+                "typeComment": "\\* @type: Set(<<Str,Str>>)",
+                "variableName": "vote_msg"
+            },
+            {
+                "typeComment": "\\* @type: Str -> Set(Str)",
+                "variableName": "votes"
+            },
+            {
+                "typeComment": "\\* @type: Str -> Bool",
+                "variableName": "leader"
+            },
+            {
+                "typeComment": "\\* @type: Str -> Set(Str)",
+                "variableName": "decided"
+            }
+        ],
+        "location": "line 4, col 1 to line 120, col 31 of module consensus_epr",
+        "operatorDefinitions": [
+            {
+                "concreteContent": "vars == <<vote_request_msg,voted,vote_msg,votes,leader,decided>>",
+                "location": "line 27, col 1 to line 27, col 64 of module consensus_epr",
+                "operatorName": "vars",
+                "type": "State"
+            },
+            {
+                "concreteContent": "SendRequestVote(src, dst) == \r\n    /\\ vote_request_msg' = vote_request_msg \\cup {<<src, dst>> }\r\n    /\\ UNCHANGED <<voted,vote_msg,votes,leader,decided>>\r\n",
+                "location": "line 29, col 1 to line 31, col 56 of module consensus_epr",
+                "operatorName": "SendRequestVote",
+                "paramNum": 2,
+                "type": "Action"
+            },
+            {
+                "concreteContent": "SendVote(src, dst) == \r\n    /\\ ~voted[src]\r\n    /\\ <<dst,src>> \\in vote_request_msg\r\n    /\\ vote_msg' = vote_msg \\cup {<<src,dst>>}\r\n    /\\ voted' = [voted EXCEPT ![src] = TRUE]\r\n    /\\ \\/ vote_request_msg' = vote_request_msg \\cup {<<src,dst>>}\r\n       \\/ vote_request_msg' = vote_request_msg \\ {<<src,dst>>}\r\n    /\\ UNCHANGED <<votes, leader, decided>>\r\n",
+                "location": "line 33, col 1 to line 40, col 43 of module consensus_epr",
+                "operatorName": "SendVote",
+                "paramNum": 2,
+                "type": "Action"
+            },
+            {
+                "concreteContent": "RecvVote(n, sender) == \r\n    /\\ <<sender,n>> \\in vote_msg\r\n    /\\ votes' = [votes EXCEPT ![n] = votes[n] \\cup {sender}]\r\n    /\\ UNCHANGED <<vote_request_msg,voted,vote_msg,leader,decided>>\r\n",
+                "location": "line 42, col 1 to line 45, col 67 of module consensus_epr",
+                "operatorName": "RecvVote",
+                "paramNum": 2,
+                "type": "Action"
+            },
+            {
+                "concreteContent": "BecomeLeader(n, Q) == \r\n    /\\ Q \\subseteq votes[n]\r\n    /\\ leader' = [leader EXCEPT ![n] = TRUE]\r\n    /\\ UNCHANGED <<vote_request_msg,voted,vote_msg,votes,decided>>\r\n",
+                "location": "line 47, col 1 to line 50, col 66 of module consensus_epr",
+                "operatorName": "BecomeLeader",
+                "paramNum": 2,
+                "type": "Action"
+            },
+            {
+                "concreteContent": "Decide(n, v) == \r\n    /\\ leader[n]\r\n    /\\ decided[n] = {}\r\n    /\\ decided' = [decided EXCEPT ![n] = decided[n] \\cup {v}]\r\n    /\\ UNCHANGED <<vote_request_msg,voted,vote_msg,votes,leader>>\r\n",
+                "location": "line 52, col 1 to line 56, col 65 of module consensus_epr",
+                "operatorName": "Decide",
+                "paramNum": 2,
+                "type": "Action"
+            },
+            {
+                "concreteContent": "Init == \r\n    /\\ vote_request_msg = {}\r\n    /\\ voted = [i \\in Node |-> FALSE]\r\n    /\\ vote_msg = {}\r\n    /\\ votes = [i \\in Node |-> {}]\r\n    /\\ leader = [i \\in Node |-> FALSE]\r\n    /\\ decided = [i \\in Node |-> {}]\r\n",
+                "location": "line 58, col 1 to line 64, col 36 of module consensus_epr",
+                "operatorName": "Init",
+                "type": "State"
+            },
+            {
+                "concreteContent": "Next == \r\n    \\/ \\E i,j \\in Node : SendRequestVote(i,j)\r\n    \\/ \\E i,j \\in Node : SendVote(i,j)\r\n    \\/ \\E i,j \\in Node : RecvVote(i,j)\r\n    \\/ \\E i \\in Node, Q \\in Quorum : BecomeLeader(i,Q)\r\n    \\/ \\E i,j \\in Node, v \\in Value : Decide(i,v)\r\n",
+                "location": "line 66, col 1 to line 71, col 49 of module consensus_epr",
+                "operatorName": "Next",
+                "type": "State"
+            },
+            {
+                "concreteContent": "Symmetry == Permutations(Node) \\cup Permutations(Value)",
+                "location": "line 73, col 1 to line 73, col 55 of module consensus_epr",
+                "operatorName": "Symmetry",
+                "type": "State"
+            },
+            {
+                "concreteContent": "TypeOK == \r\n    /\\ vote_request_msg \\in SUBSET(Node \\X Node)\r\n    /\\ voted \\in [Node -> BOOLEAN]\r\n    /\\ vote_msg \\in SUBSET(Node \\X Node)\r\n    /\\ votes \\in [Node -> SUBSET Node]\r\n    /\\ leader \\in [Node -> BOOLEAN]\r\n    /\\ decided \\in [Node -> SUBSET Value]\r\n",
+                "location": "line 75, col 1 to line 81, col 41 of module consensus_epr",
+                "operatorName": "TypeOK",
+                "type": "State"
+            },
+            {
+                "concreteContent": "TypeOKRandom ==\r\n    /\\ vote_request_msg \\in RandomSubset(40, SUBSET (Node \\X Node)) \r\n    /\\ voted \\in RandomSubset(7, [Node -> BOOLEAN])\r\n    /\\ vote_msg \\in RandomSubset(40, SUBSET(Node \\X Node)) \r\n    /\\ votes \\in RandomSubset(10, [Node -> SUBSET Node]) \r\n    /\\ leader \\in RandomSubset(4, [Node -> BOOLEAN])\r\n    /\\ decided \\in RandomSubset(10, [Node -> SUBSET Value])\r\n",
+                "location": "line 83, col 1 to line 89, col 59 of module consensus_epr",
+                "operatorName": "TypeOKRandom",
+                "type": "State"
+            },
+            {
+                "concreteContent": "Safety ==\r\n    \\A n1,n2 \\in Node, v1,v2 \\in Value : \r\n        (v1 \\in decided[n1] /\\ v2 \\in decided[n2]) => (v1 = v2)\r\n",
+                "location": "line 110, col 1 to line 112, col 63 of module consensus_epr",
+                "operatorName": "Safety",
+                "type": "State"
+            },
+            {
+                "concreteContent": "SafetyWithTypeOK ==\r\n    /\\ TypeOK \r\n    /\\ \\A n1,n2 \\in Node, v1,v2 \\in Value : \r\n        (v1 \\in decided[n1] /\\ v2 \\in decided[n2]) => (v1 = v2)\r\n",
+                "location": "line 114, col 1 to line 117, col 63 of module consensus_epr",
+                "operatorName": "SafetyWithTypeOK",
+                "type": "State"
+            },
+            {
+                "concreteContent": "NextUnchanged == UNCHANGED vars",
+                "location": "line 120, col 1 to line 120, col 31 of module consensus_epr",
+                "operatorName": "NextUnchanged",
+                "type": "State"
+            }
+        ]
+    }
+}
