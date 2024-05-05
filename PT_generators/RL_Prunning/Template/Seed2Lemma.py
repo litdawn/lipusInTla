@@ -153,7 +153,7 @@ def strictness_distribution(seed_list, seed, length):
     }
     gamma = distri_dict["all"][length - 2]
     res = torch.ones(len(seed_list), 1, dtype=torch.float32)
-    for i, every_seed in enumerate(seed_list.keys()):
+    for i, every_seed in enumerate(seed_list):
         if every_seed == seed:
             res[i, 0] = res[i, 0] * gamma
 

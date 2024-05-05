@@ -54,7 +54,7 @@ class PT_generator:
             self.candidate.update({"Safety": self.seed_tmpl.tla_ins.inv})
             self.candidate.update({"Typeok": self.seed_tmpl.tla_ins.type_ok})
         else:
-            self.candidate.update({"Safety":self.seed_tmpl.safety})
+            self.candidate.update({"Safety": self.seed_tmpl.safety})
             self.candidate.update({"Typeok": self.seed_tmpl.typeok})
 
     def concat_state_vec(self):
@@ -62,7 +62,7 @@ class PT_generator:
         concatenated_features = torch.mean(suma, dim=0, keepdim=True)
         return concatenated_features
 
-    def generate_next(self, ce):
+    def generate_next(self, cti):
         self.depth = 0
 
         # 1 初始化
@@ -70,7 +70,7 @@ class PT_generator:
         predicted_reward_list = dict()
 
         # 2 embedding counter example, state
-        emb_ce = self.E(ce)
+        emb_cti = self.E(cti)
         tla_ins = self.seed_tmpl.tla_ins
         self.emb_tla = self.T.forward_three(tla_ins.init, tla_ins.next, tla_ins.inv)
 
@@ -88,7 +88,7 @@ class PT_generator:
         # todo 2. overall_feature的具体实现（cfg_emb之类的嵌入函数选择和哪些负责嵌入）
 
         for name, state_vec in self.state_vec.items():
-            overall_feature = self.G(self.emb_tla, emb_ce, state_vec)
+            overall_feature = self.G(self.emb_tla, emb_cti, state_vec)
             predicted_reward = self.P(state_vec, overall_feature)
             predicted_reward_list.update({name: predicted_reward})
 
@@ -148,8 +148,8 @@ class PT_generator:
                 sd = strictness_distribution(self.seed_tmpl.seeds, self.last_selected_lemma[i], length)
             else:  # loose倾向于选择更短的子句
                 sd = looseness_distribution(self.seed_tmpl.seeds, self.last_selected_lemma[i], length)
-            loss_strictness = -torch.mm(sd, torch.log_softmax(
-                self.last_distribution_output.reshape(1, -1), 1).transpose(0, 1)) * gama
+            loss_strictness = -torch.mm(torch.log_softmax(
+                self.last_distribution_output.reshape(1, -1), 1), sd) * gama
             strict_loss += loss_strictness.reshape([1, 1])
             counter += 1
         if counter != 0:

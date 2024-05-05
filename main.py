@@ -13,7 +13,9 @@ from SMT_Solver.inv_checker import check_invariants
 from SMT_Solver.ind_checker import SMT_verifier
 from SMT_Solver.Config import config
 from SMT_Solver.Util import *
+
 logging.basicConfig(level=logging.INFO)
+
 
 def main(path2tla, path2cfg, path2json, path2config):
     start_time = time.time()
@@ -61,12 +63,12 @@ def main(path2tla, path2cfg, path2json, path2config):
         #     continue
         # # Step 3.3 Check if we bingo
 
-        logging.info(f"find a candidate: {str(candidate)}")
-        print(candidate)
-
-        is_inv = check_invariants(lemmas, seed_tmpl=seed_tmpl)
+        logging.info(f"==============iteration {iteration}: 找到了一些候选者 {str(candidate)}，开始检查==================")
+        is_inv = list(check_invariants(lemmas, seed_tmpl=seed_tmpl))
+        logging.info(f"find a {is_inv}")
         if len(is_inv) < 1:
             # 如果没通过不变式的检查，应该宽松一点
+            logging.info(f">>>iteration {iteration}: 没通过不变式检查，宽松一点")
             pt_generator.punish('LOOSE', 'VERY', 'V')
             continue
         else:
@@ -75,24 +77,29 @@ def main(path2tla, path2cfg, path2json, path2config):
                     candidate.update({lemma_name: seed_tmpl.quant_inv + lemma})
             # 如果被之前的candidate蕴含了，应该严格一点
             new_eliminate_cti = eliminate_ctis(is_inv, ctis, seed_tmpl)
-            if len(new_eliminate_cti) == 0:
+            if len(new_eliminate_cti[is_inv[-1]]) == 0 and iteration > 1:
+                logging.info(f">>>iteration {iteration}: 被之前的candidate蕴含了，应该严格一点")
                 pt_generator.punish('STRICT', 'VERY', 'V')
-            elif len(new_eliminate_cti) < len(ctis):
+                continue
+            elif len(new_eliminate_cti) < len(ctis) and iteration > 1:
+                logging.info(f">>>iteration {iteration}: 找到了一个正确的不变式，继续")
                 pt_generator.prise('MEDIUM')
-            else:
+            elif iteration > 1:
+                candidate_str = "\n/\\ ".join(seed_tmpl.quant_inv + v for v in candidate.values())
+                is_right = False
                 try:
-                    candidate_str = "\n/\\ ".join(seed_tmpl.quant_inv + v for v in candidate.values())
+                    logging.info(f">>>iteration {iteration}: {candidate_str}似乎是正确的归纳不变式，继续进行检查")
                     is_right = smt_verifier.verify(candidate_str, path2tla)
                 except TimeoutError as OOT:  # Out Of Time, we punish
                     pt_generator.punish('STRICT', 'LITTLE', 'V')
-                    continue
                 if is_right:  # Bingo, we prise
                     solved = True
-                    logging.info("The answer is :  ", candidate_str)
+                    logging.info("成功! The answer is :  ", candidate_str)
                     pt_generator.prise('VERY')
                     current_time = time.time()
-                    logging.info("Time cost is :  ", str(current_time - start_time))
+                    logging.info("成功! Time cost is :  ", str(current_time - start_time))
                     return current_time - start_time, candidate_str
+            logging.info(f">>>iteration {iteration}: 生成更多的cti")
             new_ctis, cti_time = generate_ctis(seed_tmpl, candidate)
 
             # for inv in ctis:
@@ -101,9 +108,10 @@ def main(path2tla, path2cfg, path2json, path2config):
             # if is_right.assignment not in CE[is_right.kind]:
             #     CE[is_right.kind].append(is_right.assignment)
             # pt_generator.prise('LITTLE')
-            ctis.union(new_ctis)
-            logging.info(f"iteration {iteration}")
-            logging.info(f"{print_cti_set(ctis)}")
+            ctis = ctis.union(new_ctis)
+            ctis_str = "\n".join(cti.get_cti_state_string() for cti in ctis)
+            logging.info(f">>>iteration {iteration}: 新找到了{len(new_ctis)}个CTI, 目前CTI的总数是{len(ctis)}")
+            logging.info(f"{ ctis_str }")
             continue
 
 

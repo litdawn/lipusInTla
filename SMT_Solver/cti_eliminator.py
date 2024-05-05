@@ -15,7 +15,7 @@ def make_indquickcheck_tla_spec(invs, sat_invs_group, orig_k_ctis, quant_inv_fn,
 
     # Start building the spec.
     # invcheck_tla_indcheck="---- MODULE %s_IndQuickCheck ----\n" % self.specname
-    invcheck_tla_indcheck = "---- MODULE %s ----\n" % config.spec_name
+    invcheck_tla_indcheck = "---- MODULE %s ----\n" % config.specname
     invcheck_tla_indcheck += "EXTENDS %s,Naturals,TLC\n\n" % config.specname
 
     invcheck_tla_indcheck += "CONSTANT " + "".join(tla_ins.constants.keys()) + "\n"
@@ -43,7 +43,7 @@ def make_indquickcheck_tla_spec(invs, sat_invs_group, orig_k_ctis, quant_inv_fn,
     invcheck_tla_indcheck += "%s == \n" % kCTIprop
     for cti in orig_k_ctis:
         # cti.getPrimedCTIStateString()
-        invcheck_tla_indcheck += "\t\/ " + cti.getCTIStateString() + "\n"
+        invcheck_tla_indcheck += "\t\/ " + cti.get_cti_state_string() + "\n"
 
         # Identify the CTI state by the hash of its string representation.
         invcheck_tla_indcheck += "\t   " + "/\\ ctiId = \"%d\"\n" % (hash(cti))

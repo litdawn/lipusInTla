@@ -8,6 +8,7 @@ import time
 import tempfile
 import re
 from SMT_Solver.Config import config
+from SMT_Solver.Util import *
 
 
 class CTI:
@@ -18,10 +19,10 @@ class CTI:
         self.action_name = action_name
         self.cti_lines = cti_lines
 
-    def getCTIStateString(self):
+    def get_cti_state_string(self):
         return self.cti_str
 
-    def getPrimedCTIStateString(self):
+    def get_primed_cti_state_string(self):
         """ Return CTI as TLA+ state string where variables are primed."""
         primed_state_vars = []
         for cti_line in self.cti_lines:
@@ -39,10 +40,10 @@ class CTI:
         # print(primed_state)
         return primed_state
 
-    def getActionName(self):
+    def get_action_name(self):
         return self.action_name
 
-    def setActionName(self, action_name):
+    def set_action_name(self, action_name):
         self.action_name = action_name
 
     def __hash__(self):
@@ -283,9 +284,9 @@ def parse_cti_trace(lines, curr_line):
             # print("varsplit:", ctivars)
             for ctivar in ctivars:
                 curr_cti_lines.append("/\\ " + ctivar)
-
             # Assign the action names below.
             cti = CTI(curr_cti.strip(), curr_cti_lines, None)
+            # print(f"cti {cti.cti_str}")
             trace_ctis.append(cti)
             # trace_ctis.append(curr_cti.strip())
         curr_line += 1
@@ -296,7 +297,7 @@ def parse_cti_trace(lines, curr_line):
         # The action associated with a CTI is given in the state 1
         # step ahead of it in the trace.
         action_name = trace_action_names[k + 1]
-        cti.setActionName(action_name)
+        cti.set_action_name(action_name)
 
     # for cti in trace_ctis:
     # print(cti.getActionName())
@@ -308,7 +309,6 @@ def parse_cti_trace(lines, curr_line):
 
 def parse_ctis(lines):
     all_ctis = set()
-
     curr_line = 0
 
     # Step forward to the first CTI error trace.
@@ -328,7 +328,6 @@ def parse_ctis(lines):
 def generate_ctis_tlc_run_await(subproc):
     """ Awaits completion of a CTI generation process, parses its results and returns the parsed CTIs."""
     tlc_out = subproc.stdout.read().decode("gbk")
-    logging.debug(tlc_out)
     lines = tlc_out.splitlines()
     if "Error: parsing" in tlc_out:
         logging.error("Error in TLC execution, printing TLC output.")
@@ -344,6 +343,7 @@ def generate_ctis_tlc_run_await(subproc):
         return set()
 
     parsed_ctis = parse_ctis(lines)
+    # print(f"parsed_ctis : {print_cti_set(parsed_ctis)}")
     return parsed_ctis
 
 
@@ -382,5 +382,271 @@ def generate_ctis(seed_tmpl, candidate):
 
     # FOR DIAGNOSTICS.
     # for x in sorted(list(all_ctis))[:10]:
-    # print(x)
+    # print("all_ctis ", all_ctis)
+    # print(f"all {len(all_ctis)} ctis {print_cti_set(all_ctis)}")
     return all_ctis, all_time
+
+
+# if __name__ == "__main__":
+#     # debug用
+#     line = [['/\\ decided = (n1 :> {v1} @@ n2 :> {} @@ n3 :> {}) ',
+#              '/\\ vote_request_msg = {<<n1, n2>>, <<n2, n1>>, <<n3, n3>>} ',
+#              '/\\ leader = (n1 :> FALSE @@ n2 :> TRUE @@ n3 :> FALSE) ',
+#              '/\\ vote_msg = {<<n1, n1>>, <<n2, n2>>, <<n2, n3>>, <<n3, n1>>, <<n3, n2>>, <<n3, n3>>} ',
+#              '/\\ voted = (n1 :> TRUE @@ n2 :> TRUE @@ n3 :> TRUE) ',
+#              '/\\ votes = (n1 :> {n2} @@ n2 :> {n1, n2, n3} @@ n3 :> {n3})'],
+#             ['/\\ decided = (n1 :> {v1} @@ n2 :> {} @@ n3 :> {}) ',
+#              '/\\ vote_request_msg = {<<n1, n1>>, <<n1, n2>>, <<n2, n1>>, <<n3, n3>>} ',
+#              '/\\ leader = (n1 :> FALSE @@ n2 :> TRUE @@ n3 :> FALSE) ',
+#              '/\\ vote_msg = {<<n1, n1>>, <<n2, n2>>, <<n2, n3>>, <<n3, n1>>, <<n3, n2>>, <<n3, n3>>} ',
+#              '/\\ voted = (n1 :> TRUE @@ n2 :> TRUE @@ n3 :> TRUE) ',
+#              '/\\ votes = (n1 :> {n2} @@ n2 :> {n1, n2, n3} @@ n3 :> {n3})'],
+#             ['/\\ decided = (n1 :> {v1} @@ n2 :> {} @@ n3 :> {}) ',
+#              '/\\ vote_request_msg = {<<n1, n2>>, <<n2, n1>>, <<n3, n3>>} ',
+#              '/\\ leader = (n1 :> FALSE @@ n2 :> TRUE @@ n3 :> FALSE) ',
+#              '/\\ vote_msg = {<<n1, n1>>, <<n2, n2>>, <<n2, n3>>, <<n3, n1>>, <<n3, n2>>, <<n3, n3>>} ',
+#              '/\\ voted = (n1 :> TRUE @@ n2 :> TRUE @@ n3 :> TRUE) ',
+#              '/\\ votes = (n1 :> {n2} @@ n2 :> {n1, n2, n3} @@ n3 :> {n3})'],
+#             ['/\\ decided = (n1 :> {v1} @@ n2 :> {} @@ n3 :> {}) ',
+#              '/\\ vote_request_msg = {<<n1, n2>>, <<n2, n1>>, <<n3, n1>>, <<n3, n3>>} ',
+#              '/\\ leader = (n1 :> FALSE @@ n2 :> TRUE @@ n3 :> FALSE) ',
+#              '/\\ vote_msg = {<<n1, n1>>, <<n2, n2>>, <<n2, n3>>, <<n3, n1>>, <<n3, n2>>, <<n3, n3>>} ',
+#              '/\\ voted = (n1 :> TRUE @@ n2 :> TRUE @@ n3 :> TRUE) ',
+#              '/\\ votes = (n1 :> {n2} @@ n2 :> {n1, n2, n3} @@ n3 :> {n3})'],
+#             ['/\\ decided = (n1 :> {v1} @@ n2 :> {} @@ n3 :> {}) ',
+#              '/\\ vote_request_msg = {<<n1, n2>>, <<n2, n1>>, <<n3, n3>>} ',
+#              '/\\ leader = (n1 :> FALSE @@ n2 :> TRUE @@ n3 :> FALSE) ',
+#              '/\\ vote_msg = {<<n1, n1>>, <<n2, n2>>, <<n2, n3>>, <<n3, n1>>, <<n3, n2>>, <<n3, n3>>} ',
+#              '/\\ voted = (n1 :> TRUE @@ n2 :> TRUE @@ n3 :> TRUE) ',
+#              '/\\ votes = (n1 :> {n2} @@ n2 :> {n1, n2, n3} @@ n3 :> {n3})'],
+#             ['/\\ decided = (n1 :> {v1} @@ n2 :> {} @@ n3 :> {}) ',
+#              '/\\ vote_request_msg = {<<n1, n1>>, <<n1, n2>>, <<n2, n1>>, <<n3, n3>>} ',
+#              '/\\ leader = (n1 :> FALSE @@ n2 :> TRUE @@ n3 :> FALSE) ',
+#              '/\\ vote_msg = {<<n1, n1>>, <<n2, n2>>, <<n2, n3>>, <<n3, n1>>, <<n3, n2>>, <<n3, n3>>} ',
+#              '/\\ voted = (n1 :> TRUE @@ n2 :> TRUE @@ n3 :> TRUE) ',
+#              '/\\ votes = (n1 :> {n2} @@ n2 :> {n1, n2, n3} @@ n3 :> {n3})'],
+#             ['/\\ decided = (n1 :> {v1} @@ n2 :> {} @@ n3 :> {}) ',
+#              '/\\ vote_request_msg = {<<n1, n1>>, <<n1, n2>>, <<n2, n1>>, <<n3, n1>>, <<n3, n3>>} ',
+#              '/\\ leader = (n1 :> FALSE @@ n2 :> TRUE @@ n3 :> FALSE) ',
+#              '/\\ vote_msg = {<<n1, n1>>, <<n2, n2>>, <<n2, n3>>, <<n3, n1>>, <<n3, n2>>, <<n3, n3>>} ',
+#              '/\\ voted = (n1 :> TRUE @@ n2 :> TRUE @@ n3 :> TRUE) ',
+#              '/\\ votes = (n1 :> {n2} @@ n2 :> {n1, n2, n3} @@ n3 :> {n3})'],
+#             ['/\\ decided = (n1 :> {v1} @@ n2 :> {} @@ n3 :> {}) ',
+#              '/\\ vote_request_msg = {<<n1, n2>>, <<n2, n1>>, <<n3, n3>>} ',
+#              '/\\ leader = (n1 :> FALSE @@ n2 :> TRUE @@ n3 :> FALSE) ',
+#              '/\\ vote_msg = {<<n1, n1>>, <<n2, n2>>, <<n2, n3>>, <<n3, n1>>, <<n3, n2>>, <<n3, n3>>} ',
+#              '/\\ voted = (n1 :> TRUE @@ n2 :> TRUE @@ n3 :> TRUE) ',
+#              '/\\ votes = (n1 :> {n2} @@ n2 :> {n1, n2, n3} @@ n3 :> {n3})'],
+#             ['/\\ decided = (n1 :> {v1} @@ n2 :> {} @@ n3 :> {}) ',
+#              '/\\ vote_request_msg = {<<n1, n1>>, <<n1, n2>>, <<n2, n1>>, <<n3, n3>>} ',
+#              '/\\ leader = (n1 :> FALSE @@ n2 :> TRUE @@ n3 :> FALSE) ',
+#              '/\\ vote_msg = {<<n1, n1>>, <<n2, n2>>, <<n2, n3>>, <<n3, n1>>, <<n3, n2>>, <<n3, n3>>} ',
+#              '/\\ voted = (n1 :> TRUE @@ n2 :> TRUE @@ n3 :> TRUE) ',
+#              '/\\ votes = (n1 :> {n2} @@ n2 :> {n1, n2, n3} @@ n3 :> {n3})'],
+#             ['/\\ decided = (n1 :> {v1} @@ n2 :> {} @@ n3 :> {}) ',
+#              '/\\ vote_request_msg = {<<n1, n1>>, <<n1, n2>>, <<n2, n1>>, <<n3, n1>>, <<n3, n3>>} ',
+#              '/\\ leader = (n1 :> FALSE @@ n2 :> TRUE @@ n3 :> FALSE) ',
+#              '/\\ vote_msg = {<<n1, n1>>, <<n2, n2>>, <<n2, n3>>, <<n3, n1>>, <<n3, n2>>, <<n3, n3>>} ',
+#              '/\\ voted = (n1 :> TRUE @@ n2 :> TRUE @@ n3 :> TRUE) ',
+#              '/\\ votes = (n1 :> {n2} @@ n2 :> {n1, n2, n3} @@ n3 :> {n3})'],
+#             ['/\\ decided = (n1 :> {v1} @@ n2 :> {} @@ n3 :> {}) ',
+#              '/\\ vote_request_msg = {<<n1, n2>>, <<n2, n1>>, <<n3, n3>>} ',
+#              '/\\ leader = (n1 :> FALSE @@ n2 :> TRUE @@ n3 :> FALSE) ',
+#              '/\\ vote_msg = {<<n1, n1>>, <<n2, n2>>, <<n2, n3>>, <<n3, n1>>, <<n3, n2>>, <<n3, n3>>} ',
+#              '/\\ voted = (n1 :> TRUE @@ n2 :> TRUE @@ n3 :> TRUE) ',
+#              '/\\ votes = (n1 :> {n2} @@ n2 :> {n1, n2, n3} @@ n3 :> {n3})'],
+#             ['/\\ decided = (n1 :> {v1} @@ n2 :> {} @@ n3 :> {}) ',
+#              '/\\ vote_request_msg = {<<n1, n2>>, <<n2, n1>>, <<n3, n1>>, <<n3, n3>>} ',
+#              '/\\ leader = (n1 :> FALSE @@ n2 :> TRUE @@ n3 :> FALSE) ',
+#              '/\\ vote_msg = {<<n1, n1>>, <<n2, n2>>, <<n2, n3>>, <<n3, n1>>, <<n3, n2>>, <<n3, n3>>} ',
+#              '/\\ voted = (n1 :> TRUE @@ n2 :> TRUE @@ n3 :> TRUE) ',
+#              '/\\ votes = (n1 :> {n2} @@ n2 :> {n1, n2, n3} @@ n3 :> {n3})'],
+#             ['/\\ decided = (n1 :> {v1} @@ n2 :> {} @@ n3 :> {}) ',
+#              '/\\ vote_request_msg = {<<n1, n2>>, <<n2, n1>>, <<n2, n2>>, <<n3, n1>>, <<n3, n3>>} ',
+#              '/\\ leader = (n1 :> FALSE @@ n2 :> TRUE @@ n3 :> FALSE) ',
+#              '/\\ vote_msg = {<<n1, n1>>, <<n2, n2>>, <<n2, n3>>, <<n3, n1>>, <<n3, n2>>, <<n3, n3>>} ',
+#              '/\\ voted = (n1 :> TRUE @@ n2 :> TRUE @@ n3 :> TRUE) ',
+#              '/\\ votes = (n1 :> {n2} @@ n2 :> {n1, n2, n3} @@ n3 :> {n3})'],
+#             ['/\\ decided = (n1 :> {v1} @@ n2 :> {} @@ n3 :> {}) ',
+#              '/\\ vote_request_msg = {<<n1, n2>>, <<n2, n1>>, <<n3, n3>>} ',
+#              '/\\ leader = (n1 :> FALSE @@ n2 :> TRUE @@ n3 :> FALSE) ',
+#              '/\\ vote_msg = {<<n1, n1>>, <<n2, n2>>, <<n2, n3>>, <<n3, n1>>, <<n3, n2>>, <<n3, n3>>} ',
+#              '/\\ voted = (n1 :> TRUE @@ n2 :> TRUE @@ n3 :> TRUE) ',
+#              '/\\ votes = (n1 :> {n2} @@ n2 :> {n1, n2, n3} @@ n3 :> {n3})'],
+#             ['/\\ decided = (n1 :> {v1} @@ n2 :> {} @@ n3 :> {}) ',
+#              '/\\ vote_request_msg = {<<n1, n2>>, <<n2, n1>>, <<n3, n1>>, <<n3, n3>>} ',
+#              '/\\ leader = (n1 :> FALSE @@ n2 :> TRUE @@ n3 :> FALSE) ',
+#              '/\\ vote_msg = {<<n1, n1>>, <<n2, n2>>, <<n2, n3>>, <<n3, n1>>, <<n3, n2>>, <<n3, n3>>} ',
+#              '/\\ voted = (n1 :> TRUE @@ n2 :> TRUE @@ n3 :> TRUE) ',
+#              '/\\ votes = (n1 :> {n2} @@ n2 :> {n1, n2, n3} @@ n3 :> {n3})'],
+#             ['/\\ decided = (n1 :> {v1} @@ n2 :> {} @@ n3 :> {}) ',
+#              '/\\ vote_request_msg = {<<n1, n2>>, <<n2, n1>>, <<n2, n2>>, <<n3, n1>>, <<n3, n3>>} ',
+#              '/\\ leader = (n1 :> FALSE @@ n2 :> TRUE @@ n3 :> FALSE) ',
+#              '/\\ vote_msg = {<<n1, n1>>, <<n2, n2>>, <<n2, n3>>, <<n3, n1>>, <<n3, n2>>, <<n3, n3>>} ',
+#              '/\\ voted = (n1 :> TRUE @@ n2 :> TRUE @@ n3 :> TRUE) ',
+#              '/\\ votes = (n1 :> {n2} @@ n2 :> {n1, n2, n3} @@ n3 :> {n3})'],
+#             ['/\\ decided = (n1 :> {v1} @@ n2 :> {} @@ n3 :> {}) ',
+#              '/\\ vote_request_msg = {<<n1, n2>>, <<n2, n1>>, <<n3, n3>>} ',
+#              '/\\ leader = (n1 :> FALSE @@ n2 :> TRUE @@ n3 :> FALSE) ',
+#              '/\\ vote_msg = {<<n1, n1>>, <<n2, n2>>, <<n2, n3>>, <<n3, n1>>, <<n3, n2>>, <<n3, n3>>} ',
+#              '/\\ voted = (n1 :> TRUE @@ n2 :> TRUE @@ n3 :> TRUE) ',
+#              '/\\ votes = (n1 :> {n2} @@ n2 :> {n1, n2, n3} @@ n3 :> {n3})'],
+#             ['/\\ decided = (n1 :> {v1} @@ n2 :> {} @@ n3 :> {}) ',
+#              '/\\ vote_request_msg = {<<n1, n2>>, <<n2, n1>>, <<n2, n2>>, <<n3, n3>>} ',
+#              '/\\ leader = (n1 :> FALSE @@ n2 :> TRUE @@ n3 :> FALSE) ',
+#              '/\\ vote_msg = {<<n1, n1>>, <<n2, n2>>, <<n2, n3>>, <<n3, n1>>, <<n3, n2>>, <<n3, n3>>} ',
+#              '/\\ voted = (n1 :> TRUE @@ n2 :> TRUE @@ n3 :> TRUE) ',
+#              '/\\ votes = (n1 :> {n2} @@ n2 :> {n1, n2, n3} @@ n3 :> {n3})'],
+#             ['/\\ decided = (n1 :> {v1} @@ n2 :> {} @@ n3 :> {}) ',
+#              '/\\ vote_request_msg = {<<n1, n2>>, <<n2, n1>>, <<n3, n3>>} ',
+#              '/\\ leader = (n1 :> FALSE @@ n2 :> TRUE @@ n3 :> FALSE) ',
+#              '/\\ vote_msg = {<<n1, n1>>, <<n2, n2>>, <<n2, n3>>, <<n3, n1>>, <<n3, n2>>, <<n3, n3>>} ',
+#              '/\\ voted = (n1 :> TRUE @@ n2 :> TRUE @@ n3 :> TRUE) ',
+#              '/\\ votes = (n1 :> {n2} @@ n2 :> {n1, n2, n3} @@ n3 :> {n3})'],
+#             ['/\\ decided = (n1 :> {v1} @@ n2 :> {} @@ n3 :> {}) ',
+#              '/\\ vote_request_msg = {<<n1, n2>>, <<n2, n1>>, <<n3, n2>>, <<n3, n3>>} ',
+#              '/\\ leader = (n1 :> FALSE @@ n2 :> TRUE @@ n3 :> FALSE) ',
+#              '/\\ vote_msg = {<<n1, n1>>, <<n2, n2>>, <<n2, n3>>, <<n3, n1>>, <<n3, n2>>, <<n3, n3>>} ',
+#              '/\\ voted = (n1 :> TRUE @@ n2 :> TRUE @@ n3 :> TRUE) ',
+#              '/\\ votes = (n1 :> {n2} @@ n2 :> {n1, n2, n3} @@ n3 :> {n3})'],
+#             ['/\\ decided = (n1 :> {v1} @@ n2 :> {} @@ n3 :> {}) ',
+#              '/\\ vote_request_msg = {<<n1, n2>>, <<n2, n1>>, <<n3, n3>>} ',
+#              '/\\ leader = (n1 :> FALSE @@ n2 :> TRUE @@ n3 :> FALSE) ',
+#              '/\\ vote_msg = {<<n1, n1>>, <<n2, n2>>, <<n2, n3>>, <<n3, n1>>, <<n3, n2>>, <<n3, n3>>} ',
+#              '/\\ voted = (n1 :> TRUE @@ n2 :> TRUE @@ n3 :> TRUE) ',
+#              '/\\ votes = (n1 :> {n2} @@ n2 :> {n1, n2, n3} @@ n3 :> {n3})'],
+#             ['/\\ decided = (n1 :> {v1} @@ n2 :> {} @@ n3 :> {}) ',
+#              '/\\ vote_request_msg = {<<n1, n2>>, <<n1, n3>>, <<n2, n1>>, <<n3, n3>>} ',
+#              '/\\ leader = (n1 :> FALSE @@ n2 :> TRUE @@ n3 :> FALSE) ',
+#              '/\\ vote_msg = {<<n1, n1>>, <<n2, n2>>, <<n2, n3>>, <<n3, n1>>, <<n3, n2>>, <<n3, n3>>} ',
+#              '/\\ voted = (n1 :> TRUE @@ n2 :> TRUE @@ n3 :> TRUE) ',
+#              '/\\ votes = (n1 :> {n2} @@ n2 :> {n1, n2, n3} @@ n3 :> {n3})'],
+#             ['/\\ decided = (n1 :> {v1} @@ n2 :> {} @@ n3 :> {}) ',
+#              '/\\ vote_request_msg = {<<n1, n2>>, <<n2, n1>>, <<n3, n3>>} ',
+#              '/\\ leader = (n1 :> FALSE @@ n2 :> TRUE @@ n3 :> FALSE) ',
+#              '/\\ vote_msg = {<<n1, n1>>, <<n2, n2>>, <<n2, n3>>, <<n3, n1>>, <<n3, n2>>, <<n3, n3>>} ',
+#              '/\\ voted = (n1 :> TRUE @@ n2 :> TRUE @@ n3 :> TRUE) ',
+#              '/\\ votes = (n1 :> {n2} @@ n2 :> {n1, n2, n3} @@ n3 :> {n3})'],
+#             ['/\\ decided = (n1 :> {v1} @@ n2 :> {} @@ n3 :> {}) ',
+#              '/\\ vote_request_msg = {<<n1, n2>>, <<n2, n1>>, <<n2, n3>>, <<n3, n3>>} ',
+#              '/\\ leader = (n1 :> FALSE @@ n2 :> TRUE @@ n3 :> FALSE) ',
+#              '/\\ vote_msg = {<<n1, n1>>, <<n2, n2>>, <<n2, n3>>, <<n3, n1>>, <<n3, n2>>, <<n3, n3>>} ',
+#              '/\\ voted = (n1 :> TRUE @@ n2 :> TRUE @@ n3 :> TRUE) ',
+#              '/\\ votes = (n1 :> {n2} @@ n2 :> {n1, n2, n3} @@ n3 :> {n3})'],
+#             ['/\\ decided = (n1 :> {v1} @@ n2 :> {} @@ n3 :> {}) ',
+#              '/\\ vote_request_msg = {<<n1, n2>>, <<n2, n1>>, <<n3, n3>>} ',
+#              '/\\ leader = (n1 :> FALSE @@ n2 :> TRUE @@ n3 :> FALSE) ',
+#              '/\\ vote_msg = {<<n1, n1>>, <<n2, n2>>, <<n2, n3>>, <<n3, n1>>, <<n3, n2>>, <<n3, n3>>} ',
+#              '/\\ voted = (n1 :> TRUE @@ n2 :> TRUE @@ n3 :> TRUE) ',
+#              '/\\ votes = (n1 :> {n2} @@ n2 :> {n1, n2, n3} @@ n3 :> {n3})'],
+#             ['/\\ decided = (n1 :> {v1} @@ n2 :> {} @@ n3 :> {}) ',
+#              '/\\ vote_request_msg = {<<n1, n2>>, <<n2, n1>>, <<n3, n3>>} ',
+#              '/\\ leader = (n1 :> FALSE @@ n2 :> TRUE @@ n3 :> FALSE) ',
+#              '/\\ vote_msg = {<<n1, n1>>, <<n2, n2>>, <<n2, n3>>, <<n3, n1>>, <<n3, n2>>, <<n3, n3>>} ',
+#              '/\\ voted = (n1 :> TRUE @@ n2 :> TRUE @@ n3 :> TRUE) ',
+#              '/\\ votes = (n1 :> {n1, n2} @@ n2 :> {n1, n2, n3} @@ n3 :> {n3})'],
+#             ['/\\ decided = (n1 :> {v1} @@ n2 :> {} @@ n3 :> {}) ',
+#              '/\\ vote_request_msg = {<<n1, n2>>, <<n2, n1>>, <<n3, n3>>} ',
+#              '/\\ leader = (n1 :> FALSE @@ n2 :> TRUE @@ n3 :> FALSE) ',
+#              '/\\ vote_msg = {<<n1, n1>>, <<n2, n2>>, <<n2, n3>>, <<n3, n1>>, <<n3, n2>>, <<n3, n3>>} ',
+#              '/\\ voted = (n1 :> TRUE @@ n2 :> TRUE @@ n3 :> TRUE) ',
+#              '/\\ votes = (n1 :> {n2} @@ n2 :> {n1, n2, n3} @@ n3 :> {n3})'],
+#             ['/\\ decided = (n1 :> {v1} @@ n2 :> {} @@ n3 :> {}) ',
+#              '/\\ vote_request_msg = {<<n1, n2>>, <<n2, n1>>, <<n3, n3>>} ',
+#              '/\\ leader = (n1 :> FALSE @@ n2 :> TRUE @@ n3 :> FALSE) ',
+#              '/\\ vote_msg = {<<n1, n1>>, <<n2, n2>>, <<n2, n3>>, <<n3, n1>>, <<n3, n2>>, <<n3, n3>>} ',
+#              '/\\ voted = (n1 :> TRUE @@ n2 :> TRUE @@ n3 :> TRUE) ',
+#              '/\\ votes = (n1 :> {n2} @@ n2 :> {n1, n2, n3} @@ n3 :> {n2, n3})'],
+#             ['/\\ decided = (n1 :> {v1} @@ n2 :> {} @@ n3 :> {}) ',
+#              '/\\ vote_request_msg = {<<n1, n2>>, <<n2, n1>>, <<n3, n3>>} ',
+#              '/\\ leader = (n1 :> FALSE @@ n2 :> TRUE @@ n3 :> FALSE) ',
+#              '/\\ vote_msg = {<<n1, n1>>, <<n2, n2>>, <<n2, n3>>, <<n3, n1>>, <<n3, n2>>, <<n3, n3>>} ',
+#              '/\\ voted = (n1 :> TRUE @@ n2 :> TRUE @@ n3 :> TRUE) ',
+#              '/\\ votes = (n1 :> {n2} @@ n2 :> {n1, n2, n3} @@ n3 :> {n3})'],
+#             ['/\\ decided = (n1 :> {v1} @@ n2 :> {} @@ n3 :> {}) ',
+#              '/\\ vote_request_msg = {<<n1, n2>>, <<n2, n1>>, <<n3, n3>>} ',
+#              '/\\ leader = (n1 :> FALSE @@ n2 :> TRUE @@ n3 :> FALSE) ',
+#              '/\\ vote_msg = {<<n1, n1>>, <<n2, n2>>, <<n2, n3>>, <<n3, n1>>, <<n3, n2>>, <<n3, n3>>} ',
+#              '/\\ voted = (n1 :> TRUE @@ n2 :> TRUE @@ n3 :> TRUE) ',
+#              '/\\ votes = (n1 :> {n2, n3} @@ n2 :> {n1, n2, n3} @@ n3 :> {n3})'],
+#             ['/\\ decided = (n1 :> {v1} @@ n2 :> {} @@ n3 :> {}) ',
+#              '/\\ vote_request_msg = {<<n1, n2>>, <<n2, n1>>, <<n3, n3>>} ',
+#              '/\\ leader = (n1 :> FALSE @@ n2 :> TRUE @@ n3 :> FALSE) ',
+#              '/\\ vote_msg = {<<n1, n1>>, <<n2, n2>>, <<n2, n3>>, <<n3, n1>>, <<n3, n2>>, <<n3, n3>>} ',
+#              '/\\ voted = (n1 :> TRUE @@ n2 :> TRUE @@ n3 :> TRUE) ',
+#              '/\\ votes = (n1 :> {n2} @@ n2 :> {n1, n2, n3} @@ n3 :> {n3})'],
+#             ['/\\ decided = (n1 :> {v1} @@ n2 :> {v1} @@ n3 :> {}) ',
+#              '/\\ vote_request_msg = {<<n1, n2>>, <<n2, n1>>, <<n3, n3>>} ',
+#              '/\\ leader = (n1 :> FALSE @@ n2 :> TRUE @@ n3 :> FALSE) ',
+#              '/\\ vote_msg = {<<n1, n1>>, <<n2, n2>>, <<n2, n3>>, <<n3, n1>>, <<n3, n2>>, <<n3, n3>>} ',
+#              '/\\ voted = (n1 :> TRUE @@ n2 :> TRUE @@ n3 :> TRUE) ',
+#              '/\\ votes = (n1 :> {n2} @@ n2 :> {n1, n2, n3} @@ n3 :> {n3})'],
+#             ['/\\ decided = (n1 :> {v1} @@ n2 :> {} @@ n3 :> {}) ',
+#              '/\\ vote_request_msg = {<<n1, n2>>, <<n2, n1>>, <<n3, n3>>} ',
+#              '/\\ leader = (n1 :> FALSE @@ n2 :> TRUE @@ n3 :> FALSE) ',
+#              '/\\ vote_msg = {<<n1, n1>>, <<n2, n2>>, <<n2, n3>>, <<n3, n1>>, <<n3, n2>>, <<n3, n3>>} ',
+#              '/\\ voted = (n1 :> TRUE @@ n2 :> TRUE @@ n3 :> TRUE) ',
+#              '/\\ votes = (n1 :> {n2} @@ n2 :> {n1, n2, n3} @@ n3 :> {n3})'],
+#             ['/\\ decided = (n1 :> {v1} @@ n2 :> {v2} @@ n3 :> {}) ',
+#              '/\\ vote_request_msg = {<<n1, n2>>, <<n2, n1>>, <<n3, n3>>} ',
+#              '/\\ leader = (n1 :> FALSE @@ n2 :> TRUE @@ n3 :> FALSE) ',
+#              '/\\ vote_msg = {<<n1, n1>>, <<n2, n2>>, <<n2, n3>>, <<n3, n1>>, <<n3, n2>>, <<n3, n3>>} ',
+#              '/\\ voted = (n1 :> TRUE @@ n2 :> TRUE @@ n3 :> TRUE) ',
+#              '/\\ votes = (n1 :> {n2} @@ n2 :> {n1, n2, n3} @@ n3 :> {n3})'],
+#             ['/\\ decided = (n1 :> {v1} @@ n2 :> {} @@ n3 :> {}) ',
+#              '/\\ vote_request_msg = {<<n1, n2>>, <<n2, n1>>, <<n3, n3>>} ',
+#              '/\\ leader = (n1 :> FALSE @@ n2 :> TRUE @@ n3 :> FALSE) ',
+#              '/\\ vote_msg = {<<n1, n1>>, <<n2, n2>>, <<n2, n3>>, <<n3, n1>>, <<n3, n2>>, <<n3, n3>>} ',
+#              '/\\ voted = (n1 :> TRUE @@ n2 :> TRUE @@ n3 :> TRUE) ',
+#              '/\\ votes = (n1 :> {n2} @@ n2 :> {n1, n2, n3} @@ n3 :> {n3})'],
+#             ['/\\ decided = (n1 :> {v1} @@ n2 :> {} @@ n3 :> {}) ',
+#              '/\\ vote_request_msg = {<<n1, n2>>, <<n2, n1>>, <<n3, n1>>, <<n3, n3>>} ',
+#              '/\\ leader = (n1 :> FALSE @@ n2 :> TRUE @@ n3 :> FALSE) ',
+#              '/\\ vote_msg = {<<n1, n1>>, <<n2, n2>>, <<n2, n3>>, <<n3, n1>>, <<n3, n2>>, <<n3, n3>>} ',
+#              '/\\ voted = (n1 :> TRUE @@ n2 :> TRUE @@ n3 :> TRUE) ',
+#              '/\\ votes = (n1 :> {n2} @@ n2 :> {n1, n2, n3} @@ n3 :> {n3})'],
+#             ['/\\ decided = (n1 :> {v1} @@ n2 :> {} @@ n3 :> {}) ',
+#              '/\\ vote_request_msg = {<<n1, n2>>, <<n2, n1>>, <<n3, n1>>, <<n3, n2>>, <<n3, n3>>} ',
+#              '/\\ leader = (n1 :> FALSE @@ n2 :> TRUE @@ n3 :> FALSE) ',
+#              '/\\ vote_msg = {<<n1, n1>>, <<n2, n2>>, <<n2, n3>>, <<n3, n1>>, <<n3, n2>>, <<n3, n3>>} ',
+#              '/\\ voted = (n1 :> TRUE @@ n2 :> TRUE @@ n3 :> TRUE) ',
+#              '/\\ votes = (n1 :> {n2} @@ n2 :> {n1, n2, n3} @@ n3 :> {n3})'],
+#             ['/\\ decided = (n1 :> {v1} @@ n2 :> {} @@ n3 :> {}) ',
+#              '/\\ vote_request_msg = {<<n1, n2>>, <<n2, n1>>, <<n3, n3>>} ',
+#              '/\\ leader = (n1 :> FALSE @@ n2 :> TRUE @@ n3 :> FALSE) ',
+#              '/\\ vote_msg = {<<n1, n1>>, <<n2, n2>>, <<n2, n3>>, <<n3, n1>>, <<n3, n2>>, <<n3, n3>>} ',
+#              '/\\ voted = (n1 :> TRUE @@ n2 :> TRUE @@ n3 :> TRUE) ',
+#              '/\\ votes = (n1 :> {n2} @@ n2 :> {n1, n2, n3} @@ n3 :> {n3})'],
+#             ['/\\ decided = (n1 :> {v1} @@ n2 :> {} @@ n3 :> {}) ',
+#              '/\\ vote_request_msg = {<<n1, n2>>, <<n2, n1>>, <<n3, n1>>, <<n3, n3>>} ',
+#              '/\\ leader = (n1 :> FALSE @@ n2 :> TRUE @@ n3 :> FALSE) ',
+#              '/\\ vote_msg = {<<n1, n1>>, <<n2, n2>>, <<n2, n3>>, <<n3, n1>>, <<n3, n2>>, <<n3, n3>>} ',
+#              '/\\ voted = (n1 :> TRUE @@ n2 :> TRUE @@ n3 :> TRUE) ',
+#              '/\\ votes = (n1 :> {n2} @@ n2 :> {n1, n2, n3} @@ n3 :> {n3})'],
+#             ['/\\ decided = (n1 :> {v1} @@ n2 :> {} @@ n3 :> {}) ',
+#              '/\\ vote_request_msg = {<<n1, n2>>, <<n1, n3>>, <<n2, n1>>, <<n3, n1>>, <<n3, n3>>} ',
+#              '/\\ leader = (n1 :> FALSE @@ n2 :> TRUE @@ n3 :> FALSE) ',
+#              '/\\ vote_msg = {<<n1, n1>>, <<n2, n2>>, <<n2, n3>>, <<n3, n1>>, <<n3, n2>>, <<n3, n3>>} ',
+#              '/\\ voted = (n1 :> TRUE @@ n2 :> TRUE @@ n3 :> TRUE) ',
+#              '/\\ votes = (n1 :> {n2} @@ n2 :> {n1, n2, n3} @@ n3 :> {n3})'],
+#             ['/\\ decided = (n1 :> {v1} @@ n2 :> {} @@ n3 :> {}) ',
+#              '/\\ vote_request_msg = {<<n1, n2>>, <<n2, n1>>, <<n3, n3>>} ',
+#              '/\\ leader = (n1 :> FALSE @@ n2 :> TRUE @@ n3 :> FALSE) ',
+#              '/\\ vote_msg = {<<n1, n1>>, <<n2, n2>>, <<n2, n3>>, <<n3, n1>>, <<n3, n2>>, <<n3, n3>>} ',
+#              '/\\ voted = (n1 :> TRUE @@ n2 :> TRUE @@ n3 :> TRUE) ',
+#              '/\\ votes = (n1 :> {n2} @@ n2 :> {n1, n2, n3} @@ n3 :> {n3})'],
+#             ['/\\ decided = (n1 :> {v1} @@ n2 :> {} @@ n3 :> {}) ',
+#              '/\\ vote_request_msg = {<<n1, n2>>, <<n2, n1>>, <<n3, n1>>, <<n3, n3>>} ',
+#              '/\\ leader = (n1 :> FALSE @@ n2 :> TRUE @@ n3 :> FALSE) ',
+#              '/\\ vote_msg = {<<n1, n1>>, <<n2, n2>>, <<n2, n3>>, <<n3, n1>>, <<n3, n2>>, <<n3, n3>>} ',
+#              '/\\ voted = (n1 :> TRUE @@ n2 :> TRUE @@ n3 :> TRUE) ',
+#              '/\\ votes = (n1 :> {n2} @@ n2 :> {n1, n2, n3} @@ n3 :> {n3})'],
+#             ['/\\ decided = (n1 :> {v1} @@ n2 :> {} @@ n3 :> {}) ',
+#              '/\\ vote_request_msg = {<<n1, n2>>, <<n1, n3>>, <<n2, n1>>, <<n3, n1>>, <<n3, n3>>} ',
+#              '/\\ leader = (n1 :> FALSE @@ n2 :> TRUE @@ n3 :> FALSE) ',
+#              '/\\ vote_msg = {<<n1, n1>>, <<n2, n2>>, <<n2, n3>>, <<n3, n1>>, <<n3, n2>>, <<n3, n3>>} ',
+#              '/\\ voted = (n1 :> TRUE @@ n2 :> TRUE @@ n3 :> TRUE) ',
+#              '/\\ votes = (n1 :> {n2} @@ n2 :> {n1, n2, n3} @@ n3 :> {n3})']]
+str = ("/\ decided = (n1 :> {v2} @@ n2 :> {} @@ n3 :> {}) /\ vote_request_msg = {<<n2, n2>>, <<n2, n3>>, <<n3, "
+       "n1>>} /\ leader = (n1 :> TRUE @@ n2 :> FALSE @@ n3 :> FALSE) /\ vote_msg = {<<n1, n1>>, <<n2, n3>>, <<n3, "
+       "n2>>} /\ voted = (n1 :> FALSE @@ n2 :> FALSE @@ n3 :> TRUE) /\ votes = (n1 :> {} @@ n2 :> {n1} @@ n3 :> {})")

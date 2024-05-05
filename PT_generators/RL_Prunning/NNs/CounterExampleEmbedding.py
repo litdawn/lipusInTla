@@ -34,9 +34,9 @@ def pca(X, k):  # k is the components you want
 
 
 class CEEmbedding(nn.Module):
-    def __init__(self, vars):
+    def __init__(self, _vars):
         super().__init__()
-        self.vars = vars
+        self.vars = _vars
         # self.RNNs = {}
         # for keyer in ['p', 'n', 'i_1', 'i_2']:
         #     self.RNNs['CE_' + keyer ] = nn.LSTM(config.SIZE_PCA_NUM, config.SIZE_EXP_NODE_FEATURE, 2)
@@ -47,13 +47,16 @@ class CEEmbedding(nn.Module):
     def matxlize(self, lister):
         seq = []
         for example in lister:
-            seq_1 = []
-            for varer in self.vars:
-                if varer in example:
-                    seq_1.append(int(str(example[varer])))
-                else:
-                    seq_1.append(0)
-            seq.append(seq_1)
+            # print(example.cti_str)
+            # print(example.action_name)
+            for cti_line in example.cti_lines:
+                seq_1 = []
+                for var in self.vars:
+                    if var in cti_line:
+                        seq_1.append(1)
+                    else:
+                        seq_1.append(0)
+                seq.append(seq_1)
         if len(seq) == 0:
             seq.append([0])
         return np.matrix(seq)
@@ -84,23 +87,23 @@ class CEEmbedding(nn.Module):
             seq_post.append([0])
         return np.matrix(seq_pre), np.matrix(seq_post)
 
-    def forward(self, CE):
-        matx = self.matxlize(CE)
+    def forward(self, cti):
+        matx = self.matxlize(list(cti))
         # matx_p = self.matxlize(CE['p'])
         # matx_n = self.matxlize(CE['n'])
         # matx_i1, matx_i2 = self.matxlize_inductive(CE['i'])
-        pca_ce = tensor(pca(matx, config.SIZE_PCA_NUM), dtype=torch.float32).reshape([-1, 1, config.SIZE_PCA_NUM])
+        pca_cti = tensor(pca(matx, config.SIZE_PCA_NUM), dtype=torch.float32).reshape([-1, 1, config.SIZE_PCA_NUM])
         # pca_p = tensor(pca(matx_p, config.SIZE_PCA_NUM), dtype=torch.float32).reshape([-1,1,config.SIZE_PCA_NUM])
         # pca_n = tensor(pca(matx_n, config.SIZE_PCA_NUM), dtype=torch.float32).reshape([-1,1,config.SIZE_PCA_NUM])
         # pca_i1, pca_i2 = tensor(pca(matx_i1, config.SIZE_PCA_NUM), dtype=torch.float32).reshape([-1,1,config.SIZE_PCA_NUM]), \
         #                  tensor(pca(matx_i2, config.SIZE_PCA_NUM), dtype=torch.float32).reshape([-1,1,config.SIZE_PCA_NUM])
         if torch.cuda.is_available():
-            pca_ce = pca_ce.cuda()
+            pca_cti = pca_cti.cuda()
             # pca_p = pca_p.cuda()
             # pca_n = pca_n.cuda()
             # pca_i1, pca_i2 = pca_i1.cuda(), pca_i2.cuda()
 
-        emb, _ = self.RNNs(pca_ce)
+        emb, _ = self.RNNs(pca_cti)
         emb = emb[-1]
         # p_emb,_ = self.RNNs['CE_p'](pca_p)
         # p_emb = p_emb[-1]

@@ -21,8 +21,9 @@ def grep_lines(pattern, lines):
 # def get_invexp_cost(inv):
 #     exp = get_invexp(inv)
 #     return exp
-
 def print_cti_set(set_cti):
-    for cti in set_cti:
-        print(cti.getCTIStateString())
+    strs = [" "]
+    for ctis in set_cti:
+        strs.append(ctis)
+    return "\n".join(strs)
 
