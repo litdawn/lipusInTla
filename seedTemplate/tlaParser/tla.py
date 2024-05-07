@@ -1,6 +1,7 @@
 from seedTemplate.SeedTemplate import Type
 from pyparsing import Forward, Combine, infixNotation, opAssoc, Keyword, Word, alphanums, Suppress, Optional, ZeroOrMore
 import re
+from PT_generators.RL_Prunning.Conifg import config
 
 
 class Element(object):
@@ -43,6 +44,7 @@ class TLA:
         self.next = ""
         self.inv = ""
         self.type_ok = "TypeOK"
+        self.model_const = None
 
     def init_var(self, constants, variables, actions, states):
         for var in variables:
@@ -63,7 +65,7 @@ class TLA:
             var.index_type = info["param_type"]
             var.param_num = info["param_num"]
             var.result = self.construct_var("result", info["result"])
-        elif var.self_type == Type.SET:
+        elif var.self_type == Type.SET :
             var.sub_num = info["sub_num"]
             var.sub_type = info["sub_type"]
         elif var.self_type == Type.ARRAY:
@@ -96,19 +98,20 @@ class TLA:
     def parse_logic_expression(expression):
 
         quant_reg = re.compile(r"\\[AE](.*?):")
-        expression = expression[-1].strip()[2:]
+        expression = expression.split("==")[-1].strip()[2:]
         expression = quant_reg.sub("", expression)
-        print(expression)
+        # print(expression)
 
         if len(expression) == 0:
             return []
 
         # 定义操作数、函数名和符号
-        identifier = Word(alphanums + "_" + "[]")
+        identifier = Word(alphanums + "_" + "[]" +"{}")
         function_name = Word(alphanums + "_")
         keyword_not = Keyword("~")
         keyword_subset = Keyword("\\subseteq")
         keyword_belongs_to = Keyword("\\in")
+        keyword_equal = Keyword("=")
         keyword_and = Keyword("/\\")
         keyword_or = Keyword("\\/")
         keyword_x = Keyword("\\X")
@@ -122,6 +125,7 @@ class TLA:
             (keyword_x, 2, opAssoc.LEFT),
             (keyword_subset, 2, opAssoc.LEFT),
             (keyword_belongs_to, 2, opAssoc.LEFT),
+            (keyword_equal, 2, opAssoc.LEFT),
             (keyword_and, 2, opAssoc.LEFT),
             (keyword_or, 2, opAssoc.LEFT),
         ]
@@ -160,7 +164,6 @@ class TLA:
     class Action(Element):
         def __init__(self, ):
             super(Element, self).__init__()
-
 
 # if __name__ == "__main__":
 #     # quant_reg = re.compile(r"\\[AE](.*?):")

@@ -31,11 +31,11 @@ class PT_generator:
         # self.consts = get_consts_from_source_code(self.path2CFile)
         self.seed_tmpl = seed_tmpl
 
-        init_symbolEmbeddings()
+        init_symbolEmbeddings(seed_tmpl)
 
         # Step2. Construct the NNs and Load the parameters
         # 在 NNs.NeuralNetwork 里
-        self.T = constructT()  # treeLSTM
+        self.T = constructT(seed_tmpl)  # treeLSTM
         # self.G = constructG(self.cfg)  # CFG_Embedding
         self.E = constructE(seed_tmpl.seeds)  # CounterExample_Embedding
         self.P = constructP()  # reward predictor

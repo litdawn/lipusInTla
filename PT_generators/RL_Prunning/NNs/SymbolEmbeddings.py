@@ -12,15 +12,15 @@ SymbolEmbeddings = {}
 
 # SymbolEmbeddings['Int'] = Parameter(torch.randn((1, config.SIZE_EXP_NODE_FEATURE)), requires_grad=True)  # const
 # 需要梯度计算的张量。该张量是模型参数，需要根据反向传播算法进行更新。
-SymbolEmbeddings['?'] = Parameter(torch.randn((1, config.SIZE_EXP_NODE_FEATURE)), requires_grad=True)  # default
-SymbolEmbeddings['str'] = Parameter(torch.randn((1, config.SIZE_EXP_NODE_FEATURE)), requires_grad=True)
-SymbolEmbeddings['bool'] = Parameter(torch.randn((1, config.SIZE_EXP_NODE_FEATURE)), requires_grad=True)
-SymbolEmbeddings['set'] = Parameter(torch.randn((1, config.SIZE_EXP_NODE_FEATURE)), requires_grad=True)
-SymbolEmbeddings['array'] = Parameter(torch.randn((1, config.SIZE_EXP_NODE_FEATURE)), requires_grad=True)
-
-SymbolEmbeddings['Rule_and'] = Parameter(torch.randn((1, config.SIZE_EXP_NODE_FEATURE)), requires_grad=True)
-SymbolEmbeddings['Rule_or'] = Parameter(torch.randn((1, config.SIZE_EXP_NODE_FEATURE)), requires_grad=True)
-SymbolEmbeddings['Rule_neg'] = Parameter(torch.randn((1, config.SIZE_EXP_NODE_FEATURE)), requires_grad=True)
+# SymbolEmbeddings['?'] = Parameter(torch.randn((1, config.SIZE_EXP_NODE_FEATURE)), requires_grad=True)  # default
+# SymbolEmbeddings['str'] = Parameter(torch.randn((1, config.SIZE_EXP_NODE_FEATURE)), requires_grad=True)
+# SymbolEmbeddings['bool'] = Parameter(torch.randn((1, config.SIZE_EXP_NODE_FEATURE)), requires_grad=True)
+# SymbolEmbeddings['set'] = Parameter(torch.randn((1, config.SIZE_EXP_NODE_FEATURE)), requires_grad=True)
+# SymbolEmbeddings['array'] = Parameter(torch.randn((1, config.SIZE_EXP_NODE_FEATURE)), requires_grad=True)
+#
+# SymbolEmbeddings['Rule_and'] = Parameter(torch.randn((1, config.SIZE_EXP_NODE_FEATURE)), requires_grad=True)
+# SymbolEmbeddings['Rule_or'] = Parameter(torch.randn((1, config.SIZE_EXP_NODE_FEATURE)), requires_grad=True)
+# SymbolEmbeddings['Rule_neg'] = Parameter(torch.randn((1, config.SIZE_EXP_NODE_FEATURE)), requires_grad=True)
 
 # SymbolEmbeddings['in'] = Parameter(torch.randn((1, config.SIZE_EXP_NODE_FEATURE)), requires_grad=True)
 # SymbolEmbeddings['[]'] = Parameter(torch.randn((1, config.SIZE_EXP_NODE_FEATURE)), requires_grad=True)

@@ -3,8 +3,8 @@ import time
 import logging
 import os
 
-from PT_generators.RL_Prunning.PT_generator import PT_generator
-
+# from PT_generators.RL_Prunning.PT_generator import PT_generator
+from PT_generators.simple_generator import PT_generator
 from seedTemplate.tlaParser import tlaparser
 
 from SMT_Solver.cti_generator import generate_ctis
@@ -12,7 +12,6 @@ from SMT_Solver.cti_eliminator import eliminate_ctis
 from SMT_Solver.inv_checker import check_invariants
 from SMT_Solver.ind_checker import SMT_verifier
 from SMT_Solver.Config import config
-from SMT_Solver.Util import *
 
 logging.basicConfig(level=logging.INFO)
 
@@ -28,7 +27,6 @@ def main(path2tla, path2cfg, path2json, path2config):
     # todo: 第二步 生成seed和quants
     # tla_ins, seed_tmpl = tlaparser.main(path2cfg, path2json)
     tla_ins, seed_tmpl = tlaparser.main_from_json(path2cfg, path2json, path2config)
-    print(seed_tmpl.seeds)
 
     # # todo: 第三步
     #
@@ -40,6 +38,7 @@ def main(path2tla, path2cfg, path2json, path2config):
     # 原CE = {'p': [],'n': [],'i': []}
     logging.info(f"Begin_process:   {path2tla}")
     iteration = 0
+
     while not solved:
         current_time = time.time()
         if current_time - start_time >= config.Limited_time:
@@ -69,7 +68,7 @@ def main(path2tla, path2cfg, path2json, path2config):
         if len(is_inv) < 1:
             # 如果没通过不变式的检查，应该宽松一点
             logging.info(f">>>iteration {iteration}: 没通过不变式检查，宽松一点")
-            pt_generator.punish('LOOSE', 'VERY', 'V')
+            pt_generator.punish('LOOSE', 'VERY')
             continue
         else:
             for lemma_name, lemma in candidate.items():
@@ -80,29 +79,31 @@ def main(path2tla, path2cfg, path2json, path2config):
             for raw_name, raw_can in candidate.items():
                 if raw_name in is_inv:
                     can2test.update({raw_name: raw_can})
-            print(f"can2test只让最后一个不变式{can2test}参与消除")
-            new_eliminate_cti = eliminate_ctis(can2test, ctis, seed_tmpl)
+
+            new_eliminate_cti, ctis = eliminate_ctis(candidate, can2test, ctis, seed_tmpl)
             logging.info(f"消除了一些cti，分别是{new_eliminate_cti}")
-            if (len(new_eliminate_cti) == 0 or len(new_eliminate_cti[is_inv[-1]]) == 0) and iteration > 1:
+            # if (len(new_eliminate_cti) == 0 or len(new_eliminate_cti[is_inv[-1]]) == 0) and iteration > 1:
+
+            if len(new_eliminate_cti) == 0 and iteration > 1:
                 logging.info(f">>>iteration {iteration}: 被之前的candidate蕴含了，应该严格一点")
-                pt_generator.punish('STRICT', 'VERY', 'V')
+                pt_generator.punish('STRICT', 'VERY')
                 if len(ctis) != 0:
                     continue
-            elif len(new_eliminate_cti) < len(ctis) and iteration > 1:
+            elif len(new_eliminate_cti) > 0 and len(ctis) > 0 and iteration > 1:
                 logging.info(f">>>iteration {iteration}: 找到了一个正确的不变式，继续")
                 pt_generator.prise('MEDIUM')
-            elif iteration > 1:
+            elif len(ctis) == 0 and iteration > 1:
                 candidate_str = "\n/\\ ".join(seed_tmpl.quant_inv + v for v in candidate.values())
                 is_right = False
+                pt_generator.prise('VERY')
                 try:
                     logging.info(f">>>iteration {iteration}: {candidate_str}似乎是正确的归纳不变式，继续进行检查")
                     is_right = smt_verifier.verify(candidate_str, path2tla)
                 except TimeoutError as OOT:  # Out Of Time, we punish
-                    pt_generator.punish('STRICT', 'LITTLE', 'V')
+                    pt_generator.punish('STRICT', 'LITTLE')
                 if is_right:  # Bingo, we prise
                     solved = True
                     logging.info("成功! The answer is :  ", candidate_str)
-                    pt_generator.prise('VERY')
                     current_time = time.time()
                     logging.info("成功! Time cost is :  ", str(current_time - start_time))
                     return current_time - start_time, candidate_str
@@ -116,14 +117,13 @@ def main(path2tla, path2cfg, path2json, path2config):
             #     CE[is_right.kind].append(is_right.assignment)
             # pt_generator.prise('LITTLE')
             ctis = ctis.union(new_ctis)
-            ctis_str = "\n".join(cti.get_cti_state_string() for cti in ctis)
+            # ctis_str = "\n".join(cti.get_cti_state_string() for cti in ctis)
             logging.info(f">>>iteration {iteration}: 新找到了{len(new_ctis)}个CTI, 目前CTI的总数是{len(ctis)}")
-            logging.info(f"{ctis_str}")
             continue
 
 
 if __name__ == "__main__":
-    name = "consensus_epr"
+    name = "toy_consensus_epr"
     config.specname = name
     path2tla = os.getcwd() + f"/Benchmarks/protocols/{name}.tla"
     path2cfg = os.getcwd() + f"/Benchmarks/cfg/{name}.cfg"

@@ -30,11 +30,15 @@ from PT_generators.RL_Prunning.NNs.Utility import getParFromModule
 #             return SymbolEmbeddings['?']
 
 class TreeLSTM(nn.Module):
-    def __init__(self, tla_ins):  # vars 来自tla_ins.variables
+    def __init__(self, seed_tmpl):  # vars 来自tla_ins.variables
         super().__init__()
+        tla_ins = seed_tmpl.tla_ins
         self.rnns = {}
         self.tla_ins = tla_ins
-        self.vars = tla_ins.variables
+        if config.use_self_generate:
+            self.vars = tla_ins.variables
+        else:
+            self.vars = seed_tmpl.variables
         self.states = tla_ins.states
         # Lets give each sort of EXP an rnn
         a = '\\/,/\\,\\X'.split(',')
@@ -55,56 +59,75 @@ class TreeLSTM(nn.Module):
         state: 一个init/ind/next的名字
     '''
 
-    def forward(self, state):
+    def forward(self, s, state_or_seed):
         # if len(state.children()) > 0:
-        state_rnn = ""
-        try:
-            content = self.states[state].concrete_content
-            if len(content) == 0:
-                state_ele_list = []
-            else:
-                state_ele_list = TLA.parse_logic_expression(content)
-            for k in self.keys:
-                if k in state_ele_list:
-                    state_rnn = self.rnns[k]
-        except:
-            state_ele_list = []
 
+        if state_or_seed == "state":
+            try:
+                content = self.states[s].concrete_content
+                if len(content) == 0:
+                    state_ele_list = []
+                else:
+                    state_ele_list = TLA.parse_logic_expression(content)
+            except:
+                state_ele_list = []
+        else:
+            s = s.replace(",", " ").replace("<", "").replace(">", "").replace("(", "").replace(")", "")
+            state_ele_list = s.split(" ")
+        return self.find_and_concat(state_ele_list)
+
+    def find_and_concat(self, state_ele_list):
+        state_rnn = ""
+        while len(state_ele_list) == 1:
+            state_ele_list = state_ele_list[0]
+        for k in self.keys:
+            if k in set(state_ele_list):
+                state_rnn = self.rnns[k]
+                break
         if state_rnn == "":
             state_rnn = self.rnns["other"]
-        child_features = torch.ones((1, config.SIZE_EXP_NODE_FEATURE))  # 创建一个 初始化均为1 的张量
+        # child_features = torch.ones((1, config.SIZE_EXP_NODE_FEATURE))  # 创建一个 初始化均为1 的张量
+
+        child_feature_list = [torch.ones((1, config.SIZE_EXP_NODE_FEATURE))]
+        # child_feature_list = []
+        # for var in self.vars.keys():
+        #     if var in state_ele_list:
+        #         child_features = torch.cat((child_features, self.forward_var(var, state_ele_list)), 0).clone()
+
+        for ele in state_ele_list:
+            if not type(ele) == str:
+                child_feature_list.append(self.find_and_concat(ele))
+            elif ele in self.vars or ele in self.tla_ins.constants or ele in self.tla_ins.variables:
+                child_feature_list.append(self.forward_var(ele))
+
+        child_features = torch.cat(child_feature_list, dim=0)
         if torch.cuda.is_available():
             child_features = child_features.cuda()
-
-        for var in self.vars.keys():
-            if var in state_ele_list:
-                child_features = torch.cat((child_features, self.forward_var(var, state_ele_list)), 0)
         feature, _ = state_rnn(child_features.reshape([-1, 1, config.SIZE_EXP_NODE_FEATURE]))
         return feature[-1]
 
-    def forward_var(self, var, state):
-        if var.self_type == Type.BOOL:
-            name = "bool"
-        elif var.self_type == Type.ARRAY:
-            name = "array"
-        elif var.self_type == Type.SET:
-            name = "set"
-        elif var.self_type == Type.STRING:
-            name = "str"
+    def forward_var(self, var):
+        if config.use_self_generate:
+            if var.self_type == Type.BOOL:
+                name = "bool"
+            elif var.self_type == Type.ARRAY:
+                name = "array"
+            elif var.self_type == Type.SET:
+                name = "set"
+            elif var.self_type == Type.STRING:
+                name = "str"
+            else:
+                name = "?"
         else:
-            name = "?"
+            name = var
         origin = SymbolEmbeddings[name]
-        for ele in state:
-            if type(ele) is 'list':
-                for var in self.vars.keys():
-                    if var in ele:
-                        return torch.cat((origin, self.forward_var(var, ele)), 0)
+        return origin
 
     # init next ind exp的特征
     def forward_three(self, init_exp, next_exp, ind_exp):
-        init_emb = self.forward(init_exp)
-        next_emb = self.forward(next_exp)
-        ind_emb = self.forward(ind_exp)
+        init_emb = self.forward(init_exp, "state")
+        next_emb = self.forward(next_exp, "state")
+        ind_emb = self.forward(ind_exp, "state")
 
         weis = torch.cat([torch.cosine_similarity(init_emb, self.attvec),
                           torch.cosine_similarity(next_emb, self.attvec),

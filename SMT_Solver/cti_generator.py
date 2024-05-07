@@ -6,7 +6,6 @@ import sys
 import subprocess
 import time
 import tempfile
-import re
 from SMT_Solver.Config import config
 from SMT_Solver.Util import *
 
@@ -62,7 +61,6 @@ class CTI:
 
 def generate_ctis_tlc_run_async(seed_tmpl, candidate, num_traces_per_worker=15):
     """ Starts a single instance of TLC to generate CTIs."""
-    tla_ins = seed_tmpl.tla_ins
     # Avoid TLC directory naming conflicts.
     tag = random.randint(0, 10000)
     ctiseed = random.randint(0, 10000)
@@ -328,6 +326,7 @@ def parse_ctis(lines):
 def generate_ctis_tlc_run_await(subproc):
     """ Awaits completion of a CTI generation process, parses its results and returns the parsed CTIs."""
     tlc_out = subproc.stdout.read().decode("gbk")
+    # print(tlc_out)
     lines = tlc_out.splitlines()
     if "Error: parsing" in tlc_out:
         logging.error("Error in TLC execution, printing TLC output.")

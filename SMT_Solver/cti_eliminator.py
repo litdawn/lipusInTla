@@ -23,21 +23,25 @@ def make_indquickcheck_tla_spec(specname, invs: dict, sat_invs_group: list, orig
 
     # Create a variable to represent the value of each invariant.
     for inv in sat_invs_group:
-        invi = int(inv.replace("inv_", "").strip())
-        invname = "inv_%d" % invi
-        invcheck_tla_indcheck += "VARIABLE %s_val\n" % invname
+        # invi = int(inv.replace("inv_", "").strip())
+        # invname = "inv_%d" % invi
+        invcheck_tla_indcheck += "VARIABLE %s_val\n" % inv
     invcheck_tla_indcheck += "VARIABLE ctiId\n"
     invcheck_tla_indcheck += "\n"
 
     # Add definitions for all invariants and strengthening conjuncts.
     for cinvname, cinvexp in invs.items():
-        invcheck_tla_indcheck += ("%s == %s\n" % (cinvname, cinvexp))
+        if cinvname not in sat_invs_group and not (
+                cinvname == "Safety" and cinvexp == "Safety") and not (
+                cinvname == "Typeok" and cinvexp == "Typeok"
+        ):
+            invcheck_tla_indcheck += ("%s == %s\n" % (cinvname, cinvexp))
 
-    # for inv in sat_invs_group:
-    #     invi = int(inv.replace("inv_", ""))
-    #     invname = "inv_%d" % invi
-    #     invexp = invs[invname]
-    #     invcheck_tla_indcheck += ("%s == %s\n" % (invname, invexp))
+    for inv in sat_invs_group:
+        invi = int(inv.replace("inv_", ""))
+        invname = "inv_%d" % invi
+        invexp = invs[invname]
+        invcheck_tla_indcheck += ("%s == %s\n" % (invname, invexp))
     invcheck_tla_indcheck += "\n"
 
     kCTIprop = "kCTIs"
@@ -54,7 +58,11 @@ def make_indquickcheck_tla_spec(specname, invs: dict, sat_invs_group: list, orig
 
     strengthening_conjuncts_str = ""
     for cinvname, cinvexp in invs.items():
-        strengthening_conjuncts_str += "    /\\ %s\n" % cinvname
+        if cinvname not in sat_invs_group and not (
+                cinvname == "Safety" and cinvexp == "Safety") and not (
+                cinvname == "Typeok" and cinvexp == "Typeok"
+        ):
+            strengthening_conjuncts_str += "    /\\ %s\n" % cinvname
 
     invcheck_tla_indcheck += "\n"
 
@@ -100,10 +108,9 @@ def make_ctiquickcheck_cfg(seed_tmpl):
     return invcheck_tla_indcheck_cfg
 
 
-def eliminate_ctis(invs, orig_k_ctis, seed_tmpl):
+def eliminate_ctis(all_invs, invs, orig_k_ctis, seed_tmpl):
     # print(invs)
     # print(orig_k_ctis)
-    tla_ins = seed_tmpl.tla_ins
     """ Check which of the given satisfied invariants eliminate CTIs. """
 
     # Save CTIs, indexed by their hashed value.
@@ -113,7 +120,8 @@ def eliminate_ctis(invs, orig_k_ctis, seed_tmpl):
         hashed = str(hash(cti))
         cti_table[hashed] = cti
 
-    eliminated_ctis = set()
+
+
 
     # Parameters for invariant generation.
     # min_conjs = 2
@@ -128,12 +136,10 @@ def eliminate_ctis(invs, orig_k_ctis, seed_tmpl):
 
     logging.info("Starting iteration %d of eliminate_ctis")
 
-    print_invs = True  # disable printing for now.
+    print_invs = False  # disable printing for now.
     if print_invs:
         for inv, invexp in invs.items():
-            invi = int(inv.replace("inv_", ""))
-            invname = "inv_%d" % invi
-            logging.info("%s %s %s", invname, "==", invexp)
+            logging.info("%s %s %s", inv, "==", invexp)
 
     # Try to select invariants based on size ordering.
     # First, sort invariants by the number of CTIs they eliminate.
@@ -174,7 +180,7 @@ def eliminate_ctis(invs, orig_k_ctis, seed_tmpl):
     curr_ind = 0
 
     # Run CTI elimination checking in parallel.
-    n_tlc_workers = 4
+    n_tlc_workers = 6
     # inv_chunks = list(chunks(sat_invs, n_tlc_workers))
     cti_chunks = list(chunks(list(orig_k_ctis), n_tlc_workers))
     inv_list = list(invs.keys())
@@ -187,10 +193,11 @@ def eliminate_ctis(invs, orig_k_ctis, seed_tmpl):
     tlc_procs = []
 
     # Create the TLA+ specs and configs for checking each chunk.
+
     for ci, cti_chunk in enumerate(cti_chunks):
         # Build and save the TLA+ spec.
         spec_name = f"{config.specname}_chunk{ci}_IndQuickCheck"
-        spec_str = make_indquickcheck_tla_spec(spec_name, invs, inv_list, cti_chunk, seed_tmpl)
+        spec_str = make_indquickcheck_tla_spec(spec_name, all_invs, inv_list, cti_chunk, seed_tmpl)
 
         ctiquicktlafile = f"{os.path.join(config.specdir, config.GEN_TLA_DIR)}\\cti\\{spec_name}.tla"
         ctiquicktlafilename = f"{config.GEN_TLA_DIR}\\cti\\{spec_name}.tla"
@@ -214,7 +221,7 @@ def eliminate_ctis(invs, orig_k_ctis, seed_tmpl):
         # Run TLC.
         # Create new tempdir to avoid name clashes with multiple TLC instances running concurrently.
         dirpath = tempfile.mkdtemp()
-        cmd = (f'{config.JAVA_EXE} -Xss16M -Djava.io.tmpdir="{dirpath}" -cp {config.TLC_PATH} tlc2.TLC '
+        cmd = (f'{config.JAVA_EXE} -Djava.io.tmpdir="{dirpath}" -cp {config.TLC_PATH} tlc2.TLC '
                f'-maxSetSize {config.TLC_MAX_SET_SIZE} -dump json {cti_states_relative_file} '
                f'-noGenerateSpecTE -metadir states\\ctiquick_{config.specname}_chunk{ci}_{curr_ind} '
                f'-continue -checkAllInvariants -deadlock '
@@ -226,6 +233,7 @@ def eliminate_ctis(invs, orig_k_ctis, seed_tmpl):
         # time.sleep(0.25)
         tlc_procs.append(subproc)
 
+    eliminated_ctis = set()
     for ci, subproc in enumerate(tlc_procs):
         logging.info("Waiting for TLC termination " + str(ci))
 
@@ -259,6 +267,7 @@ def eliminate_ctis(invs, orig_k_ctis, seed_tmpl):
             for inv in inv_list:
                 if not sval[inv + "_val"]:
                     cti_states_eliminated_by_invs[inv].add(ctiHash)
+                    eliminated_ctis.add(ctiHash)
 
         # for inv in cti_states_eliminated_by_invs:
         #     if len(cti_states_eliminated_by_invs[inv]):
@@ -271,18 +280,23 @@ def eliminate_ctis(invs, orig_k_ctis, seed_tmpl):
         # Key function for sorting invariants by the number of new CTIs they eliminate.
 
         # sorted_invs = sorted(sat_invs, reverse=True, key=inv_sort_key)
-        chosen_invs = []
-        cti_states_eliminated_in_iter = 0
+        # chosen_invs = []
+        # cti_states_eliminated_in_iter = 0
 
         num_ctis_remaining = len(list(cti_table.keys())) - len(eliminated_ctis)
         num_orig_ctis = len(list(cti_table.keys()))
         # duration = time.time() - tstart
         logging.info("[ End eliminate (took {:.2f} secs.) ]".format(iteration, ))
         logging.info("%d original CTIs." % num_orig_ctis)
-        logging.info("%d new CTIs eliminated in this iteration." % cti_states_eliminated_in_iter)
+        # logging.info("%d new CTIs eliminated in this iteration." % cti_states_eliminated_in_iter)
         logging.info("%d total CTIs eliminated." % len(eliminated_ctis))
         logging.info("%d still remaining." % num_ctis_remaining)
 
         # end_timing_ctielimcheck()
+    new_ctis = set()
+    for cti in orig_k_ctis:
+        hashed = str(hash(cti))
+        if hashed not in eliminated_ctis:
+            new_ctis.add(cti)
 
-    return cti_states_eliminated_by_invs
+    return eliminated_ctis, new_ctis

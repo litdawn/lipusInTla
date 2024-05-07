@@ -25,6 +25,7 @@ class SeedTemplate:
         self.simulate = json_data["simulate"]
         self.tla_ins = tla_ins
         self.seeds = self.preds
+        self.variables = json_data["variable"].split(",")
 
     def generate(self):
         return self.preds, self.quant_vars

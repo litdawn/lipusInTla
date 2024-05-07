@@ -15,8 +15,8 @@ from PT_generators.RL_Prunning.NNs.TreeLSTM import TreeLSTM
 from PT_generators.RL_Prunning.Template.Seed2Lemma import RULE
 
 
-def constructT(vars):
-    treeLSTM = TreeLSTM(vars)
+def constructT(seed_tmpl):
+    treeLSTM = TreeLSTM(seed_tmpl)
     return treeLSTM
 
 
@@ -44,13 +44,16 @@ def construct_intValuelzie():
     return IntLize()
 
 
-def init_symbolEmbeddings():
-    Rule_keys = RULE.keys()
-    for non_terminal in Rule_keys:
-        SymbolEmbeddings[non_terminal] = Parameter(torch.randn((1, config.SIZE_EXP_NODE_FEATURE)), requires_grad=True)
-        actions = RULE[non_terminal]
-        for act in actions:
-            SymbolEmbeddings[str(act)] = Parameter(torch.randn((1, config.SIZE_EXP_NODE_FEATURE)), requires_grad=True)
+def init_symbolEmbeddings(seed_tmpl):
+    for var in seed_tmpl.variables:
+        SymbolEmbeddings[var] = Parameter(torch.randn((1, config.SIZE_EXP_NODE_FEATURE)), requires_grad=True)
+    for const in seed_tmpl.tla_ins.constants.keys():
+        SymbolEmbeddings[const] = Parameter(torch.randn((1, config.SIZE_EXP_NODE_FEATURE)), requires_grad=True)
+    for var in seed_tmpl.tla_ins.variables.keys():
+        SymbolEmbeddings[var] = Parameter(torch.randn((1, config.SIZE_EXP_NODE_FEATURE)), requires_grad=True)
+        # actions = RULE[non_terminal]
+        # for act in actions:
+        #     SymbolEmbeddings[str(act)] = Parameter(torch.randn((1, config.SIZE_EXP_NODE_FEATURE)), requires_grad=True)
 
 
 def GetProgramFearture(path2tla, depth):

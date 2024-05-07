@@ -168,10 +168,10 @@ def looseness_distribution(seed_list, seed, length):
     }
     print(length)
     gamma = distri_dict["all"][length - 2]
-    res = torch.ones( 1, len(seed_list), dtype=torch.float32)
+    res = torch.ones(len(seed_list), 1,  dtype=torch.float32)
     for i, every_seed in enumerate(seed_list):
         if every_seed == seed:
-            res[0, i] = res[0, i] * gamma
+            res[i, 0] = res[i, 0] * gamma
 
     if torch.cuda.is_available():
         res = res.cuda()
@@ -186,7 +186,7 @@ def normalization(dist):
     return lister
 
 
-def sampling(action_distribution, sample_list: list, seeds_num=5):
+def sampling(action_distribution, sample_list: list, seeds_num=5, pure_random=False):
     seeds_selected = []
     # print(action_distribution.shape)
     # if best:
@@ -194,12 +194,15 @@ def sampling(action_distribution, sample_list: list, seeds_num=5):
     #     top_idx = xx.argsort()[-1:(-seeds_num - 1):-1]
     #     seeds_selected = sample_list[top_idx]
     # else:
-    try:
-        # print(sample_list)
-        seeds_selected = np.random.choice(sample_list, size=seeds_num, replace=False,
-                                          p=normalization(action_distribution))
-        # print(seeds_selected)
-    except Exception as e:
-        print("shit", e)
-        raise e
+    if pure_random:
+        seeds_selected = np.random.choice(sample_list, size=seeds_num, replace=False)
+    else:
+        try:
+            # print(sample_list)
+            seeds_selected = np.random.choice(sample_list, size=seeds_num, replace=False,
+                                              p=normalization(action_distribution))
+            # print(seeds_selected)
+        except Exception as e:
+            print("shit", e)
+            raise e
     return generate_lemmas(seeds_selected), seeds_selected

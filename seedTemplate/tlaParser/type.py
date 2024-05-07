@@ -8,3 +8,4 @@ class Type(Enum):
     STRING = 4
     BOOL = 5
     State = 6
+    DEFAULT=7

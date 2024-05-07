@@ -4,12 +4,13 @@ from PT_generators.RL_Prunning.Template.Seed2Lemma import *
 from PT_generators.RL_Prunning.Template.Lemma2Candidate import *
 import torch.nn.functional as f
 
-
+# torch.autograd.set_detect_anomaly(True)
 class PT_generator:
     def __init__(self, seed_tmpl, name):
         self.last_predicted_reward_list = None
         self.last_selected_lemma = None
         self.last_distribution_output = None
+        self.already_generate = set()
 
         self.emb_tla = None
         self.adam = None
@@ -22,11 +23,11 @@ class PT_generator:
         # Step1. Parse the inputs
         self.seed_tmpl = seed_tmpl
 
-        init_symbolEmbeddings()
+        init_symbolEmbeddings(seed_tmpl)
 
         # Step2. Construct the NNs and Load the parameters
         # 在 NNs.NeuralNetwork 里
-        self.T = constructT(seed_tmpl.tla_ins)  # treeLSTM
+        self.T = constructT(seed_tmpl)  # treeLSTM
         self.G = constructG()  # CFG_Embedding
         self.E = constructE(seed_tmpl.seeds)  # CounterExample_Embedding
         self.P = constructP()  # reward predictor
@@ -47,6 +48,8 @@ class PT_generator:
         self.candidate = dict()
         self.lemma_pointer = 0
         self.init_candidate()
+
+
 
     def init_candidate(self):
         self.candidate.clear()
@@ -72,14 +75,14 @@ class PT_generator:
         # 2 embedding counter example, state
         emb_cti = self.E(cti)
         tla_ins = self.seed_tmpl.tla_ins
+        # if config.use_self_generate:
         self.emb_tla = self.T.forward_three(tla_ins.init, tla_ins.next, tla_ins.inv)
-
+        # else:
+        #     self.emb_tla = self.T.forward_three()
         # 3. 嵌入seed
         for seed in self.seed_tmpl.seeds:
-            self.state_vec.update({seed: self.T(seed)})
+            self.state_vec.update({seed: self.T(seed, "seed")})
 
-        # for name, content in lemmas:
-        #     self.stateVec.update({name: self.T(content)})
 
         # todo seed2lemma的rule应该和distribution一一对应。
         # 4. 总体特征并打分
@@ -96,8 +99,12 @@ class PT_generator:
         action_vector = self.pi(self.concat_state_vec(), overall_feature)
         action_distribution, action_raw = self.distributionlize(action_vector, list(self.state_vec.values()))
 
-        seeds_num = random.randint(3, 7)
+        seeds_num = random.randint(2,4)
+
+        #是否重复出现
         new_candidate, raw_lemmas = sampling(action_distribution, self.seed_tmpl.seeds, seeds_num)
+        while self.if_already_generate(raw_lemmas):
+            new_candidate, raw_lemmas = sampling(action_distribution, self.seed_tmpl.seeds, seeds_num)
 
         # 将lemma加入candidates
         self.candidate.update({f"inv_{self.lemma_pointer}": new_candidate[0]})
@@ -105,11 +112,13 @@ class PT_generator:
 
         self.last_predicted_reward_list = predicted_reward_list
         self.last_selected_lemma = raw_lemmas
+        self.cache_inv(raw_lemmas)
         self.last_distribution_output = action_raw
         if config.use_self_generate:
             lemmas = Lemma2Candidate.add_quant(f"inv_{self.lemma_pointer - 1}", new_candidate[0], self.seed_tmpl.quants)
         else:
             lemmas = [f"inv_{self.lemma_pointer - 1} ==  {self.seed_tmpl.quant_inv} {new_candidate[0]}"]
+
         return self.candidate, lemmas, self.lemma_pointer - 1
 
     # 设置奖励和伽马值：根据Deg的值设置奖励和伽马值。
@@ -124,7 +133,15 @@ class PT_generator:
     # 计算动作损失并进行学习步骤：调用self.ALoss(reward)
     # 计算动作损失，然后调用self.LearnStep((a_loss + strict_loss))
     # 进行学习步骤。
-    def punish(self, s_or_l, deg, whom):
+    def cache_inv(self, inv):
+        self.already_generate.add(tuple(inv))
+        # self.all_checked_invs = self.all_checked_invs.union(set(map(quant_inv_fn, list(invs))))
+        return
+
+    def if_already_generate(self, inv):
+        return tuple(inv) in self.already_generate
+
+    def punish(self, s_or_l, deg):
         if deg == "VERY":
             reward = -10
             gama = 0.1
@@ -142,7 +159,6 @@ class PT_generator:
         strict_loss = tensor([[0]], dtype=torch.float32)
         counter = 0
         length = len(self.last_selected_lemma)
-        print(self.last_selected_lemma)
         for i in range(length):
             if s_or_l == 'STRICT':  # strict倾向于选择更长的子句
                 sd = strictness_distribution(self.seed_tmpl.seeds, self.last_selected_lemma[i], length)
@@ -218,7 +234,7 @@ class PT_generator:
         #     loss = loss.cuda()
         self.adam.zero_grad()
         # print(loss)
-        loss.backward()
+        loss.backward(retain_graph=True)
         # if torch.cuda.is_available():
         #     loss = loss.cpu()
         self.adam.step()

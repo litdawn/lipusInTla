@@ -36,18 +36,32 @@ def parse_file(json_data, cfg_data):
     variables = []
     actions = []
     states = []
-    for param in content['declaredParams']:
-        constants.append({"name": param['paramName'], "info": parse_type(param['typeComment'])})
-    for var in content['definedVariables']:
-        variables.append({"name": var['variableName'], "info": parse_type(var['typeComment'])})
     if config.use_self_generate:
+        for param in content['declaredParams']:
+            constants.append({"name": param['paramName'], "info": parse_type(param['typeComment'])})
+        for var in content['definedVariables']:
+            variables.append({"name": var['variableName'], "info": parse_type(var['typeComment'])})
         for operator in content['operatorDefinitions']:
             if operator['type'] == "Action":
                 actions.append({"name": operator['operatorName'],
                                 "info": parse_type(operator['typeComment'], operator['concreteContent'])})
             if operator['type'] == "State":
                 states.append(
-                    {"name": operator['operatorName'], "info": parse_type(concrete_content=operator['concreteContent'])})
+                    {"name": operator['operatorName'],
+                     "info": parse_type(concrete_content=operator['concreteContent'])})
+    else:
+        for param in content['declaredParams']:
+            constants.append({"name": param['paramName'], "info": parse_type("","",Type.DEFAULT)})
+        for var in content['definedVariables']:
+            variables.append({"name": var['variableName'], "info": parse_type("","",Type.DEFAULT)})
+        for operator in content['operatorDefinitions']:
+            if operator['type'] == "Action":
+                actions.append({"name": operator['operatorName'],
+                                "info": parse_type(concrete_content=operator['concreteContent'])})
+            if operator['type'] == "State":
+                states.append(
+                    {"name": operator['operatorName'],
+                     "info": parse_type(concrete_content=operator['concreteContent'])})
 
     tla_ins = TLA()
     tla_ins.init_var(constants, variables, actions, states)
@@ -60,11 +74,12 @@ def parse_file(json_data, cfg_data):
         elif line.startswith("INVARIANT"):
             tla_ins.inv = line.split(" ")[-1]
         elif line.startswith("CONSTANT"):
+            tla_ins.model_const = line
             if line.find("=") != -1:
                 name = line.split("=")[0]
                 value = line.split("=")[1]
-                tla_ins.constants[name.replace("CONSTANT", "").strip()].real_val = value[1:-1].split(",")
-                tla_ins.model_const = line
+                if config.use_self_generate:
+                    tla_ins.constants[name.replace("CONSTANT", "").strip()].real_val = value[1:-1].split(",")
         elif line.startswith("\\*"):
             continue
         elif line.startswith("SYMMETRY"):
@@ -76,22 +91,27 @@ def parse_file(json_data, cfg_data):
             if line.find("=") != -1:
                 name = line.split("=")[0]
                 value = line.split("=")[1]
-                tla_ins.constants[name.strip()].real_val = value[1:-1].split(",")
+                if config.use_self_generate:
+                    tla_ins.constants[name.strip()].real_val = value[1:-1].split(",")
+                tla_ins.model_const += "\n" + line
     return tla_ins
 
 
 #
-def parse_type(str="", concrete_content=""):
+def parse_type(str="", concrete_content="", s_type=Type.State):
     # @type: (Str, Str, Str, Str, Str) = > Bool
     # str = "Set(<<Str, Str, Str, Str>>)"
 
     # 一个action
     index = str.find("=>")
     if index != -1:
-        param_part = str[0:index - 1].strip()
-        param_info = parse_type(param_part)
-        result_part = str[index + 2:].strip()
-        result_info = parse_type(result_part)
+        param_info = [{"self_type": ""}, {"num": 0}]
+        result_info = ""
+        if str != "":
+            param_part = str[0:index - 1].strip()
+            param_info = parse_type(param_part)
+            result_part = str[index + 2:].strip()
+            result_info = parse_type(result_part)
         return {
             "self_type": Type.ACTION,
             "concrete_content": concrete_content,
@@ -165,10 +185,15 @@ def parse_type(str="", concrete_content=""):
 
     # state
     if str == "":
-        return {
-            "self_type": Type.State,
-            "concrete_content": concrete_content
-        }
+        if s_type == Type.State:
+            return {
+                "self_type": Type.State,
+                "concrete_content": concrete_content
+            }
+        else:
+            return {
+                "self_type": Type.DEFAULT
+            }
 
 #
 # if __name__ == "__main__":

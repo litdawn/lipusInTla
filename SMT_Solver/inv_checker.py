@@ -10,12 +10,8 @@ import tempfile
 
 logging.basicConfig(level=logging.INFO)
 
-# TLC_MAX_SET_SIZE = 100
-# JAVA_EXE = "java"
-
 
 def check_invariants(invs: list, seed_tmpl, strengthening_conjuncts="", tlc_workers=3):
-    tla_ins = seed_tmpl.tla_ins
     seed = random.randint(0, 10000)
     """ Check which of the given invariants are valid. """
     ta = time.time()
@@ -23,7 +19,7 @@ def check_invariants(invs: list, seed_tmpl, strengthening_conjuncts="", tlc_work
     invcheck_tla += "EXTENDS %s\n\n" % config.specname
 
     # invcheck_tla += tla_ins.model_const + "\n"
-    invcheck_tla += "CONSTANT " + ",".join(tla_ins.constants.keys()) + "\n"
+    invcheck_tla += seed_tmpl.model_consts + "\n"
 
     all_inv_names = set()
     for i, inv in enumerate(invs):
@@ -66,7 +62,7 @@ def check_invariants(invs: list, seed_tmpl, strengthening_conjuncts="", tlc_work
     # Check invariants.
     logging.info("Checking %d candidate invariants in spec file '%s'" % (len(invs), invcheck_spec_name))
     workdir = None if config.specdir == "" else config.specdir
-    violated_invs = runtlc_check_violated_invariants(invcheck_spec_filename, cfg=invcheck_cfg_file,
+    violated_invs = runtlc_check_violated_invariants(invchecktlafile, cfg=invcheck_cfg_file,
                                                      tlc_workers=tlc_workers, cwd=workdir, java=config.JAVA_EXE)
     sat_invs = (all_inv_names - violated_invs)
     logging.info(
@@ -80,16 +76,17 @@ def runtlc_check_violated_invariants(spec, cfg=None, tlc_workers=6, cwd=None, ja
     # TODO: Check for this type of error:
     # 'Error: The invariant of Inv91 is equal to FALSE'
     #
-    lines = run_tlc(spec, cfg=cfg, tlc_workers=tlc_workers, cwd=cwd, java=java)
+    lines = run_tlc(spec, cfg=cfg, tlc_workers=tlc_workers, cwd=cwd)
+    # print("lines", lines)
     invs_violated = set()
     for l in grep_lines("is violated", lines):
-        res = re.match(".*Invariant (Inv.*) is violated", l)
+        res = re.match(".*Invariant (inv_.*) is violated", l)
         inv_name = res.group(1)
         invs_violated.add(inv_name)
     return invs_violated
 
 
-def run_tlc(spec, cfg=None, tlc_workers=6, cwd=None, java="java", tlc_flags=""):
+def run_tlc(spec, cfg=None, tlc_workers=6, cwd=None, tlc_flags=""):
     # Make a best effort to attempt to avoid collisions between different
     # instances of TLC running on the same machine.
     dirpath = tempfile.mkdtemp()
@@ -97,26 +94,29 @@ def run_tlc(spec, cfg=None, tlc_workers=6, cwd=None, java="java", tlc_flags=""):
 
     cmd = (
         # ' -metadir {metadir_path} -noGenerateSpecTE '
-        f' java  -Djava.io.tmpdir="{dirpath}" -cp {config.TLC_PATH} tlc2.TLC  {tlc_flags} -maxSetSize {config.TLC_MAX_SET_SIZE}'
+        f'java -Djava.io.tmpdir="{dirpath}" -cp {config.TLC_PATH} tlc2.TLC  {tlc_flags} -maxSetSize {config.TLC_MAX_SET_SIZE}'
         f' -checkAllInvariants -metadir {metadir_path} -noGenerateSpecTE -deadlock -continue -workers {tlc_workers}'
     )
     if config:
         cmd += " -config " + cfg
-    cmd += " " + spec + ".tla"
+    cmd += " " + spec
     logging.info("TLC command: " + cmd)
-    subproc = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, cwd=cwd)
+    subproc = subprocess.run(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, cwd=cwd)
+
     line_str = ""
     tlc_lines = []
-    # new_stdout = subproc.stdout.read(1).decode(sys.stdout.encoding)
-    while True:
-        new_stdout = subproc.stdout.read(1).decode(sys.stdout.encoding)
-
-        if new_stdout == "":  # reached end of file.
-            break
-        if new_stdout == os.linesep:
-            logging.info("[TLC Output] " + line_str)
-            tlc_lines.append(line_str)
-            line_str = ""
-        else:
-            line_str += new_stdout
+    new_stdout = subproc.stdout.decode(sys.stdout.encoding)
+    tlc_lines = new_stdout.split("\r\n")
+    # while True:
+    #     new_stdout = subproc.stdout.read(1).decode(sys.stdout.encoding)
+    #
+    #     if new_stdout == "":  # reached end of file.
+    #         break
+    #     if new_stdout == os.linesep:
+    #         logging.info("[TLC Output] " + line_str)
+    #         tlc_lines.append(line_str)
+    #         line_str = ""
+    #     else:
+    #         line_str += new_stdout
+    # print(f"tlc_lines: {tlc_lines}")
     return tlc_lines
