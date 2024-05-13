@@ -58,11 +58,14 @@ def get_available_rule():
 
 def get_action_index(last_seed, seed_list):
     for i, action in enumerate(seed_list):
-        if str(action) == str(last_seed):
+        if str(action) in str(last_seed):
             if torch.cuda.is_available():
                 return tensor([i]).cuda()
             else:
                 return tensor([i])
+
+    print(last_seed)
+    print(seed_list)
 
     assert False  # should not be here
 

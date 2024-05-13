@@ -3,8 +3,8 @@ import time
 import logging
 import os
 
-# from PT_generators.RL_Prunning.PT_generator import PT_generator
-from PT_generators.simple_generator import PT_generator
+from PT_generators.RL_Prunning.PT_generator import PT_generator
+# from PT_generators.simple_generator import PT_generator
 from seedTemplate.tlaParser import tlaparser
 
 from SMT_Solver.cti_generator import generate_ctis

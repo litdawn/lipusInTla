@@ -78,7 +78,7 @@ class TreeLSTM(nn.Module):
 
     def find_and_concat(self, state_ele_list):
         state_rnn = ""
-        while len(state_ele_list) == 1:
+        while type(state_ele_list) is not str and len(state_ele_list) == 1:
             state_ele_list = state_ele_list[0]
         for k in self.keys:
             if k in set(state_ele_list):
