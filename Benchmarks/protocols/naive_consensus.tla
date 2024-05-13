@@ -1,7 +1,7 @@
 ---- MODULE naive_consensus ----
 \* benchmark: ex-naive-consensus
 
-EXTENDS TLC, FiniteSets, Randomization
+EXTENDS TLC, FiniteSets, Randomization, Integers
 
 CONSTANT Node
 CONSTANT Quorum
@@ -56,5 +56,8 @@ TypeOKRandom ==
 Safety == \A v1,v2 \in Value : (v1 \in decision /\ v2 \in decision) => (v1=v2)
 
 Symmetry == Permutations(Node) \cup Permutations(Value)
+
+
+
 
 ====

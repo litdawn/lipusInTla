@@ -28,10 +28,11 @@ EXTENDS two_phase_commit
 \* cpu_count: 8
 
 \* Inductive strengthening conjuncts
+Inv699_1_3_def == (decide_commit = {}) \/ (~(go_commit = {}))
 Inv703_1_0_def == (go_abort = {}) \/ ((go_commit = {}))
 Inv1049_1_1_def == \A VARJ \in Node : ~(VARJ \in vote_no) \/ (~(VARJ \in vote_yes))
 Inv648_1_2_def == (decide_abort = {}) \/ ((go_commit = {}))
-Inv699_1_3_def == (decide_commit = {}) \/ (~(go_commit = {}))
+
 Inv346_1_4_def == \A VARJ \in Node : (VARJ \in alive) \/ ((abort_flag))
 Inv313_1_5_def == \A VARI \in Node : (VARI \in vote_yes) \/ ((go_commit = {}))
 Inv588_1_0_def == (abort_flag) \/ ((go_abort = {}))

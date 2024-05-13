@@ -1,7 +1,7 @@
 ---- MODULE lockserver ----
 \* benchmark: i4-lock-server
 
-EXTENDS TLC, Naturals
+EXTENDS TLC, Naturals, Integers
 
 \*
 \* Simple lock server example.
@@ -62,5 +62,8 @@ Ind ==
     /\ Inv
     \* A client and server never hold the same lock at the same time.
     /\ \A c \in Client, s \in Server : (s \in clientlocks[c]) => ~semaphore[s]
+
+
+
 
 ====

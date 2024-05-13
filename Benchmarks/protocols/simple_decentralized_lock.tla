@@ -1,7 +1,7 @@
 ---- MODULE simple_decentralized_lock ----
 \* benchmark: ex-simple-decentralized-lock
 
-EXTENDS TLC
+EXTENDS TLC, Integers
 
 CONSTANT Node
 
@@ -51,5 +51,6 @@ IndHumanB ==
     /\ Inv
     /\ \A n,t \in Node : <<n,t>> \in message => has_lock = {}
     /\ \A a,b,c,d \in Node : (<<a,b>> \in message /\ <<c,d>> \in message) => (a=c /\ b=d)
+
 
 ====

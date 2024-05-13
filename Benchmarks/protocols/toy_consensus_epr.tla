@@ -1,7 +1,7 @@
 ---- MODULE toy_consensus_epr ----
 \* benchmark: pyv-toy-consensus-epr
 
-EXTENDS TLC, Naturals, FiniteSets
+EXTENDS TLC, Naturals, FiniteSets, Integers
 
 CONSTANT Node
 CONSTANT Quorum
@@ -48,5 +48,7 @@ TypeOK ==
 Safety == \A vi,vj \in decided : vi = vj
 
 Symmetry == Permutations(Node) \cup Permutations(Value)
+
+
 
 ====

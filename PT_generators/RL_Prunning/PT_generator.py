@@ -28,7 +28,7 @@ class PT_generator:
         # Step2. Construct the NNs and Load the parameters
         # 在 NNs.NeuralNetwork 里
         self.T = constructT(seed_tmpl)  # treeLSTM
-        self.G = constructG()  # CFG_Embedding
+        self.G = constructG()  # Overall_Embedding
         self.E = constructE(seed_tmpl.seeds)  # CounterExample_Embedding
         self.P = constructP()  # reward predictor
         self.pi = constructpi(self)  # policyNetwork

@@ -15,21 +15,23 @@ from SMT_Solver.Config import config
 
 logging.basicConfig(level=logging.INFO)
 
-
+def save_result(invs):
+    str = "ind == \n "
+    for inv_name, inv_content in invs.items():
+        str += f"/\\ {inv_content} \n"
+    with open(f"{os.getcwd()}/Benchmarks/Result/ind/{name}.txt", 'a') as f:
+        f.write(str)
+    pass
 def main(path2tla, path2cfg, path2json, path2config):
     start_time = time.time()
-    # Step 1. Input the three formation of the code.
-    # todo: 第一步：tla静态检查
+    # Step 1. Input the three formation of the code
 
     # path2CFile, path2CFG, path2SMT = parseArgs()
     # Step 2. Load the Partial Template Generator.
 
-    # todo: 第二步 生成seed和quants
     # tla_ins, seed_tmpl = tlaparser.main(path2cfg, path2json)
     tla_ins, seed_tmpl = tlaparser.main_from_json(path2cfg, path2json, path2config)
 
-    # # todo: 第三步
-    #
     pt_generator = PT_generator(seed_tmpl, name)
     smt_verifier = SMT_verifier(tla_ins.variables)
     # Step 3. ENTER the ICE Solving Loop
@@ -84,11 +86,10 @@ def main(path2tla, path2cfg, path2json, path2config):
             logging.info(f"消除了一些cti，分别是{new_eliminate_cti}")
             # if (len(new_eliminate_cti) == 0 or len(new_eliminate_cti[is_inv[-1]]) == 0) and iteration > 1:
 
-            if len(new_eliminate_cti) == 0 and iteration > 1:
+            if len(new_eliminate_cti) == 0 and len(ctis) > 0 and iteration > 1:
                 logging.info(f">>>iteration {iteration}: 被之前的candidate蕴含了，应该严格一点")
                 pt_generator.punish('STRICT', 'VERY')
-                if len(ctis) != 0:
-                    continue
+                continue
             elif len(new_eliminate_cti) > 0 and len(ctis) > 0 and iteration > 1:
                 logging.info(f">>>iteration {iteration}: 找到了一个正确的不变式，继续")
                 pt_generator.prise('MEDIUM')
@@ -108,22 +109,21 @@ def main(path2tla, path2cfg, path2json, path2config):
                     logging.info("成功! Time cost is :  ", str(current_time - start_time))
                     return current_time - start_time, candidate_str
             logging.info(f">>>iteration {iteration}: 生成更多的cti")
-            new_ctis, cti_time = generate_ctis(seed_tmpl, candidate)
-
-            # for inv in ctis:
-            #     if ctis in new_eliminate_cti:
-            #         ctis.remove(inv)
-            # if is_right.assignment not in CE[is_right.kind]:
-            #     CE[is_right.kind].append(is_right.assignment)
-            # pt_generator.prise('LITTLE')
+            new_ctis = generate_ctis(seed_tmpl, candidate)
+            old_len = len(ctis)
             ctis = ctis.union(new_ctis)
+            if len(ctis) == old_len:
+                logging.info("也许已经是结果了")
+                save_result(candidate)
+                break
             # ctis_str = "\n".join(cti.get_cti_state_string() for cti in ctis)
             logging.info(f">>>iteration {iteration}: 新找到了{len(new_ctis)}个CTI, 目前CTI的总数是{len(ctis)}")
             continue
 
 
 if __name__ == "__main__":
-    name = "toy_consensus_epr"
+    begin = time.time()
+    name = "quorum_leader_election"
     config.specname = name
     path2tla = os.getcwd() + f"/Benchmarks/protocols/{name}.tla"
     path2cfg = os.getcwd() + f"/Benchmarks/cfg/{name}.cfg"
@@ -137,3 +137,5 @@ if __name__ == "__main__":
     # path2CFG=r"Benchmarks/Linear/c_graph/2.c.json"
     # path2SMT=r"Benchmarks/Linear/c_smt2/2.c.smt"
     main(path2tla, path2cfg, path2json, path2config)
+    print(str(time.time()-begin))
+

@@ -65,7 +65,7 @@ class TLA:
             var.index_type = info["param_type"]
             var.param_num = info["param_num"]
             var.result = self.construct_var("result", info["result"])
-        elif var.self_type == Type.SET :
+        elif var.self_type == Type.SET:
             var.sub_num = info["sub_num"]
             var.sub_type = info["sub_type"]
         elif var.self_type == Type.ARRAY:
@@ -106,7 +106,7 @@ class TLA:
             return []
 
         # 定义操作数、函数名和符号
-        identifier = Word(alphanums + "_" + "[]" +"{}")
+        identifier = Word(alphanums + "_" + "[]" + "{}")
         function_name = Word(alphanums + "_")
         keyword_not = Keyword("~")
         keyword_subset = Keyword("\\subseteq")
@@ -115,6 +115,8 @@ class TLA:
         keyword_and = Keyword("/\\")
         keyword_or = Keyword("\\/")
         keyword_x = Keyword("\\X")
+        keyword_to = Keyword("->")
+        keyword_is = Keyword("|->")
 
         # 定义括号
         LPAREN = Suppress("(")
@@ -124,6 +126,8 @@ class TLA:
         precedence = [
             (keyword_x, 2, opAssoc.LEFT),
             (keyword_subset, 2, opAssoc.LEFT),
+            (keyword_is, 2, opAssoc.LEFT),
+            (keyword_to, 2, opAssoc.LEFT),
             (keyword_belongs_to, 2, opAssoc.LEFT),
             (keyword_equal, 2, opAssoc.LEFT),
             (keyword_and, 2, opAssoc.LEFT),
@@ -165,16 +169,16 @@ class TLA:
         def __init__(self, ):
             super(Element, self).__init__()
 
-# if __name__ == "__main__":
-#     # quant_reg = re.compile(r"\\[AE](.*?):")
-#     # inputs = (
-#     #              "Safety == \n /\\ \\A t,x \\in Node : <<t,x,x>> \\in table\n    /\\ \\A t,x,y,z \\in Node : (<<t,"
-#     #              "x,y>> \\in table /\\ <<t,y,z>> \\in table) => (<<t,x,z>> \\in table)\n    /\\ \\A t,x,y \\in Node : "
-#     #              "(<<t,x,y>> \\in table /\\ <<t,y,x>> \\in table) => (x = y)\n    /\\ \\A t,x,y,z \\in Node : (<<t,x,"
-#     #              "y>> \\in table /\\ <<t,x,z>> \\in table) => (<<t,y,z>> \\in table \\/ <<t,z,y>> \\in table)\n").split(
-#     #     "==")[-1].strip()[2:]
-#
-#     inputs = quant_reg.sub("", inputs)
-#     print(inputs)
-#     a = TLA.parse_logic_expression(inputs)
-#     print(a)
+
+if __name__ == "__main__":
+    # quant_reg = re.compile(r"\\[AE](.*?):")
+    inputs = (
+                 "Init == "
+                 " /\\ semaphore = [i \\in Server |-> TRUE]"
+                 "/\\ clientlocks = [i \\in Client |-> {}]"
+             ).split("==")[-1].strip()[2:]
+
+    # inputs = quant_reg.sub("", inputs)
+    # print(inputs)
+    a = TLA.parse_logic_expression(inputs)
+    print(a)

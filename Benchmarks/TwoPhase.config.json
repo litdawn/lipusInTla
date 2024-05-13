@@ -20,18 +20,14 @@
     ],
     "preds_alt" : [],
     "safety"  :  "TCConsistent",
-    "constants"  :  [
-        "CONSTANTS",
-        "RM={rm1,rm2,rm3}",
-        "rm1 = rm1",
-        "rm2 = rm2",
-        "rm3 = rm3"
-    ],
+    "constants"  :  "CONSTANTS\nRM={rm1,rm2,rm3}\nrm1 = rm1\nrm2 = rm2\nrm3 = rm3",
     "constraint"  :  "",
+    "quant_vars" : [],
     "quant_inv"  :  "\\A rmi \\in RM : \\A rmj \\in RM : ",
     "quant_inv_alt"  :  null,
     "model_consts"  :  "CONSTANT rm1,rm2,rm3",
     "symmetry" : true,
     "typeok"  :  "TypeOK",
-    "simulate"  :  true      
+    "simulate"  :  true,
+    "variable" : "rmi,rmj"
 }

@@ -83,6 +83,8 @@ def generate_lemmas(seeds: list, min_num_conjuncts=2, max_num_conjuncts=5, num_i
     invs_sym = []
     invs_sym_strs = []
 
+    choose = list()
+
     for inv_id in range(num_invs):
         conjuncts = list(seeds)
         # conjuncts = list(map(str, range(len(preds))))
@@ -98,6 +100,7 @@ def generate_lemmas(seeds: list, min_num_conjuncts=2, max_num_conjuncts=5, num_i
         (n, fn) = (neg_op, symb_neg_op) if negate else ("", "")
 
         inv = n + "(" + c + ")"
+        choose.append(inv)
         pred_id_var = f"x_{str(seed_id[c]).zfill(3)}"
         symb_inv_str = fn + "(" + pred_id_var + ")"
 
@@ -111,6 +114,7 @@ def generate_lemmas(seeds: list, min_num_conjuncts=2, max_num_conjuncts=5, num_i
             negate = random.choice([True, False])
             (n, fn) = (neg_op, symb_neg_op) if negate else ("", "")
             new_term = n + "(" + c + ")"
+            choose.append(new_term)
 
             # Sort invariant terms to produce more consistent output regardless of random seed.
             new_inv_args = [new_term, inv]
@@ -144,7 +148,7 @@ def generate_lemmas(seeds: list, min_num_conjuncts=2, max_num_conjuncts=5, num_i
     # return invs_sym_strs
     # return set(map(str, invs_sym))
     # return {"raw_invs": set(invs), "pred_invs": invs_sym_strs}
-    return invs
+    return invs, choose
 
 
 def strictness_distribution(seed_list, seed, length):
@@ -168,7 +172,7 @@ def looseness_distribution(seed_list, seed, length):
     }
     print(length)
     gamma = distri_dict["all"][length - 2]
-    res = torch.ones(len(seed_list), 1,  dtype=torch.float32)
+    res = torch.ones(len(seed_list), 1, dtype=torch.float32)
     for i, every_seed in enumerate(seed_list):
         if every_seed == seed:
             res[i, 0] = res[i, 0] * gamma
@@ -205,4 +209,6 @@ def sampling(action_distribution, sample_list: list, seeds_num=5, pure_random=Fa
         except Exception as e:
             print("shit", e)
             raise e
-    return generate_lemmas(seeds_selected), seeds_selected
+
+    invs, choose = generate_lemmas(seeds_selected)
+    return invs, choose

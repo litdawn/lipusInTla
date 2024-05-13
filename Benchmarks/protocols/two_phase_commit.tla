@@ -1,7 +1,7 @@
 ---- MODULE two_phase_commit ----
 \* benchmark: i4-two-phase-commit
 
-EXTENDS TLC
+EXTENDS TLC, Integers
 
 CONSTANT Node
 
@@ -104,5 +104,10 @@ Safety ==
     /\ \A n,n2 \in Node : (n \in decide_abort) => abort_flag
 
 Symmetry == Permutations(Node)
+
+
+
+
+
 
 ====

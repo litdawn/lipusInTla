@@ -10,8 +10,8 @@ class IntLize(nn.Module):
         super().__init__()
         # self.layer1 = nn.Linear(SIZE_EXP_NODE_FEATURE, SIZE_EXP_NODE_FEATURE//2)
         # self.layer2 = nn.Linear(SIZE_EXP_NODE_FEATURE//2, 1)
-        self.layer1_n = nn.Linear(config.SIZE_EXP_NODE_FEATURE, config.SIZE_EXP_NODE_FEATURE//2)
-        self.layer2_n = nn.Linear(config.SIZE_EXP_NODE_FEATURE//2, 1)
+        self.layer1_n = nn.Linear(config.SIZE_EXP_NODE_FEATURE, config.SIZE_EXP_NODE_FEATURE // 2)
+        self.layer2_n = nn.Linear(config.SIZE_EXP_NODE_FEATURE // 2, 1)
 
     def forward(self, action_vector, left_handle):
         # print("value", self.layer2(self.layer1(action_vector)))
@@ -19,12 +19,11 @@ class IntLize(nn.Module):
             return torch.min(
                 torch.cat([torch.max(
                     torch.cat([self.layer2_n(self.layer1_n(action_vector)),
-                               tensor([[1]],dtype=torch.float32)],0)).reshape(1,1),
-                           tensor([[4]],dtype=torch.float32)],0))
-        assert False # should not be here now
+                               tensor([[1]], dtype=torch.float32)], 0)).reshape(1, 1),
+                           tensor([[4]], dtype=torch.float32)], 0))
+        assert False  # should not be here now
         # else:
         #     return self.layer2(self.layer1(action_vector))
-
 
     # def GetParameters(self):
     #     res = {}
@@ -41,6 +40,3 @@ class IntLize(nn.Module):
 # 在 forward 方法中，如果 left_handle.decl() 的值为 'non_nc' 或 'non_nd'，那么它会计算一个值，这个值是 self.layer2_n(self.layer1_n(action_vector)) 和 tensor([[1]],dtype=torch.float32) 中的最大值与 tensor([[4]],dtype=torch.float32) 中的最小值。否则，它会触发一个断言错误，表示不应该到达这里。
 #
 # GetParameters 方法会返回一个字典，这个字典包含了 layer1_n 和 layer2_n 的参数。
-
-
-

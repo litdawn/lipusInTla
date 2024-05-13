@@ -22,8 +22,7 @@ class PT_generator:
             self.candidate.update({"Typeok": self.seed_tmpl.typeok})
 
     def generate_next(self, cti):
-        # seeds_num = random.randint(2, 4)
-        seeds_num = 2
+        seeds_num = random.randint(2, 3)
         new_candidate, raw_lemmas = sampling([], self.seeds, seeds_num,True)
         while self.if_already_generate(raw_lemmas):
             new_candidate, raw_lemmas = sampling([], self.seeds, seeds_num,True)

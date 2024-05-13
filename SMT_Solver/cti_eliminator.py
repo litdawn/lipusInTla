@@ -174,9 +174,6 @@ def eliminate_ctis(all_invs, invs, orig_k_ctis, seed_tmpl):
     # partition the invariants into sub groups for checking with TLC, since
     # it can get overwhelmed when trying to check too many invariants at
     # once.
-    #
-    # TODO: Properly parallelize CTI elimination checking.
-    #
     curr_ind = 0
 
     # Run CTI elimination checking in parallel.

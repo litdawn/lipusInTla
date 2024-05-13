@@ -22,11 +22,11 @@ class Config:
 
     specname = ""
 
-    simulate = False
+    simulate = True
 
     cti_generate_use_apalache = False
     TLC_PATH = ""
-    TLC_MAX_SET_SIZE = 10000
+    TLC_MAX_SET_SIZE = 1000000
 
     JAVA_EXE = "java"
 

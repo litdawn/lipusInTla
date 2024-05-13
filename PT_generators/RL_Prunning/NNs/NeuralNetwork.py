@@ -7,7 +7,7 @@ from PT_generators.RL_Prunning.Conifg import config
 from PT_generators.RL_Prunning.NNs.CounterExampleEmbedding import CEEmbedding
 from PT_generators.RL_Prunning.NNs.OverallEmbedding import OverallEmbedding
 from PT_generators.RL_Prunning.NNs.DistributionLize import DistributionLize
-from PT_generators.RL_Prunning.NNs.IntLize import IntLize
+# from PT_generators.RL_Prunning.NNs.IntLize import IntLize
 from PT_generators.RL_Prunning.NNs.PolicyNetwork import PolicyNetwork
 from PT_generators.RL_Prunning.NNs.RewardPredictor import RewardPredictor
 from PT_generators.RL_Prunning.NNs.SymbolEmbeddings import SymbolEmbeddings
@@ -40,8 +40,8 @@ def construct_distributionlize():
     return DistributionLize()
 
 
-def construct_intValuelzie():
-    return IntLize()
+# def construct_intValuelzie():
+#     return IntLize()
 
 
 def init_symbolEmbeddings(seed_tmpl):

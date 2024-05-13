@@ -22,9 +22,15 @@ class RewardPredictor(nn.Module):
         if torch.cuda.is_available():
             m10 = m10.cuda()
             p10 = p10.cuda()
-        return torch.min(
-            torch.cat([torch.max(torch.cat([self.layer3(self.layer2(l1out)), m10], 1)).reshape(1, 1), p10], 1)).reshape(
-            1, 1)
+        return (torch.min(
+                    torch.cat([
+                        torch.max(
+                            torch.cat([
+                                self.layer3(self.layer2(l1out))
+                                , m10], 1)
+                        ).reshape(1, 1)
+                        , p10], 1))
+                .reshape(1, 1))
 
     def get_parameters(self):
         res = {}

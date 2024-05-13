@@ -74,7 +74,7 @@ def generate_ctis_tlc_run_async(seed_tmpl, candidate, num_traces_per_worker=15):
 
     # Add definitions for for all strengthening conjuncts and for the current invariant.
     for cinvname, cinvexp in candidate.items():
-        if cinvname != "Safety":
+        if not (cinvname == "Safety" and cinvexp == "Safety"):
             invcheck_tla_indcheck += ("%s == %s\n" % (cinvname, cinvexp))
 
     # Create formula string which is conjunction of all strengthening conjuncts.
@@ -141,7 +141,7 @@ def generate_ctis_tlc_run_async(seed_tmpl, candidate, num_traces_per_worker=15):
 
     simulate_flag = ""
     simulate_depth = 0
-    if config.simulate:
+    if seed_tmpl.simulate:
         # traces_per_worker = self.num_simulate_traces // num_ctigen_tlc_workers
         traces_per_worker = num_traces_per_worker
         simulate_flag = "-simulate num=%d" % traces_per_worker
@@ -165,7 +165,7 @@ def generate_ctis_tlc_run_async(seed_tmpl, candidate, num_traces_per_worker=15):
         cmd = (
             f'java -cp {config.TLC_PATH} tlc2.TLC'
             f' -maxSetSize {config.TLC_MAX_SET_SIZE} '
-            # f' {simulate_flag} -depth {simulate_depth} '
+            f' {simulate_flag} -depth {simulate_depth} '
             f' -seed {ctiseed} -noGenerateSpecTE -metadir states\\indcheckrandom_{tag}'
             f' -continue -deadlock -workers {num_ctigen_tlc_workers} -config {indcheckcfgfilename} '
             f' {indchecktlafilename}')
@@ -182,7 +182,7 @@ def generate_ctis_apalache_run_await(subproc):
     """ Awaits completion of a CTI generation process, parses its results and returns the parsed CTIs."""
     start_time = time.time()
     tlc_out = subproc.stdout.read().decode(sys.stdout.encoding)
-    # print(tlc_out)
+
     end_time = time.time()
     # logging.debug(tlc_out)
     # lines = tlc_out.splitlines()
@@ -320,7 +320,7 @@ def parse_ctis(lines):
         (curr_line, trace_ctis) = parse_cti_trace(lines, curr_line)
         all_ctis = all_ctis.union(trace_ctis)
         curr_line += 1
-    return all_ctis, 0
+    return all_ctis
 
 
 def generate_ctis_tlc_run_await(subproc):
@@ -328,6 +328,7 @@ def generate_ctis_tlc_run_await(subproc):
     tlc_out = subproc.stdout.read().decode("gbk")
     # print(tlc_out)
     lines = tlc_out.splitlines()
+    print(lines)
     if "Error: parsing" in tlc_out:
         logging.error("Error in TLC execution, printing TLC output.")
         for line in lines:
@@ -348,6 +349,7 @@ def generate_ctis_tlc_run_await(subproc):
 
 def generate_ctis(seed_tmpl, candidate):
     """ Generate CTIs for use in counterexample elimination. """
+    print(candidate)
 
     all_ctis = set()
 
@@ -357,7 +359,7 @@ def generate_ctis(seed_tmpl, candidate):
     # in parallel, using a separate TLC instance.
     num_cti_worker_procs = 1
     cti_subprocs = []
-    all_time = 0.0
+    # all_time = 0.0
     num_traces_per_tlc_instance = 15
 
     # Start the TLC processes for CTI generation.
@@ -373,14 +375,14 @@ def generate_ctis(seed_tmpl, candidate):
     # Await completion and parse results.
     for cti_subproc in cti_subprocs:
         if config.cti_generate_use_apalache:
-            parsed_ctis, times = generate_ctis_apalache_run_await(cti_subproc)
+            parsed_ctis = generate_ctis_apalache_run_await(cti_subproc)
         else:
-            parsed_ctis, times = generate_ctis_tlc_run_await(cti_subproc)
+            parsed_ctis = generate_ctis_tlc_run_await(cti_subproc)
         all_ctis = all_ctis.union(parsed_ctis)
-        all_time += times
+        # all_time += times
 
     # FOR DIAGNOSTICS.
     # for x in sorted(list(all_ctis))[:10]:
     # print("all_ctis ", all_ctis)
     # print(f"all {len(all_ctis)} ctis {print_cti_set(all_ctis)}")
-    return all_ctis, all_time
+    return all_ctis

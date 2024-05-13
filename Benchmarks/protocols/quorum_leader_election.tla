@@ -1,7 +1,7 @@
 ---- MODULE quorum_leader_election ----
 \* benchmark: ex-quorum-leader-election
 
-EXTENDS TLC, Naturals, FiniteSets
+EXTENDS TLC, Naturals, FiniteSets, Integers
 
 CONSTANT Node
 CONSTANT Nil
@@ -43,5 +43,7 @@ TypeOK ==
     /\ voted \in [Node -> Node \cup {Nil}]
 
 NextUnchanged == UNCHANGED vars
+
+
 
 ====

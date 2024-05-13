@@ -14,5 +14,6 @@
     "model_consts"  :  "CONSTANT s1,s2,c1,c2",
     "symmetry" : false,
     "typeok"  :  "TypeOK",
-    "simulate"  :  false      
+    "simulate"  :  false,
+    "variable" : "VARS,VARC"
 }

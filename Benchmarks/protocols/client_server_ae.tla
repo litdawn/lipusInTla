@@ -1,7 +1,7 @@
 ---- MODULE client_server_ae ----
 \* benchmark: pyv-client-server-ae
 
-EXTENDS TLC
+EXTENDS TLC, Integers
 
 CONSTANT Node
 CONSTANT Request
@@ -10,8 +10,12 @@ CONSTANT Response
 VARIABLE match
 
 VARIABLE request_sent
-VARIABLE response_sent
-VARIABLE response_received
+VARIABLE
+    \* @type: Set(<<Str, Str>>);
+    response_sent
+VARIABLE
+    \* @type: Set(<<Str, Str>>);
+    response_received
 
 vars == <<match,request_sent,response_sent,response_received>>
 
@@ -54,5 +58,9 @@ NextUnchanged == UNCHANGED vars
 Safety == \A n \in Node, p \in Response : (<<n,p>> \in response_received) => ResponseMatched(n,p)
 
 Symmetry == Permutations(Node) \cup Permutations(Request) \cup Permutations(Response)
+
+
+
+
 
 ====
