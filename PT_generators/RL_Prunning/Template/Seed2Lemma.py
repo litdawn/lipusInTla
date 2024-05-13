@@ -64,8 +64,8 @@ def get_action_index(last_seed, seed_list):
             else:
                 return tensor([i])
 
-    print(last_seed)
-    print(seed_list)
+    # print(last_seed)
+    # print(seed_list)
 
     assert False  # should not be here
 
