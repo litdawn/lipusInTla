@@ -21,5 +21,6 @@
     "model_consts"  :  "",
     "symmetry" : false,
     "typeok"  :  "TypeOK",
-    "simulate"  :  false      
+    "simulate"  :  false,
+    "variable": "VARS,VART"
 }

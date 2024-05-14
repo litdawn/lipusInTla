@@ -1,6 +1,6 @@
 import json
-import time
-import logging
+from Utilities.Timing import timer,TIMER
+from Utilities.Logging import log
 import subprocess
 import tempfile
 from SMT_Solver.Config import config
@@ -11,7 +11,6 @@ from SMT_Solver.Util import *
 
 def make_indquickcheck_tla_spec(specname, invs: dict, sat_invs_group: list, orig_k_ctis: set, seed_tmpl):
     # print(f"sat_invs_group {sat_invs_group}")
-    begin = time.time()
     # invs_sorted = sorted(invs)
 
     # Start building the spec.
@@ -129,17 +128,15 @@ def eliminate_ctis(all_invs, invs, orig_k_ctis, seed_tmpl):
     # process_local = False
     # quant_inv_fn = seed_tmpl.quant_inv
 
-    iteration = 1
+    # iteration = 1
     # uniqid = 0
     # logging.info("\n>>> Iteration %d (num_conjs=(min=%d,max=%d),process_local=%s)" % (
     #     iteration, min_conjs, max_conjs, process_local))
 
-    logging.info("Starting iteration %d of eliminate_ctis")
-
-    print_invs = False  # disable printing for now.
-    if print_invs:
-        for inv, invexp in invs.items():
-            logging.info("%s %s %s", inv, "==", invexp)
+    # print_invs = False  # disable printing for now.
+    # if print_invs:
+    #     for inv, invexp in invs.items():
+    #         logging.info("%s %s %s", inv, "==", invexp)
 
     # Try to select invariants based on size ordering.
     # First, sort invariants by the number of CTIs they eliminate.
@@ -159,7 +156,7 @@ def eliminate_ctis(all_invs, invs, orig_k_ctis, seed_tmpl):
     #
     ############
 
-    logging.info("Checking which invariants eliminate CTIs.")
+    log.info("Checking which invariants eliminate CTIs.")
 
     # Initialize table mapping from invariants to a set of CTI states they violate.
     cti_states_eliminated_by_invs = {}
@@ -185,7 +182,7 @@ def eliminate_ctis(all_invs, invs, orig_k_ctis, seed_tmpl):
     # while curr_ind < len(inv_list):
     # print(invs)
     # sat_invs_group = inv_list[curr_ind:(curr_ind + MAX_INVS_PER_GROUP)]
-    logging.info("Checking invariant group of size %d (starting invariant=%d) for CTI elimination." % (
+    log.info("Checking invariant group of size %d (starting invariant=%d) for CTI elimination." % (
         len(inv_list), curr_ind))
     tlc_procs = []
 
@@ -224,7 +221,7 @@ def eliminate_ctis(all_invs, invs, orig_k_ctis, seed_tmpl):
                f'-continue -checkAllInvariants -deadlock '
                f'-workers 1 -config {ctiquickcfgfilename} {ctiquicktlafilename}')
 
-        logging.info("TLC command: " + cmd)
+        log.info("TLC command: " + cmd)
         workdir = None if config.specdir == "" else config.specdir
         subproc = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, cwd=workdir)
         # time.sleep(0.25)
@@ -232,7 +229,7 @@ def eliminate_ctis(all_invs, invs, orig_k_ctis, seed_tmpl):
 
     eliminated_ctis = set()
     for ci, subproc in enumerate(tlc_procs):
-        logging.info("Waiting for TLC termination " + str(ci))
+        log.info("Waiting for TLC termination " + str(ci))
 
         subproc.wait()
         ret = subproc.stdout.read().decode(sys.stdout.encoding)
@@ -270,7 +267,7 @@ def eliminate_ctis(all_invs, invs, orig_k_ctis, seed_tmpl):
         #     if len(cti_states_eliminated_by_invs[inv]):
         #         invi = int(inv.replace("inv_", ""))
         #         invexp = invs[inv]
-        logging.info(f"{cti_states_eliminated_by_invs}")
+        log.info(f"{cti_states_eliminated_by_invs}")
 
         # The estimated syntactic/semantic "cost" (i.e complexity) of an invariant expression.
 
@@ -283,11 +280,11 @@ def eliminate_ctis(all_invs, invs, orig_k_ctis, seed_tmpl):
         num_ctis_remaining = len(list(cti_table.keys())) - len(eliminated_ctis)
         num_orig_ctis = len(list(cti_table.keys()))
         # duration = time.time() - tstart
-        logging.info("[ End eliminate (took {:.2f} secs.) ]".format(iteration, ))
-        logging.info("%d original CTIs." % num_orig_ctis)
+        # log.info("[ End eliminate (took {:.2f} secs.) ]".format(iteration, ))
+        log.info("%d original CTIs." % num_orig_ctis)
         # logging.info("%d new CTIs eliminated in this iteration." % cti_states_eliminated_in_iter)
-        logging.info("%d total CTIs eliminated." % len(eliminated_ctis))
-        logging.info("%d still remaining." % num_ctis_remaining)
+        log.info("%d total CTIs eliminated." % len(eliminated_ctis))
+        log.info("%d still remaining." % num_ctis_remaining)
 
         # end_timing_ctielimcheck()
     new_ctis = set()

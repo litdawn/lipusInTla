@@ -1,7 +1,7 @@
 from z3 import *
 set_param('parallel.enable', True)
 from SMT_Solver.Config import config
-from Utilities.TimeController import time_limit_calling
+from Ztmpp.TimeController import time_limit_calling
 
 
 class Counterexample:

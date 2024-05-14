@@ -26,5 +26,6 @@
     "model_consts"  :  "CONSTANT n1,n2,n3,r1,r2,r3,p1,p2,p3,i1,i2,i3",
     "symmetry" : true,
     "typeok"  :  "TypeOKRandom",
-    "simulate"  :  true      
+    "simulate"  :  true ,
+    "variable": "VARI,VARID,VARR,VARJ,VARP"
 }

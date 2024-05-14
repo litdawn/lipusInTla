@@ -1,7 +1,6 @@
 import logging
 # set_param('parallel.enable', True)
 from SMT_Solver.Config import config
-from Utilities.TimeController import time_limit_calling
 import subprocess
 
 apalache_bin = "apalache-0.44.2/bin/apalache-mc"

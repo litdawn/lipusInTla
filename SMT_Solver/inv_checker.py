@@ -1,20 +1,21 @@
 import random
-import logging
+# import logging
 import os
-import time
+# import time
 import subprocess
 import sys
 from SMT_Solver.Util import *
 from SMT_Solver.Config import config
 import tempfile
 
-logging.basicConfig(level=logging.INFO)
+from Utilities.Logging import log
+
 
 
 def check_invariants(invs: list, seed_tmpl, strengthening_conjuncts="", tlc_workers=3):
     seed = random.randint(0, 10000)
     """ Check which of the given invariants are valid. """
-    ta = time.time()
+    # ta = time.time()
     invcheck_tla = "---- MODULE %s_InvCheck_%d ----\n" % (config.specname, seed)
     invcheck_tla += "EXTENDS %s\n\n" % config.specname
 
@@ -60,13 +61,13 @@ def check_invariants(invs: list, seed_tmpl, strengthening_conjuncts="", tlc_work
     f.close()
 
     # Check invariants.
-    logging.info("Checking %d candidate invariants in spec file '%s'" % (len(invs), invcheck_spec_name))
+    log.info("Checking %d candidate invariants in spec file '%s'" % (len(invs), invcheck_spec_name))
     workdir = None if config.specdir == "" else config.specdir
     violated_invs = runtlc_check_violated_invariants(invchecktlafile, cfg=invcheck_cfg_file,
                                                      tlc_workers=tlc_workers, cwd=workdir, java=config.JAVA_EXE)
     sat_invs = (all_inv_names - violated_invs)
-    logging.info(
-        f"Found {len(sat_invs)} / {len(invs)} candidate invariants satisfied in {round(time.time() - ta, 2)}s.")
+    log.info(
+        f"Found {len(sat_invs)} / {len(invs)} candidate invariants satisfied")
 
     return sat_invs
 
@@ -100,7 +101,7 @@ def run_tlc(spec, cfg=None, tlc_workers=6, cwd=None, tlc_flags=""):
     if config:
         cmd += " -config " + cfg
     cmd += " " + spec
-    logging.info("TLC command: " + cmd)
+    log.info("TLC command: " + cmd)
     subproc = subprocess.run(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, cwd=cwd)
 
     line_str = ""

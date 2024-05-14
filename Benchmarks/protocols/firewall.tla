@@ -1,7 +1,7 @@
 ---- MODULE firewall ----
 \* benchmark: pyv-firewall
 
-EXTENDS TLC
+EXTENDS TLC, Integers
 
 CONSTANT Node
 
@@ -47,5 +47,6 @@ TypeOK ==
     /\ allowed_in \in SUBSET Node
 
 Symmetry == Permutations(Node)
+
 
 ====

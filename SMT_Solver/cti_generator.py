@@ -1,13 +1,15 @@
 import random
 import os
-import logging
+
 import json
 import sys
 import subprocess
-import time
+
 import tempfile
 from SMT_Solver.Config import config
 from SMT_Solver.Util import *
+
+from Utilities.Logging import log
 
 
 class CTI:
@@ -136,7 +138,7 @@ def generate_ctis_tlc_run_async(seed_tmpl, candidate, num_traces_per_worker=15):
     #     traces_per_worker = num_traces_per_worker
     #     simulate_flag = "-simulate num=%d" % traces_per_worker
 
-    logging.info(f"Using fixed TLC worker count of {num_ctigen_tlc_workers} to ensure reproducible CTI generation.")
+    log.info(f"Using fixed TLC worker count of {num_ctigen_tlc_workers} to ensure reproducible CTI generation.")
     dirpath = tempfile.mkdtemp()
 
     simulate_flag = ""
@@ -158,7 +160,7 @@ def generate_ctis_tlc_run_async(seed_tmpl, candidate, num_traces_per_worker=15):
         cmd = (f"java -jar {config.apalache_path} check --run-dir={config.output_directory} "
                f"--init=IndCand --inv=IndCand --length=1 --config={indcheckcfgfilename}"
                f" {indchecktlafilename}")
-        logging.info("Apalache command: " + cmd)
+        log.info("Apalache command: " + cmd)
         subproc = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, cwd=workdir)
         return subproc
     else:
@@ -169,7 +171,7 @@ def generate_ctis_tlc_run_async(seed_tmpl, candidate, num_traces_per_worker=15):
             f' -seed {ctiseed} -noGenerateSpecTE -metadir states\\indcheckrandom_{tag}'
             f' -continue -deadlock -workers {num_ctigen_tlc_workers} -config {indcheckcfgfilename} '
             f' {indchecktlafilename}')
-        logging.info("TLC command: " + cmd)
+        log.info("TLC command: " + cmd)
 
         subproc = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, cwd=workdir)
         # subproc = subprocess.run(cmd, shell=True, stdout=subprocess.PIPE, cwd=workdir)
@@ -180,10 +182,10 @@ def generate_ctis_tlc_run_async(seed_tmpl, candidate, num_traces_per_worker=15):
 
 def generate_ctis_apalache_run_await(subproc):
     """ Awaits completion of a CTI generation process, parses its results and returns the parsed CTIs."""
-    start_time = time.time()
+    # start_time = time.time()
     tlc_out = subproc.stdout.read().decode(sys.stdout.encoding)
 
-    end_time = time.time()
+    # end_time = time.time()
     # logging.debug(tlc_out)
     # lines = tlc_out.splitlines()
 
@@ -206,7 +208,7 @@ def generate_ctis_apalache_run_await(subproc):
 
     # parsed_ctis = self.parse_ctis(lines)
     # return parsed_ctis
-    return all_tla_ctis, end_time - start_time
+    return all_tla_ctis
 
 
 def itf_json_val_to_tla_val(itfval):
@@ -330,16 +332,16 @@ def generate_ctis_tlc_run_await(subproc):
     lines = tlc_out.splitlines()
     print(lines)
     if "Error: parsing" in tlc_out:
-        logging.error("Error in TLC execution, printing TLC output.")
+        log.error("Error in TLC execution, printing TLC output.")
         for line in lines:
-            logging.info("[TLC output] " + line)
+            log.info("[TLC output] " + line)
 
     # Check for error:
     # 'Error: Too many possible next states for the last state in the trace'
     if "Error: Too many possible next states" in tlc_out:
-        logging.error("Error in TLC execution, printing TLC output.")
+        log.error("Error in TLC execution, printing TLC output.")
         for line in lines:
-            logging.info("[TLC output] " + line)
+            log.info("[TLC output] " + line)
         return set()
 
     parsed_ctis = parse_ctis(lines)
@@ -363,9 +365,9 @@ def generate_ctis(seed_tmpl, candidate):
     num_traces_per_tlc_instance = 15
 
     # Start the TLC processes for CTI generation.
-    logging.info(f"Running {num_cti_worker_procs} parallel CTI generation processes")
+    log.info(f"Running {num_cti_worker_procs} parallel CTI generation processes")
     for n in range(num_cti_worker_procs):
-        logging.info(f"Starting CTI generation process {n}")
+        log.info(f"Starting CTI generation process {n}")
         cti_subproc = generate_ctis_tlc_run_async(seed_tmpl=seed_tmpl,
                                                   candidate=candidate,
                                                   num_traces_per_worker=num_traces_per_tlc_instance, )

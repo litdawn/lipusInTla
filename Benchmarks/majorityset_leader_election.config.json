@@ -29,5 +29,5 @@
     "symmetry" : true,
     "typeok"  :  "TypeOKRandom",
     "simulate"  :  true,
-    "variable": "VARI,VARJ"
+    "variable": "VARI,VARJ,VARK"
 }

@@ -1,7 +1,7 @@
 ---- MODULE majorityset_leader_election ----
 \* benchmark: ex-majorityset-leader-election
 
-EXTENDS TLC, Naturals, FiniteSets, Randomization
+EXTENDS TLC, Naturals, FiniteSets, Randomization, Integers
 
 CONSTANT Node
 
@@ -61,5 +61,6 @@ Safety == \A x,y \in Node : (x \in leader) /\ (y \in leader) => (x = y)
 Symmetry == Permutations(Node)
 
 NextUnchanged == UNCHANGED vars
+
 
 ====
