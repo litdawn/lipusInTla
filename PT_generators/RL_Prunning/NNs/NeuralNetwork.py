@@ -1,4 +1,4 @@
-import pickle
+# import pickle
 
 import torch
 from torch.nn import Parameter
@@ -12,7 +12,7 @@ from PT_generators.RL_Prunning.NNs.PolicyNetwork import PolicyNetwork
 from PT_generators.RL_Prunning.NNs.RewardPredictor import RewardPredictor
 from PT_generators.RL_Prunning.NNs.SymbolEmbeddings import SymbolEmbeddings
 from PT_generators.RL_Prunning.NNs.TreeLSTM import TreeLSTM
-from PT_generators.RL_Prunning.Template.Seed2Lemma import RULE
+# from PT_generators.RL_Prunning.Template.Seed2Lemma import RULE
 
 
 def constructT(seed_tmpl):

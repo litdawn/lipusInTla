@@ -157,4 +157,5 @@ IND ==
  /\ \A rmi \in RM : \A rmj \in RM : (rmState[rmj] = "prepared") \/ (~(rmState[rmj] = "working")) \/ (~(tmPrepared = RM))
  /\ \A rmi \in RM : \\A rmj \\in RM : ~([type |-> "Abort"] \\in msgs) \\/ (~([type |-> "Commit"] \\in msgs))
 
+
 ====

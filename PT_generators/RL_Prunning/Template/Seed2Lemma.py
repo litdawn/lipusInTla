@@ -1,59 +1,49 @@
-import logging
+from typing import List
+
+from Utilities.Logging import log
 import random
 import torch
 from torch import tensor
 import numpy as np
-from PT_generators.RL_Prunning.NNs.SymbolEmbeddings import SymbolEmbeddings
-from PT_generators.RL_Prunning.Conifg import config
 
 
-def op_and(*args):
-    return f"({args[0]})/\\({args[1]})"
+class seed2Lemma:
+    def op_and(self, *args):
+        return f"({args[0]})/\\({args[1]})"
+
+    def op_and_str(self):
+        return "and"
+
+    def op_or(self, *args):
+        return f"({args[0]})\\/({args[1]})"
+
+    def op_or_str(self):
+        return "or"
+
+    def op_neg(self, *args):
+        return f"(~ {args[0]})"
+
+    def op_neg_str(self):
+        return "neg"
+
+    op_and.__str__ = op_and_str
+    op_or.__str__ = op_or_str
+    op_neg_str.__str__ = op_neg_str
+
+    # RULE = {
+    #     "all": [op_and, op_or, op_neg]
+    # }
+
+    RULE = {
+        "all": [2, 3, 4, 5, 6, 7]
+        # todo 应该是in/ subseteq/ = /[]/ ()几类
+    }
+
+    DIST = []
 
 
-def op_and_str():
-    return "and"
-
-
-def op_or(*args):
-    return f"({args[0]})\\/({args[1]})"
-
-
-def op_or_str():
-    return "or"
-
-
-def op_neg(*args):
-    return f"(~ {args[0]})"
-
-
-def op_neg_str():
-    return "neg"
-
-
-op_and.__str__ = op_and_str
-op_or.__str__ = op_or_str
-op_neg_str.__str__ = op_neg_str
-
-# RULE = {
-#     "all": [op_and, op_or, op_neg]
-# }
-
-RULE = {
-    "all": [2, 3, 4, 5, 6, 7]
-    # todo 应该是in/ subseteq/ = /[]/ ()几类
-}
-
-
-# RULE = {
-#     "and": op_and,
-#     "or": op_or,
-#     "neg": op_neg
-#
-# }
-
-def get_available_rule():
-    return RULE["all"]
+# def get_available_rule():
+#     return RULE["all"]
 
 
 def get_action_index(last_seed, seed_list):
@@ -137,7 +127,7 @@ def generate_lemmas(seeds: list, min_num_conjuncts=2, max_num_conjuncts=5, num_i
             # print(type(invs_sym[-1]))
             invs_sym_strs.append(symb_inv_str)
 
-    logging.info(f"number of invs: {len(invs)}")
+    log.info(f"generate {len(invs)} invs.")
 
     # # Do CNF based equivalence reduction.
     # invs = symb_equivalence_reduction(invs, invs_sym)
@@ -145,7 +135,6 @@ def generate_lemmas(seeds: list, min_num_conjuncts=2, max_num_conjuncts=5, num_i
 
     # if len(quant_vars):
     # invs = pred_symmetry_reduction(invs, quant_vars)
-    logging.info(f"number of post symmetry invs: {len(invs)}")
 
     # return invs_sym
     # return invs_sym_strs
@@ -154,31 +143,33 @@ def generate_lemmas(seeds: list, min_num_conjuncts=2, max_num_conjuncts=5, num_i
     return invs, choose
 
 
+def init_dict(seed_list):
+    DIST = [1 / len(seed_list)] * len(seed_list)
+
+
 def strictness_distribution(seed_list, seed, length):
-    distri_dict = {
-        "all": [0.05, 0.05, 0.2, 0.3, 0.3, 0.1]
-    }
-    gamma = distri_dict["all"][length - 2]
+    distri_dict = [1 / len(seed_list)] * len(seed_list)
     res = torch.ones(len(seed_list), 1, dtype=torch.float32)
     for i, every_seed in enumerate(seed_list):
         if every_seed == seed:
-            res[i, 0] = res[i, 0] * gamma
+            res[i, 0] = res[i, 0] * distri_dict[i]
+            distri_dict[i] += 1 / len(seed_list)
 
+    normalization(distri_dict)
     if torch.cuda.is_available():
         res = res.cuda()
     return res
 
 
-def looseness_distribution(seed_list, seed, length):
-    distri_dict = {
-        "all": [0.1, 0.2, 0.3, 0.3, 0.05, 0.05]
-    }
-    print(length)
-    gamma = distri_dict["all"][length - 2]
+def looseness_distribution(seed_list, seeds_selected):
+    distri_dict = [1 / len(seed_list)] * len(seed_list)
     res = torch.ones(len(seed_list), 1, dtype=torch.float32)
     for i, every_seed in enumerate(seed_list):
-        if every_seed == seed:
-            res[i, 0] = res[i, 0] * gamma
+        res[i, 0] = distri_dict[i]
+        for j, seed in enumerate(seeds_selected):
+            if every_seed == seed:
+                res[i, 0] = 1
+                break
 
     if torch.cuda.is_available():
         res = res.cuda()
@@ -186,7 +177,10 @@ def looseness_distribution(seed_list, seed, length):
 
 
 def normalization(dist):
-    lister = [float(x) for x in list(dist[0])]
+    if type(dist) is list:
+        lister = [float(x) for x in dist]
+    else:
+        lister = [float(x) for x in list(dist[0])]
     sumer = sum(lister)
     lister = [x / sumer for x in lister]
     # print("lister ",lister)
@@ -206,11 +200,11 @@ def sampling(action_distribution, sample_list: list, seeds_num=5, pure_random=Fa
     else:
         try:
             # print(sample_list)
-            seeds_selected = np.random.choice(sample_list, size=seeds_num, replace=False,
+            seeds_selected = np.random.choice(sample_list, size=seeds_num, replace=True,
                                               p=normalization(action_distribution))
             # print(seeds_selected)
         except Exception as e:
-            print("shit", e)
+            print("错误：请检查config文件中的seed是否重复")
             raise e
 
     invs, choose = generate_lemmas(seeds_selected)

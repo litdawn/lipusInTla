@@ -1,7 +1,7 @@
 ---- MODULE toy_consensus_forall ----
 \* benchmark: pyv-toy-consensus-forall
 
-EXTENDS TLC, Naturals, FiniteSets
+EXTENDS TLC, Naturals, FiniteSets, Integers
 
 CONSTANT Node
 CONSTANT Value
@@ -78,6 +78,13 @@ A3 == wp(Decide, A1) ==
             \A n \in Q : (vote[n] = vz) => \A vi,vj \in ((decided \cup {v}) \cup {vz}) : vi = vj
 
 **)
+
+
+
+
+
+
+
 
 
 ====

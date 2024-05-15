@@ -12,6 +12,7 @@ from SMT_Solver.Config import config
 
 from Utilities.Timing import timer, TIMER
 from Utilities.Logging import log
+from Utilities.Analysis import Analyst
 
 
 def save_result(invs):
@@ -41,7 +42,10 @@ def main(path2tla, path2cfg, path2json, path2config):
     log.info(f"Begin_process:   {path2tla}")
     iteration = 0
     timer.new_timer(TIMER.EPOCH)
+    reward_list = []
     while not solved:
+        if iteration % 10 == 0:
+            print(reward_list)
         current_time = timer.get_and_refesh(TIMER.EPOCH)
         log.info(f"第{iteration}轮已经结束，本轮耗时{current_time}")
         if current_time >= config.Limited_time:
@@ -64,6 +68,7 @@ def main(path2tla, path2cfg, path2json, path2config):
         if len(is_inv) < 1:
             # 如果没通过不变式的检查，应该宽松一点
             log.info(f">>>iteration {iteration}: 没通过不变式检查，宽松一点，花费{timer.get_time(TIMER.LEMMA_CHECKER)}")
+            reward_list.append(-10)
             pt_generator.punish('LOOSE', 'VERY')
             continue
         else:
@@ -84,15 +89,18 @@ def main(path2tla, path2cfg, path2json, path2config):
 
             if len(new_eliminate_cti) == 0 and len(ctis) > 0 and iteration > 1:
                 log.info(f">>>iteration {iteration}: 被之前的candidate蕴含了，应该严格一点")
-                pt_generator.punish('STRICT', 'VERY')
+                reward_list.append(-1)
+                pt_generator.punish('STRICT', 'LITTLE')
                 continue
             elif len(new_eliminate_cti) > 0 and len(ctis) > 0 and iteration > 1:
                 log.info(f">>>iteration {iteration}: 找到了一个正确的不变式，继续")
-                pt_generator.prise('MEDIUM')
+                reward_list.append(5)
+                pt_generator.prise('VERY')
             elif len(ctis) == 0 and iteration > 1:
                 candidate_str = "\n/\\ ".join(seed_tmpl.quant_inv + v for v in candidate.values())
                 is_right = False
-                pt_generator.prise('VERY')
+                # reward_list.append(10)
+                # pt_generator.prise('VERY')
                 try:
                     log.info(f">>>iteration {iteration}: {candidate_str}似乎是正确的归纳不变式，继续进行检查")
                     is_right = smt_verifier.verify(candidate_str, path2tla)
@@ -100,7 +108,7 @@ def main(path2tla, path2cfg, path2json, path2config):
                     pt_generator.punish('STRICT', 'LITTLE')
                 if is_right:  # Bingo, we prise
                     save_result(candidate)
-                    return
+                    break
 
             log.info(f">>>iteration {iteration}: 开始生成更多的cti")
             timer.new_timer(TIMER.CTI_GENERATOR)
@@ -110,16 +118,24 @@ def main(path2tla, path2cfg, path2json, path2config):
             if len(ctis) == old_len:
                 log.info("找到结果")
                 save_result(candidate)
-                return
+                break
             log.info(
                 f">>>iteration {iteration}: 新找到了{len(new_ctis)}个CTI, 目前CTI的总数是{len(ctis)}，"
                 f"花费{timer.get_time(TIMER.CTI_GENERATOR)}")
             continue
+    # print(pt_generator.loss_list)
+    print(reward_list)
+    print(iteration)
+    try:
+        analyst = Analyst(accuracy_list=reward_list, loss_list=pt_generator.loss_list, iteration=iteration)
+    finally:
+        return
+
 
 
 if __name__ == "__main__":
     begin = timer.new_timer("total")
-    name = "firewall"
+    name = "lockserv"
     config.specname = name
     path2tla = os.getcwd() + f"/Benchmarks/protocols/{name}.tla"
     path2cfg = os.getcwd() + f"/Benchmarks/cfg/{name}.cfg"

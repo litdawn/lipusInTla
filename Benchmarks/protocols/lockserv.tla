@@ -1,5 +1,5 @@
 ---- MODULE lockserv ----
-EXTENDS TLC
+EXTENDS TLC, Integers
 
 CONSTANT Node
 
@@ -67,5 +67,9 @@ NextUnchanged == UNCHANGED vars
 
 \* No two clients think they hold the lock simultaneously.
 Mutex == \A x,y \in Node : (holds_lock[x] /\ holds_lock[y]) => (x = y)
+
+
+
+
 
 ====

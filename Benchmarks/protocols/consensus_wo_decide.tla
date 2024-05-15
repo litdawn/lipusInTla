@@ -1,7 +1,7 @@
 ---- MODULE consensus_wo_decide ----
 \* benchmark: pyv-consensus-wo-decide
 
-EXTENDS TLC, Randomization
+EXTENDS TLC, Randomization, Integers
 
 CONSTANT Node
 CONSTANT Quorums
@@ -126,5 +126,6 @@ Ind ==
 IInit ==
     /\ TypeOKRandom
     /\ Ind
+
 
 ====

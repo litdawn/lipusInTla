@@ -33,5 +33,6 @@
     "model_consts"  :  "CONSTANT n1,n2,n3",
     "symmetry" : true,
     "typeok"  :  "TypeOKRandom",
-    "simulate"  :  true      
+    "simulate"  :  true ,
+    "variable": "VARI,VARJ,VARK"
 }

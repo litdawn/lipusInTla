@@ -7,6 +7,7 @@ import torch.nn.functional as f
 # torch.autograd.set_detect_anomaly(True)
 class PT_generator:
     def __init__(self, seed_tmpl, name):
+        self.loss_list = []
         self.last_predicted_reward_list = None
         self.last_selected_lemma = None
         self.last_distribution_output = None
@@ -142,10 +143,12 @@ class PT_generator:
         return tuple(inv) in self.already_generate
 
     def punish(self, s_or_l, deg):
+        self.lemma_pointer -= 1
+
         if deg == "VERY":
             reward = -10
             gama = 0.1
-            self.lemma_pointer -= 1
+
         elif deg == "MEDIUM":
             reward = -5
             gama = 0.05
@@ -159,15 +162,23 @@ class PT_generator:
         strict_loss = tensor([[0]], dtype=torch.float32)
         counter = 0
         length = len(self.last_selected_lemma)
-        for i in range(length):
-            if s_or_l == 'STRICT':  # strict倾向于选择更长的子句
-                sd = strictness_distribution(self.seed_tmpl.seeds, self.last_selected_lemma[i], length)
-            else:  # loose倾向于选择更短的子句
-                sd = looseness_distribution(self.seed_tmpl.seeds, self.last_selected_lemma[i], length)
-            loss_strictness = -torch.mm(torch.log_softmax(
-                self.last_distribution_output.reshape(1, -1), 1), sd) * gama
-            strict_loss += loss_strictness.reshape([1, 1])
-            counter += 1
+        # for i in range(length):
+        #     if s_or_l == 'STRICT':  # strict倾向于选择更长的子句
+        #         sd = strictness_distribution(self.seed_tmpl.seeds, self.last_selected_lemma[i], length)
+        #     else:  # loose倾向于选择更短的子句
+        #         sd = looseness_distribution(self.seed_tmpl.seeds, self.last_selected_lemma[i], length)
+        #     loss_strictness = -torch.mm(torch.log_softmax(
+        #         self.last_distribution_output.reshape(1, -1), 1), sd) * gama
+        #     strict_loss += loss_strictness.reshape([1, 1])
+        #     counter += 1
+        if s_or_l == 'STRICT':  # strict倾向于选择更长的子句
+            sd = strictness_distribution(self.seed_tmpl.seeds, self.last_selected_lemma, length)
+        else:  # loose倾向于选择更短的子句
+            sd = looseness_distribution(self.seed_tmpl.seeds, self.last_selected_lemma)
+        loss_strictness = -torch.mm(torch.log_softmax(
+            self.last_distribution_output.reshape(1, -1), 1), sd) * gama
+        strict_loss += loss_strictness.reshape([1, 1])
+        counter += 1
         if counter != 0:
             strict_loss /= counter
         a_loss = self.a_loss(reward)
@@ -186,7 +197,7 @@ class PT_generator:
             reward_list.append(final_reward * discounter ** i)
         reward_list = reward_list[::-1]
         p_loss = 0
-        for i in range(len(self.last_selected_lemma)):
+        for i in range(min(len(self.last_selected_lemma), len(reward_list))) :
             r_i = reward_list[i]
             if i == 0:
                 pr_i_1 = tensor([[0]], dtype=torch.float32)
@@ -217,7 +228,7 @@ class PT_generator:
         elif ge_time > config.generate_time["little"]:
             self.prise("LITTLE")
         else:
-            self.punish("LOOSE", "LITTLE", "")
+            self.punish("LOOSE", "LITTLE")
 
     def prise(self, deg):
         if deg == "VERY":
@@ -232,6 +243,7 @@ class PT_generator:
     def learn_step(self, loss):
         # if torch.cuda.is_available():
         #     loss = loss.cuda()
+        self.loss_list.append(loss[0][0].item())
         self.adam.zero_grad()
         # print(loss)
         loss.backward(retain_graph=True)
