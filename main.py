@@ -16,11 +16,11 @@ from Utilities.Analysis import Analyst
 
 
 def save_result(invs):
-    str = "ind == \n "
+    strs = "ind == \n "
     for inv_name, inv_content in invs.items():
-        str += f"/\\ {inv_content} \n"
+        strs += f"/\\ {inv_content} \n"
     with open(f"{os.getcwd()}/Benchmarks/Result/ind/{name}.txt", 'a') as f:
-        f.write(str)
+        f.write(strs)
     pass
 
 
@@ -132,10 +132,9 @@ def main(path2tla, path2cfg, path2json, path2config):
         return
 
 
-
 if __name__ == "__main__":
     begin = timer.new_timer("total")
-    name = "lockserv"
+    name = ""
     config.specname = name
     path2tla = os.getcwd() + f"/Benchmarks/protocols/{name}.tla"
     path2cfg = os.getcwd() + f"/Benchmarks/cfg/{name}.cfg"

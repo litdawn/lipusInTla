@@ -1,7 +1,7 @@
 ---- MODULE simple_election ----
 \* benchmark: ex-simple-election
 
-EXTENDS TLC
+EXTENDS TLC, Integers
 
 CONSTANT Acceptor
 CONSTANT Quorum
@@ -53,5 +53,6 @@ TypeOK ==
     /\ leader \in SUBSET Proposer
 
 Safety == \A pi,pj \in Proposer : (pi \in leader /\ pj \in leader) => (pi = pj)
+
 
 ====
