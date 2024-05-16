@@ -41,14 +41,12 @@ class Checker:
         with open(self.induction_check_path, 'w') as f:
             f.write(induction_check_content)
 
-    def check_invariants(self, lemmas: dict):
+    def check_invariants(self, invariants: dict):
         """
         check invariants with tlc
-        :param lemmas: list of lemmas to check
+        :param invariants: list of lemmas to check
         :return: a dict of invariants that are satisfied within the given lemmas
         """
-        # invariants = {f"Inv_{i}": lemma for i, lemma in enumerate(lemmas)}
-        invariants = lemmas
         # generate tla content
         seed = random.randint(0, 100000)
         tla_name = f"{self.spec_name}_InvCheck_{seed}"
@@ -83,7 +81,7 @@ class Checker:
             exit_code = sub_process.wait()
         except Exception as e:
             logging.error(f"Check invariants failed with error: {e}")
-            return set()
+            return {}
         violated = set()
         for line in output_lines:
             res = re.match(".*Invariant (Inv_.*) is violated", line)
@@ -94,15 +92,13 @@ class Checker:
                 for inv_name, inv_content in invariants.items()
                 if inv_name not in violated}
 
-    def check_deduction(self, deducting: dict, deducted: dict):
+    def check_deduction(self, deducting: list, deducted: dict):
         """ check whether the disjunction of deducting implies deducted
         :param deducting: list of invariants to deduct
         :param deducted: invariant to be deducted
         :return: those are not deducted
         """
         # generate tla content
-        # deducted_dict = {f"Inv_{i}": deducted_item for i, deducted_item in enumerate(deducted)}
-        deducted_dict = deducted
         seed = random.randint(0, 100000)
         tla_name = f"{self.spec_name}_DeductionCheck_{seed}"
         tla_content = f"---- MODULE {tla_name} ----\n"
@@ -116,7 +112,7 @@ class Checker:
                         f"  /\\ {self.config['safety']}\n")
 
         tla_content += disjunction + "\n"
-        for name, content in deducted_dict.items():
+        for name, content in deducted.items():
             tla_content += (f"{name} == \n"
                             f"  {content}\n")
 
@@ -127,7 +123,7 @@ class Checker:
 
         deduction_check_content = "INIT Deducting\n"
         deduction_check_content += "NEXT Next\n\n"
-        deduction_check_content += "INVARIANTS " + " ".join(deducted_dict.keys()) + "\n\n"
+        deduction_check_content += "INVARIANTS " + " ".join(deducted.keys()) + "\n\n"
         deduction_check_content += self.config["constants"] + "\n"
         deduction_check_path = os.path.join(self.gen_dir, f"{self.spec_name}_DeductionCheck_{seed}.cfg")
         with open(deduction_check_path, 'w') as f:
@@ -153,9 +149,9 @@ class Checker:
             if res:
                 not_deducted.add(res.group(1))
         logging.info(f"Found {len(not_deducted)} / {len(deducted)} candidate invariants not deducted")
-        return {name: deducted_dict[name] for name in not_deducted}
+        return {name: deducted[name] for name in not_deducted}
 
-    def check_induction(self, ind_lemmas):
+    def check_induction(self, ind_lemmas :dict):
         """
         check induction with tlc
         :param ind_lemmas: list of lemmas' disjunction to check
@@ -193,6 +189,68 @@ class Checker:
             logging.info(f"Disjunction is not inductive, found {len(ctis)} CTIs")
             return False, ctis
         return True, set()
+
+    def generate_cti(self, lemma_invs: dict):
+        """
+        generate CTIs with tlc, based on the given invariants
+        :param lemma_invs: given lemmas
+        :return:
+        """
+        invariants = lemma_invs.values()
+        cti_gen_init = f"CTIGenInit ==\n  /\\ {self.config['typeok']}\n  /\\ {self.config['safety']}\n"
+        for inv in invariants:
+            cti_gen_init += f"  /\\ {inv}\n"
+        seed = random.randint(0, 100000)
+        tla_name = f"{self.spec_name}_CTIGen_{seed}"
+        tla_content = f"---- MODULE {tla_name} ----\n"
+        tla_content += f"EXTENDS {self.spec_name} \n\n"
+        tla_content += f"{cti_gen_init}\n\n"
+        tla_content += "===="
+        tla_path = os.path.join(self.gen_dir, f"{tla_name}.tla")
+        with open(tla_path, 'w') as f:
+            f.write(tla_content)
+
+        cfg_content = f"INIT CTIGenInit\n"
+        cfg_content += f"NEXT Next\n\n"
+        cfg_content += f"INVARIANT {self.config['safety']}\n\n"
+        cfg_content += self.config["constants"] + "\n"
+        cfg_path = os.path.join(self.gen_dir, f"{self.spec_name}_CTIGen_{seed}.cfg")
+        with open(cfg_path, 'w') as f:
+            f.write(cfg_content)
+
+        cmd = (f" java -cp {Checker.TLC_PATH} tlc2.TLC -workers {self.worker_num} -deadlock -continue "
+               f" -simulate {self.simulate_num} -depth {self.depth} "
+               f" -seed {seed} -maxSetSize {Checker.TLC_MAX_SET_SIZE} "
+               f" -config {os.path.relpath(cfg_path, self.cwd)} {os.path.relpath(tla_path, self.cwd)} ")
+        logging.info(f"Generate CTIs with command: {cmd}")
+        try:
+            sub_process = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, cwd=self.cwd)
+            output = sub_process.stdout.read().decode("utf-8")
+            exit_code = sub_process.wait()
+        except Exception as e:
+            logging.error(f"Generate CTIs failed with error: {e}")
+            return set()
+        ctis = CTI.parse_ctis(output.splitlines())
+        logging.info(f"Found {len(ctis)} CTIs")
+        return ctis
+
+    def eliminate_ctis(self, lemmas: dict, ctis):
+        """
+        eliminate CTIs with tlc, based on the given lemmas
+        :param lemmas:
+        :param cti:
+        :return: dict of which lemma kill which ctis in type dict
+        """
+        cti_eliminated_by_lemmas = {}
+        for key in lemmas.keys():
+            cti_eliminated_by_lemmas[key] = set()
+
+        cti_table = {}
+        for cti in ctis:
+            hashed = str(hash(cti))
+            cti_table[hashed] = cti
+
+        return cti_eliminated_by_lemmas
 
 
 class CTI:
