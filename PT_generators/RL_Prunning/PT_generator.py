@@ -4,7 +4,7 @@ from PT_generators.RL_Prunning.Template.Seed2Lemma import *
 from PT_generators.RL_Prunning.Template.Lemma2Candidate import *
 import torch.nn.functional as f
 
-# torch.autograd.set_detect_anomaly(True)
+
 class PT_generator:
     def __init__(self, seed_tmpl, name):
         self.loss_list = []
@@ -50,8 +50,6 @@ class PT_generator:
         self.lemma_pointer = 0
         self.init_candidate()
 
-
-
     def init_candidate(self):
         self.candidate.clear()
         if config.use_self_generate:
@@ -67,7 +65,6 @@ class PT_generator:
         return concatenated_features
 
     def generate_next(self, cti):
-        self.depth = 0
 
         # 1 初始化
         # the lists will be used when punish or prised.
@@ -84,7 +81,6 @@ class PT_generator:
         for seed in self.seed_tmpl.seeds:
             self.state_vec.update({seed: self.T(seed, "seed")})
 
-
         # todo seed2lemma的rule应该和distribution一一对应。
         # 4. 总体特征并打分
         # todo 具体逻辑仍需优化，包括
@@ -100,27 +96,31 @@ class PT_generator:
         action_vector = self.pi(self.concat_state_vec(), overall_feature)
         action_distribution, action_raw = self.distributionlize(action_vector, list(self.state_vec.values()))
 
-        seeds_num = random.randint(2,4)
+        # seeds_num = random.randint(2, 3)
 
-        #是否重复出现
-        new_candidate, raw_lemmas = sampling(action_distribution, self.seed_tmpl.seeds, seeds_num)
-        while self.if_already_generate(raw_lemmas):
-            new_candidate, raw_lemmas = sampling(action_distribution, self.seed_tmpl.seeds, seeds_num)
+        # # 是否重复出现
+        # new_candidate, raw_lemmas = sampling(action_distribution, self.seed_tmpl.seeds, seeds_num)
+        # while self.if_already_generate(raw_lemmas):
+        #     new_candidate, raw_lemmas = sampling(action_distribution, self.seed_tmpl.seeds, seeds_num)
+
+        new_candidate, raw_lemmas = sampling(action_distribution, self.seed_tmpl.seeds, self.depth)
+        self.depth += 1
 
         # 将lemma加入candidates
-        self.candidate.update({f"inv_{self.lemma_pointer}": new_candidate[0]})
-        self.lemma_pointer += 1
+        # self.candidate.update({f"inv_{self.lemma_pointer}": new_candidate[0]})
+        # self.lemma_pointer += 1
 
         self.last_predicted_reward_list = predicted_reward_list
         self.last_selected_lemma = raw_lemmas
-        self.cache_inv(raw_lemmas)
         self.last_distribution_output = action_raw
         if config.use_self_generate:
             lemmas = Lemma2Candidate.add_quant(f"inv_{self.lemma_pointer - 1}", new_candidate[0], self.seed_tmpl.quants)
         else:
-            lemmas = [f"inv_{self.lemma_pointer - 1} ==  {self.seed_tmpl.quant_inv} {new_candidate[0]}"]
+            lemmas = []
+            for name, inv in new_candidate.items():
+                lemmas = [f"{name} ==  {self.seed_tmpl.quant_inv} {inv}"]
 
-        return self.candidate, lemmas, self.lemma_pointer - 1
+        return self.candidate, lemmas
 
     # 设置奖励和伽马值：根据Deg的值设置奖励和伽马值。
     # 如果Deg是 "VERY"，那么奖励是 -10，伽马值是0.1。
@@ -134,17 +134,30 @@ class PT_generator:
     # 计算动作损失并进行学习步骤：调用self.ALoss(reward)
     # 计算动作损失，然后调用self.LearnStep((a_loss + strict_loss))
     # 进行学习步骤。
-    def cache_inv(self, inv):
-        self.already_generate.add(tuple(inv))
-        # self.all_checked_invs = self.all_checked_invs.union(set(map(quant_inv_fn, list(invs))))
-        return
+    # def cache_inv(self, inv):
+    #     self.already_generate.add(tuple(inv))
+    #     # self.all_checked_invs = self.all_checked_invs.union(set(map(quant_inv_fn, list(invs))))
+    #     return
 
-    def if_already_generate(self, inv):
-        return tuple(inv) in self.already_generate
+    # def if_already_generate(self, inv):
+    #     return tuple(inv) in self.already_generate
+    def add_candidate(self, new_candidates):
+        for name, new_candidate in new_candidates:
+            self.candidate.update({name: new_candidate})
+
+    def prise(self, deg, candidates):
+        self.add_candidate(candidates)
+        if deg == "VERY":
+            reward = 10
+        elif deg == "LITTLE":
+            reward = 3
+        else:
+            reward = 0
+        a_loss = self.a_loss(reward)
+        self.learn_step(a_loss)
 
     def punish(self, s_or_l, deg):
-        self.lemma_pointer -= 1
-
+        # self.lemma_pointer -= 1
         if deg == "VERY":
             reward = -10
             gama = 0.1
@@ -197,7 +210,7 @@ class PT_generator:
             reward_list.append(final_reward * discounter ** i)
         reward_list = reward_list[::-1]
         p_loss = 0
-        for i in range(min(len(self.last_selected_lemma), len(reward_list))) :
+        for i in range(min(len(self.last_selected_lemma), len(reward_list))):
             r_i = reward_list[i]
             if i == 0:
                 pr_i_1 = tensor([[0]], dtype=torch.float32)
@@ -205,7 +218,7 @@ class PT_generator:
                 pr_i_1 = tensor([reward_list[i - 1]], dtype=torch.float32)
 
             losser = f.cross_entropy(self.last_distribution_output.reshape(1, -1),
-                                     get_action_index(self.last_selected_lemma[i], self.seed_tmpl.seeds))
+                                     get_seed_index(self.last_selected_lemma[i], self.seed_tmpl.seeds))
 
             if torch.cuda.is_available():
                 p_loss += (tensor(r_i, dtype=torch.float32) - pr_i_1).cuda() * losser.reshape([1, 1])
@@ -229,16 +242,6 @@ class PT_generator:
             self.prise("LITTLE")
         else:
             self.punish("LOOSE", "LITTLE")
-
-    def prise(self, deg):
-        if deg == "VERY":
-            reward = 10
-        elif deg == "LITTLE":
-            reward = 3
-        else:
-            reward = 0
-        a_loss = self.a_loss(reward)
-        self.learn_step(a_loss)
 
     def learn_step(self, loss):
         # if torch.cuda.is_available():
