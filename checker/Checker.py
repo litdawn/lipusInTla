@@ -41,16 +41,12 @@ class Checker:
         with open(self.induction_check_path, 'w') as f:
             f.write(induction_check_content)
 
-    def check_invariants(self, lemmas: list | dict):
+    def check_invariants(self, invariants: dict):
         """
         check invariants with tlc
-        :param lemmas: list of lemmas to check
+        :param invariants: list of lemmas to check
         :return: a dict of invariants that are satisfied within the given lemmas
         """
-        if isinstance(lemmas, list):
-            invariants = {f"Inv_{i}": lemma for i, lemma in enumerate(lemmas)}
-        else:
-            invariants = lemmas
         # generate tla content
         seed = random.randint(0, 100000)
         tla_name = f"{self.spec_name}_InvCheck_{seed}"
@@ -85,7 +81,7 @@ class Checker:
             exit_code = sub_process.wait()
         except Exception as e:
             logging.error(f"Check invariants failed with error: {e}")
-            return set()
+            return {}
         violated = set()
         for line in output_lines:
             res = re.match(".*Invariant (Inv_.*) is violated", line)
@@ -96,17 +92,13 @@ class Checker:
                 for inv_name, inv_content in invariants.items()
                 if inv_name not in violated}
 
-    def check_deduction(self, deducting: list, deducted: list | dict):
+    def check_deduction(self, deducting: list, deducted: dict):
         """ check whether the disjunction of deducting implies deducted
         :param deducting: list of invariants to deduct
         :param deducted: invariant to be deducted
         :return: those are not deducted
         """
         # generate tla content
-        if isinstance(deducted, list):
-            deducted_dict = {f"Inv_{i}": deducted_item for i, deducted_item in enumerate(deducted)}
-        else:
-            deducted_dict = deducted
         seed = random.randint(0, 100000)
         tla_name = f"{self.spec_name}_DeductionCheck_{seed}"
         tla_content = f"---- MODULE {tla_name} ----\n"
@@ -120,7 +112,7 @@ class Checker:
                         f"  /\\ {self.config['safety']}\n")
 
         tla_content += disjunction + "\n"
-        for name, content in deducted_dict.items():
+        for name, content in deducted.items():
             tla_content += (f"{name} == \n"
                             f"  {content}\n")
 
@@ -131,7 +123,7 @@ class Checker:
 
         deduction_check_content = "INIT Deducting\n"
         deduction_check_content += "NEXT Next\n\n"
-        deduction_check_content += "INVARIANTS " + " ".join(deducted_dict.keys()) + "\n\n"
+        deduction_check_content += "INVARIANTS " + " ".join(deducted.keys()) + "\n\n"
         deduction_check_content += self.config["constants"] + "\n"
         deduction_check_path = os.path.join(self.gen_dir, f"{self.spec_name}_DeductionCheck_{seed}.cfg")
         with open(deduction_check_path, 'w') as f:
@@ -157,16 +149,14 @@ class Checker:
             if res:
                 not_deducted.add(res.group(1))
         logging.info(f"Found {len(not_deducted)} / {len(deducted)} candidate invariants not deducted")
-        return {name: deducted_dict[name] for name in not_deducted}
+        return {name: deducted[name] for name in not_deducted}
 
-    def check_induction(self, ind_lemmas: list| dict):
+    def check_induction(self, ind_lemmas :dict):
         """
         check induction with tlc
         :param ind_lemmas: list of lemmas' disjunction to check
         :return: whether is inductive, ctis when not inductive
         """
-        if isinstance(ind_lemmas, dict):
-            ind_lemmas = ind_lemmas.values()
         seed = random.randint(0, 100000)
         tla_name = f"{self.spec_name}_InductionCheck_{seed}"
         tla_content = f"---- MODULE {tla_name} ----\n"
@@ -200,16 +190,13 @@ class Checker:
             return False, ctis
         return True, set()
 
-    def generate_cti(self, lemma_invs: list | dict):
+    def generate_cti(self, lemma_invs: dict):
         """
         generate CTIs with tlc, based on the given invariants
         :param lemma_invs: given lemmas
         :return:
         """
-        if isinstance(lemma_invs, dict):
-            invariants = lemma_invs.values()
-        else:
-            invariants = lemma_invs
+        invariants = lemma_invs.values()
         cti_gen_init = f"CTIGenInit ==\n  /\\ {self.config['typeok']}\n  /\\ {self.config['safety']}\n"
         for inv in invariants:
             cti_gen_init += f"  /\\ {inv}\n"
