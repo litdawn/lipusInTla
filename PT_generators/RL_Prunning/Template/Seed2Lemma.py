@@ -7,21 +7,9 @@ from itertools import product
 from PT_generators.RL_Prunning.Conifg import config
 
 
-def generate_combinations(expressions):
-    combinations = []
-    n = len(expressions)
-    for selection in product([1, -1, 0], repeat=n):
-        combination = []
-        for i in range(n):
-            if selection[i] == 1:
-                combination.append(expressions[i])
-            elif selection[i] == -1:
-                combination.append(f'~({expressions[i]})')
-        combinations.append(combination)
-    return combinations
+class Seed2Lemma:
+    seed_tuples = set()
 
-
-class seed2Lemma:
     def op_and(self, *args):
         return f"({args[0]})/\\({args[1]})"
 
@@ -51,6 +39,9 @@ class seed2Lemma:
     DIST = []
 
 
+seed2lemma = Seed2Lemma()
+
+
 # def get_available_rule():
 #     return RULE["all"]
 
@@ -65,17 +56,36 @@ def get_seed_index(last_seed, seed_list):
     assert False  # should not be here
 
 
+def generate_combinations(expressions):
+    combinations = []
+    n = len(expressions)
+    for selection in product([1, -1, 0], repeat=n):
+        combination = []
+        selected = []
+        for i in range(n):
+            if selection[i] == 1:
+                combination.append(f'({expressions[i]})')
+                selected.append(expressions[i])
+            elif selection[i] == -1:
+                combination.append(f'~({expressions[i]})')
+                selected.append(expressions[i])
+        if tuple(selected) not in seed2lemma.seed_tuples:
+            seed2lemma.seed_tuples.add(tuple(selected))
+            combinations.append(combination)
+    return combinations
+
+
 def generate_lemmas(depth, seeds: list):
     """ Generate 'num_invs' random invariants with the specified number of conjuncts. """
     # Pick some random conjunct.
     # OR and negations should be functionally complete
-    symb_neg_op = "~"
-    ops = ["\\/"]
-    and_op = "/\\"
-    neg_op = "~"
-
-    # Assign a numeric id to each predicate.
-    seed_id = {p: k for (k, p) in enumerate(seeds)}
+    # symb_neg_op = "~"
+    # ops = ["\\/"]
+    # and_op = "/\\"
+    # neg_op = "~"
+    #
+    # # Assign a numeric id to each predicate.
+    # seed_id = {p: k for (k, p) in enumerate(seeds)}
 
     invs = dict()
     # invs_sym = []
@@ -83,10 +93,9 @@ def generate_lemmas(depth, seeds: list):
 
     # choose = list()
 
-    # 示例用法
     combinations = generate_combinations(seeds)
     for i, combination in enumerate(combinations):
-        invs[f"inv_{depth}_{i}"] =  ' \\/ '.join(combination)
+        invs[f"inv_{depth}_{i}"] = ' \\/ '.join(combination)
 
     # for inv_id in range(num_invs):
     #     conjuncts = list(seeds)
@@ -157,7 +166,7 @@ def generate_lemmas(depth, seeds: list):
 #     DIST = [1 / len(seed_list)] * len(seed_list)
 
 
-def strictness_distribution(seed_list, seed, length):
+def strictness_distribution(seed_list, seed):
     distri_dict = [1 / len(seed_list)] * len(seed_list)
     res = torch.ones(len(seed_list), 1, dtype=torch.float32)
     for i, every_seed in enumerate(seed_list):
@@ -166,21 +175,6 @@ def strictness_distribution(seed_list, seed, length):
             distri_dict[i] += 1 / len(seed_list)
 
     normalization(distri_dict)
-    if torch.cuda.is_available():
-        res = res.cuda()
-    return res
-
-
-def looseness_distribution(seed_list, seeds_selected):
-    distri_dict = [1 / len(seed_list)] * len(seed_list)
-    res = torch.ones(len(seed_list), 1, dtype=torch.float32)
-    for i, every_seed in enumerate(seed_list):
-        res[i, 0] = distri_dict[i]
-        for j, seed in enumerate(seeds_selected):
-            if every_seed == seed:
-                res[i, 0] = 1
-                break
-
     if torch.cuda.is_available():
         res = res.cuda()
     return res

@@ -41,13 +41,14 @@ class Checker:
         with open(self.induction_check_path, 'w') as f:
             f.write(induction_check_content)
 
-    def check_invariants(self, lemmas: list):
+    def check_invariants(self, lemmas: dict):
         """
         check invariants with tlc
         :param lemmas: list of lemmas to check
         :return: a dict of invariants that are satisfied within the given lemmas
         """
-        invariants = {f"Inv_{i}": lemma for i, lemma in enumerate(lemmas)}
+        # invariants = {f"Inv_{i}": lemma for i, lemma in enumerate(lemmas)}
+        invariants = lemmas
         # generate tla content
         seed = random.randint(0, 100000)
         tla_name = f"{self.spec_name}_InvCheck_{seed}"
@@ -93,14 +94,15 @@ class Checker:
                 for inv_name, inv_content in invariants.items()
                 if inv_name not in violated}
 
-    def check_deduction(self, deducting: list, deducted: list):
+    def check_deduction(self, deducting: dict, deducted: dict):
         """ check whether the disjunction of deducting implies deducted
         :param deducting: list of invariants to deduct
         :param deducted: invariant to be deducted
         :return: those are not deducted
         """
         # generate tla content
-        deducted_dict = {f"Inv_{i}": deducted_item for i, deducted_item in enumerate(deducted)}
+        # deducted_dict = {f"Inv_{i}": deducted_item for i, deducted_item in enumerate(deducted)}
+        deducted_dict = deducted
         seed = random.randint(0, 100000)
         tla_name = f"{self.spec_name}_DeductionCheck_{seed}"
         tla_content = f"---- MODULE {tla_name} ----\n"
