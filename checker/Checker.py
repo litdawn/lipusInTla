@@ -33,14 +33,6 @@ class Checker:
         else:
             logging.basicConfig(level=logging_level, stream=sys.stdout)
         # write default tlc cfg.
-        deduction_check_content = "INIT Deducting\n"
-        deduction_check_content += "NEXT Next\n\n"
-        deduction_check_content += "INVARIANT Deducted\n\n"
-        deduction_check_content += config["constants"] + "\n"
-        self.deduction_check_path = os.path.join(self.gen_dir, f"{spec_name}_DeductionCheck.cfg")
-        with open(self.deduction_check_path, 'w') as f:
-            f.write(deduction_check_content)
-
         induction_check_content = "INIT InductionInit\n"
         induction_check_content += "NEXT Next\n\n"
         induction_check_content += "INVARIANT InductionInv\n\n"
@@ -72,7 +64,7 @@ class Checker:
 
         inv_check_content = "INIT Init\n"
         inv_check_content += "NEXT Next\n\n"
-        inv_check_content += "INVARIANTS " + " ".join(list(invariants.keys()))
+        inv_check_content += "INVARIANTS " + " ".join(list(invariants.keys())) + "\n\n"
         inv_check_content += self.config["constants"] + "\n"
         inv_check_path = os.path.join(self.gen_dir, f"{self.spec_name}_InvCheck_{seed}.cfg")
         with open(inv_check_path, 'w') as f:
@@ -101,13 +93,14 @@ class Checker:
                 for inv_name, inv_content in invariants.items()
                 if inv_name not in violated}
 
-    def check_deduction(self, deducting: list, deducted):
+    def check_deduction(self, deducting: list, deducted: list):
         """ check whether the disjunction of deducting implies deducted
         :param deducting: list of invariants to deduct
         :param deducted: invariant to be deducted
-        :return: a bool value indicating whether the deduction is correct
+        :return: those are not deducted
         """
         # generate tla content
+        deducted_dict = {f"Inv_{i}": deducted_item for i, deducted_item in enumerate(deducted)}
         seed = random.randint(0, 100000)
         tla_name = f"{self.spec_name}_DeductionCheck_{seed}"
         tla_content = f"---- MODULE {tla_name} ----\n"
@@ -119,18 +112,30 @@ class Checker:
         tla_content += (f"Deducting ==\n"
                         f"  /\\ {self.config['typeok']}\n"
                         f"  /\\ {self.config['safety']}\n")
+
         tla_content += disjunction + "\n"
-        tla_content += f"Deducted ==\n  {deducted}\n"
+        for name, content in deducted_dict.items():
+            tla_content += (f"{name} == \n"
+                            f"  {content}\n")
+
         tla_content += "===="
         tla_path = os.path.join(self.gen_dir, f"{tla_name}.tla")
         with open(tla_path, 'w') as f:
             f.write(tla_content)
 
+        deduction_check_content = "INIT Deducting\n"
+        deduction_check_content += "NEXT Next\n\n"
+        deduction_check_content += "INVARIANTS " + " ".join(deducted_dict.keys()) + "\n\n"
+        deduction_check_content += self.config["constants"] + "\n"
+        deduction_check_path = os.path.join(self.gen_dir, f"{self.spec_name}_DeductionCheck_{seed}.cfg")
+        with open(deduction_check_path, 'w') as f:
+            f.write(deduction_check_content)
+
         metadir = os.path.join(self.state_dir, f"deduction_check_{seed}")
 
         cmd = (f" java -cp {Checker.TLC_PATH} tlc2.TLC -workers {self.worker_num} -deadlock -continue "
-               f" -seed {seed} -metadir {metadir} -maxSetSize {Checker.TLC_MAX_SET_SIZE}  "
-               f" -config {os.path.relpath(self.deduction_check_path, self.cwd)} {os.path.relpath(tla_path, self.cwd)} ")
+               f" -seed {seed} -metadir {metadir} -maxSetSize {Checker.TLC_MAX_SET_SIZE} -checkAllInvariants "
+               f" -config {os.path.relpath(deduction_check_path, self.cwd)} {os.path.relpath(tla_path, self.cwd)} ")
 
         logging.info(f"Check deduction with command: {cmd}")
         try:
@@ -139,15 +144,14 @@ class Checker:
             exit_code = sub_process.wait()
         except Exception as e:
             logging.error(f"Check deduction failed with error: {e}")
-            return False
+            return set()
+        not_deducted = set()
         for line in output_lines:
-            if re.search("Error: Invariant", line):
-                logging.info("Deduction is incorrect")
-                return False
-            if "Model checking completed. No error has been found." in line:
-                logging.info("Deduction is correct")
-                return True
-        return False
+            res = re.match(".*Invariant (Inv_.*) is violated", line)
+            if res:
+                not_deducted.add(res.group(1))
+        logging.info(f"Found {len(not_deducted)} / {len(deducted)} candidate invariants not deducted")
+        return {name: deducted_dict[name] for name in not_deducted}
 
     def check_induction(self, ind_lemmas):
         """
