@@ -93,7 +93,7 @@ class Checker:
                 for inv_name, inv_content in invariants.items()
                 if inv_name not in violated}
 
-    def check_deduction(self, deducting: list, deducted: dict):
+    def check_deduction(self, deducting: dict, deducted: dict):
         """ check whether the disjunction of deducting implies deducted
         :param deducting: list of invariants to deduct
         :param deducted: invariant to be deducted
