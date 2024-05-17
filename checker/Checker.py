@@ -24,7 +24,7 @@ class Checker:
         self.depth = depth
 
         self.cwd = protocols_dir
-        self.gen_dir = os.path.join(protocols_dir, "gen_tla")
+        self.gen_dir = os.path.join(protocols_dir, "gen_tla_dir")
         self.state_dir = os.path.join(self.gen_dir, "states")
 
         self.spec_name = spec_name
@@ -85,7 +85,7 @@ class Checker:
             return {}
         violated = set()
         for line in output_lines:
-            res = re.match(".*Invariant ([I,i]nv_.*) is violated", line)
+            res = re.match(".*Invariant (Inv_.*) is violated", line)
             if res:
                 violated.add(res.group(1))
         logging.info(f"Found {len(invariants) - len(violated)} / {len(invariants)} candidate invariants satisfied")
@@ -148,7 +148,7 @@ class Checker:
             return set()
         not_deducted = set()
         for line in output_lines:
-            res = re.match(".*Invariant ([I,i]nv_.*) is violated", line)
+            res = re.match(".*Invariant (Inv_.*) is violated", line)
             if res:
                 not_deducted.add(res.group(1))
         logging.info(f"Found {len(not_deducted)} / {len(deducted)} candidate invariants not deducted")

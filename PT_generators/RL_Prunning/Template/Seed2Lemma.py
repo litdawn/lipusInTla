@@ -1,6 +1,7 @@
 from Utilities.Logging import log
+import logging
 import torch
-from torch import tensor
+# from torch import tensor
 import numpy as np
 from sympy import *
 from itertools import product
@@ -9,6 +10,7 @@ from PT_generators.RL_Prunning.Conifg import config
 
 class Seed2Lemma:
     seed_tuples = set()
+    tmp_tuples = set()
 
     def op_and(self, *args):
         return f"({args[0]})/\\({args[1]})"
@@ -42,9 +44,9 @@ def get_seed_index(last_seed, seed_list, is_tensor=True):
     for i, action in enumerate(seed_list):
         if str(action) in str(last_seed):
             if torch.cuda.is_available():
-                return tensor([i]).cuda() if is_tensor else i
+                return torch.tensor([i]).cuda() if is_tensor else i
             else:
-                return tensor([i]) if is_tensor else i
+                return torch.tensor([i]) if is_tensor else i
     assert False  # should not be here
 
 
@@ -62,9 +64,10 @@ def generate_combinations(expressions):
                 combination.append(f'~({expressions[i]})')
                 selected.append(expressions[i])
         selected.sort()
-        if tuple(selected) not in seed2lemma.seed_tuples:
-            seed2lemma.seed_tuples.add(tuple(selected))
+        if tuple(selected) not in seed2lemma.seed_tuples and len(selected)>0:
+            seed2lemma.tmp_tuples.add(tuple(selected))
             combinations.append(combination)
+    seed2lemma.seed_tuples = seed2lemma.seed_tuples.union(seed2lemma.tmp_tuples)
     return combinations
 
 
@@ -72,11 +75,13 @@ def generate_lemmas(depth, seeds: list):
     """ Generate 'num_invs' random invariants with the specified number of conjuncts. """
     invs = dict()
     combinations = generate_combinations(seeds)
+    combinations_with_name = {}
     for i, combination in enumerate(combinations):
-        invs[f"inv_{depth}_{i}"] = ' \\/ '.join(combination)
+        invs.update({f"Inv_{depth}_{i}": ' \\/ '.join(combination)})
+        combinations_with_name.update({f"Inv_{depth}_{i}": combination})
 
-    log.info(f"generate {len(invs)} invs.")
-    return invs, combinations
+    logging.info(f"generate {len(invs)} invs.")
+    return invs, combinations_with_name
 
 
 # def init_dict(seed_list):
@@ -89,7 +94,7 @@ def strictness_distribution(seed_list, seeds_selected):
     for i, every_seed in enumerate(seeds_selected):
         begin = every_seed.find("(")
         end = every_seed.find(")")
-        every_seed = every_seed[begin:end - 1]
+        every_seed = every_seed[begin+1:end]
         res[get_seed_index(every_seed, seed_list, False), 0] *= distri_dict[i]
         # distri_dict[i] += 1 / len(seed_list)
     # normalization(distri_dict)
