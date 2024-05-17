@@ -135,7 +135,7 @@ def del_from_ctis(orig_k_ctis, eliminated_ctis):
 
 if __name__ == "__main__":
     begin = timer.new_timer("total")
-    name = "lockserv"
+    name = "toy_consensus_epr"
     benchmark_path = os.path.join(os.getcwd(), "Benchmarks")
     config.specname = name
     config.TLC_PATH = os.path.join(os.getcwd(), "tla2tools.jar")
