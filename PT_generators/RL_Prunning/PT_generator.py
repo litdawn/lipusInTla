@@ -4,14 +4,15 @@ from PT_generators.RL_Prunning.Template.Seed2Lemma import *
 from PT_generators.RL_Prunning.Template.Lemma2Candidate import *
 import torch.nn.functional as f
 
-# torch.autograd.set_detect_anomaly(True)
+
 class PT_generator:
     def __init__(self, seed_tmpl, name):
         self.loss_list = []
         self.last_predicted_reward_list = None
+        self.reward_list = []
         self.last_selected_lemma = None
         self.last_distribution_output = None
-        self.already_generate = set()
+        # self.already_generate = set()
 
         self.emb_tla = None
         self.adam = None
@@ -47,19 +48,17 @@ class PT_generator:
         # self.init_parameters()
 
         self.candidate = dict()
-        self.lemma_pointer = 0
-        self.init_candidate()
+        # self.lemma_pointer = 0
+        # self.init_candidate()
 
-
-
-    def init_candidate(self):
-        self.candidate.clear()
-        if config.use_self_generate:
-            self.candidate.update({"Safety": self.seed_tmpl.tla_ins.inv})
-            self.candidate.update({"Typeok": self.seed_tmpl.tla_ins.type_ok})
-        else:
-            self.candidate.update({"Safety": self.seed_tmpl.safety})
-            self.candidate.update({"Typeok": self.seed_tmpl.typeok})
+    # def init_candidate(self):
+    #     self.candidate.clear()
+    #     if config.use_self_generate:
+    #         self.candidate.update({"Safety": self.seed_tmpl.tla_ins.inv})
+    #         self.candidate.update({"Typeok": self.seed_tmpl.tla_ins.type_ok})
+    #     else:
+    #         self.candidate.update({"Safety": self.seed_tmpl.safety})
+    #         self.candidate.update({"Typeok": self.seed_tmpl.typeok})
 
     def concat_state_vec(self):
         suma = torch.cat(list(self.state_vec.values()), dim=0)
@@ -67,7 +66,6 @@ class PT_generator:
         return concatenated_features
 
     def generate_next(self, cti):
-        self.depth = 0
 
         # 1 初始化
         # the lists will be used when punish or prised.
@@ -84,7 +82,6 @@ class PT_generator:
         for seed in self.seed_tmpl.seeds:
             self.state_vec.update({seed: self.T(seed, "seed")})
 
-
         # todo seed2lemma的rule应该和distribution一一对应。
         # 4. 总体特征并打分
         # todo 具体逻辑仍需优化，包括
@@ -100,27 +97,31 @@ class PT_generator:
         action_vector = self.pi(self.concat_state_vec(), overall_feature)
         action_distribution, action_raw = self.distributionlize(action_vector, list(self.state_vec.values()))
 
-        seeds_num = random.randint(2,4)
+        # seeds_num = random.randint(2, 3)
 
-        #是否重复出现
-        new_candidate, raw_lemmas = sampling(action_distribution, self.seed_tmpl.seeds, seeds_num)
-        while self.if_already_generate(raw_lemmas):
-            new_candidate, raw_lemmas = sampling(action_distribution, self.seed_tmpl.seeds, seeds_num)
+        # # 是否重复出现
+        # new_candidate, raw_lemmas = sampling(action_distribution, self.seed_tmpl.seeds, seeds_num)
+        # while self.if_already_generate(raw_lemmas):
+        #     new_candidate, raw_lemmas = sampling(action_distribution, self.seed_tmpl.seeds, seeds_num)
+
+        new_candidate, raw_lemmas = sampling(action_distribution, self.seed_tmpl.seeds, self.depth)
+        self.depth += 1
 
         # 将lemma加入candidates
-        self.candidate.update({f"inv_{self.lemma_pointer}": new_candidate[0]})
-        self.lemma_pointer += 1
+        # self.candidate.update({f"inv_{self.lemma_pointer}": new_candidate[0]})
+        # self.lemma_pointer += 1
 
         self.last_predicted_reward_list = predicted_reward_list
         self.last_selected_lemma = raw_lemmas
-        self.cache_inv(raw_lemmas)
         self.last_distribution_output = action_raw
         if config.use_self_generate:
             lemmas = Lemma2Candidate.add_quant(f"inv_{self.lemma_pointer - 1}", new_candidate[0], self.seed_tmpl.quants)
         else:
-            lemmas = [f"inv_{self.lemma_pointer - 1} ==  {self.seed_tmpl.quant_inv} {new_candidate[0]}"]
+            lemmas = []
+            for name, inv in new_candidate.items():
+                lemmas = [f"{name} ==  {self.seed_tmpl.quant_inv} {inv}"]
 
-        return self.candidate, lemmas, self.lemma_pointer - 1
+        return self.candidate, lemmas
 
     # 设置奖励和伽马值：根据Deg的值设置奖励和伽马值。
     # 如果Deg是 "VERY"，那么奖励是 -10，伽马值是0.1。
@@ -134,55 +135,67 @@ class PT_generator:
     # 计算动作损失并进行学习步骤：调用self.ALoss(reward)
     # 计算动作损失，然后调用self.LearnStep((a_loss + strict_loss))
     # 进行学习步骤。
-    def cache_inv(self, inv):
-        self.already_generate.add(tuple(inv))
-        # self.all_checked_invs = self.all_checked_invs.union(set(map(quant_inv_fn, list(invs))))
-        return
+    # def cache_inv(self, inv):
+    #     self.already_generate.add(tuple(inv))
+    #     # self.all_checked_invs = self.all_checked_invs.union(set(map(quant_inv_fn, list(invs))))
+    #     return
 
-    def if_already_generate(self, inv):
-        return tuple(inv) in self.already_generate
+    # def if_already_generate(self, inv):
+    #     return tuple(inv) in self.already_generate
 
-    def punish(self, s_or_l, deg):
-        self.lemma_pointer -= 1
+    def decide_little_prise(self, successes):
+        reward = {}
+        for name, cti_num in successes.items():
+            reward.update({name: cti_num * cti_num})
+        return reward
 
+    def decide_very_prise(self, successes):
+        return 10
+
+    def prise(self, deg, successes: dict):
+        self.candidate = self.candidate.update(successes)
         if deg == "VERY":
-            reward = -10
-            gama = 0.1
-
-        elif deg == "MEDIUM":
-            reward = -5
-            gama = 0.05
+            reward = self.decide_very_prise(successes)
         elif deg == "LITTLE":
-            reward = -1
-            gama = 0.01
+            reward = self.decide_little_prise(successes)
         else:
-            reward = 0
-            gama = 0.01
+            reward = {name: 0 for name in successes.keys()}
 
-        strict_loss = tensor([[0]], dtype=torch.float32)
-        counter = 0
-        length = len(self.last_selected_lemma)
-        # for i in range(length):
-        #     if s_or_l == 'STRICT':  # strict倾向于选择更长的子句
-        #         sd = strictness_distribution(self.seed_tmpl.seeds, self.last_selected_lemma[i], length)
-        #     else:  # loose倾向于选择更短的子句
-        #         sd = looseness_distribution(self.seed_tmpl.seeds, self.last_selected_lemma[i], length)
-        #     loss_strictness = -torch.mm(torch.log_softmax(
-        #         self.last_distribution_output.reshape(1, -1), 1), sd) * gama
-        #     strict_loss += loss_strictness.reshape([1, 1])
-        #     counter += 1
-        if s_or_l == 'STRICT':  # strict倾向于选择更长的子句
-            sd = strictness_distribution(self.seed_tmpl.seeds, self.last_selected_lemma, length)
-        else:  # loose倾向于选择更短的子句
-            sd = looseness_distribution(self.seed_tmpl.seeds, self.last_selected_lemma)
-        loss_strictness = -torch.mm(torch.log_softmax(
-            self.last_distribution_output.reshape(1, -1), 1), sd) * gama
-        strict_loss += loss_strictness.reshape([1, 1])
-        counter += 1
-        if counter != 0:
-            strict_loss /= counter
-        a_loss = self.a_loss(reward)
-        self.learn_step((a_loss + strict_loss))
+        self.reward_list.extend(reward.values())
+        for name, val in reward:
+            a_loss = self.a_loss(val, name)
+            self.learn_step(a_loss)
+
+    def decide_very_punish(self, failures:dict):
+        reward = dict()
+        for name, sth in failures.items():
+            reward.update({name:(-10, 0.1)})
+        return reward
+
+    def decide_little_punish(self, failures):
+        reward = dict()
+        for name, sth in failures.items():
+            reward.update({name:(-1, 0.2)})
+        return reward
+
+    def punish(self, deg, failures: dict):
+        if deg == "VERY":
+            reward =  self.decide_very_punish(failures)
+        elif deg == "MEDIUM":
+            reward = {name: (-5, 0.05) for name in failures.keys()}
+        elif deg == "LITTLE":
+            reward = self.decide_little_punish(failures)
+        else:
+            reward = {name: (0, 0.01) for name in failures.keys()}
+        self.reward_list.extend([a[0] for a in reward.values()])
+
+        for name, val in reward.items():
+            sd = strictness_distribution(self.seed_tmpl.seeds, self.last_selected_lemma[name])
+            loss_strictness = -torch.mm(torch.log_softmax(
+                self.last_distribution_output.reshape(1, -1), 1), sd) * val[1]
+            strict_loss = loss_strictness.reshape([1, 1]) / len(self.last_selected_lemma[name])
+            a_loss = self.a_loss(val[0], name)
+            self.learn_step((a_loss + strict_loss))
 
     # 计算奖励列表：根据final_reward和discounter计算每一步的奖励，并将结果存储在reward_list中。
     # 计算预测损失：对于self.last_predicted_reward_list中的每一个元素，计算预测的奖励和上一步的预测奖励，然后根据动作的类型计算损失。如果这个动作是选择一个动作，那么就计算交叉熵损失。如果这个动作是选择一个值，那么就计算均方误差损失（但是请注意，这部分代码目前被注释掉了，所以实际上并不会执行）。然后将损失乘以奖励和上一步的预测奖励的差值，并累加到总的预测损失上。
@@ -190,14 +203,14 @@ class PT_generator:
     # 计算均方误差损失：使用F.mse_loss函数计算奖励列表和预测奖励列表之间的均方误差损失。
     # 返回总损失：将预测损失和均方误差损失相加，得到总损失，并返回。
 
-    def a_loss(self, final_reward):
+    def a_loss(self, final_reward, lemma_name):
         discounter = 0.95
         reward_list = []
         for i in range(len(self.last_predicted_reward_list)):
             reward_list.append(final_reward * discounter ** i)
         reward_list = reward_list[::-1]
         p_loss = 0
-        for i in range(min(len(self.last_selected_lemma), len(reward_list))) :
+        for i in range(min(len(self.last_selected_lemma[lemma_name]), len(reward_list))):
             r_i = reward_list[i]
             if i == 0:
                 pr_i_1 = tensor([[0]], dtype=torch.float32)
@@ -205,7 +218,7 @@ class PT_generator:
                 pr_i_1 = tensor([reward_list[i - 1]], dtype=torch.float32)
 
             losser = f.cross_entropy(self.last_distribution_output.reshape(1, -1),
-                                     get_action_index(self.last_selected_lemma[i], self.seed_tmpl.seeds))
+                                     get_seed_index(self.last_selected_lemma[lemma_name][i], self.seed_tmpl.seeds))
 
             if torch.cuda.is_available():
                 p_loss += (tensor(r_i, dtype=torch.float32) - pr_i_1).cuda() * losser.reshape([1, 1])
@@ -222,23 +235,13 @@ class PT_generator:
         # print("p_loss", p_loss)
         return p_loss + mse_loss
 
-    def judge_by_time(self, ge_time):
-        if ge_time > config.generate_time["very"]:
-            self.prise("VERY")
-        elif ge_time > config.generate_time["little"]:
-            self.prise("LITTLE")
-        else:
-            self.punish("LOOSE", "LITTLE")
-
-    def prise(self, deg):
-        if deg == "VERY":
-            reward = 10
-        elif deg == "LITTLE":
-            reward = 3
-        else:
-            reward = 0
-        a_loss = self.a_loss(reward)
-        self.learn_step(a_loss)
+    # def judge_by_time(self, ge_time):
+    #     if ge_time > config.generate_time["very"]:
+    #         self.prise("VERY")
+    #     elif ge_time > config.generate_time["little"]:
+    #         self.prise("LITTLE")
+    #     else:
+    #         self.punish("LOOSE", "LITTLE")
 
     def learn_step(self, loss):
         # if torch.cuda.is_available():

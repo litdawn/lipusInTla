@@ -23,5 +23,7 @@ class Config:
     min_num_conjuncts = 2
     max_num_conjuncts = 3
 
+    seed_num = 3
+
 
 config = Config()
