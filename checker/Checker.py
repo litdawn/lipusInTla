@@ -5,18 +5,24 @@ import random
 import subprocess
 import sys
 import re
+import threading
+import time
+from concurrent.futures import ThreadPoolExecutor
 
 
 class Checker:
     TLC_PATH = os.path.join(os.getcwd(), "tla2tools.jar")
     TLC_MAX_SET_SIZE = 10 ** 8
+    ELIMINATE_CTIS_PER_CHUNK = 1000
+    TLC_CMD_LOCK = threading.Lock()
+    TLC_CMD_SLEEP = 0.15
 
     def __init__(self, spec_name, config: dict, protocols_dir, worker_num="auto", simulate_num=12500, depth=6,
                  logging_level=logging.INFO, logging_file=None):
         """
         :param spec_name: specification's name
         :param config: endive configuration content
-        :param protocols_dir: to generate protocols' dir, necessay
+        :param protocols_dir: to generate protocols' dir, necessarily
         """
         self.worker_num = worker_num
         self.simulate_num = simulate_num
@@ -242,7 +248,7 @@ class Checker:
         logging.info(f"Found {len(ctis)} CTIs")
         return ctis
 
-    def eliminate_ctis(self, add_invs: dict, lemmas: dict, ctis: set):
+    def eliminate_ctis_without_chunk(self, add_invs: dict, lemmas: dict, ctis: set):
         """
         eliminate CTIs with tlc, based on the given lemmas
         :param add_invs: invariants those added to induction invariants
@@ -339,6 +345,117 @@ class Checker:
             [eliminated_ctis.add(cti_id) for cti_id in cti_ids]
         logging.info(f"Eliminated {len(eliminated_ctis)} / {len(ctis)} CTIs in this round")
         return cti_eliminated_by_lemmas
+
+    def eliminate_ctis(self, add_invs: dict, lemmas: dict, ctis: set):
+        """
+        eliminate CTIs with tlc, based on the given lemmas
+        :param add_invs: invariants those added to induction invariants
+        :param lemmas: new given lemmas
+        :param ctis: counterexamples to induction to eliminate
+        :return: dict of which lemma kill which ctis in type dict
+        """
+        cti_eliminated_by_lemmas = {}
+        for name in lemmas.keys():
+            cti_eliminated_by_lemmas[name] = set()
+        if not ctis:
+            return cti_eliminated_by_lemmas
+        cti_table = {}
+        for cti in ctis:
+            hashed = str(hash(cti))
+            cti_table[hashed] = cti
+
+        seed = random.randint(0, 100000)
+        tla_name = f"{self.spec_name}_CTIEliminate_{seed}"
+        cfg_content = "INIT CTICheckInit\n"
+        cfg_content += "NEXT CTICheckNext\n\n"
+        cfg_content += self.config["constants"] + "\n"
+        cfg_path = os.path.join(self.gen_dir, f"{tla_name}.cfg")
+        with open(cfg_path, 'w') as f:
+            f.write(cfg_content)
+        items = list(cti_table.items())
+        sub_cti_dicts = [dict(items[i: i + Checker.ELIMINATE_CTIS_PER_CHUNK])
+                         for i in range(0, len(items), Checker.ELIMINATE_CTIS_PER_CHUNK)]
+        # 使用线程池
+        with ThreadPoolExecutor(max_workers=len(sub_cti_dicts)) as executor:
+            futures = [executor.submit(self.get_ctis_eliminate_state_info,
+                                       add_invs, lemmas, sub_cti_dict, i, cfg_path, seed)
+                       for i, sub_cti_dict in enumerate(sub_cti_dicts)]
+            for future in futures:
+                try:
+                    cti_states = future.result()
+                    for state in cti_states:
+                        vals = state['val']
+                        cti_id = vals['ctiId']
+                        for name in lemmas.keys():
+                            if not vals[f"{name}_val"]:
+                                cti_eliminated_by_lemmas[name].add(cti_id)
+                except Exception as e:
+                    logging.error(f"Eliminate CTIs failed with error: {e}")
+                    return {}
+
+        cti_eliminated_by_lemmas = dict(sorted(cti_eliminated_by_lemmas.items(), key=lambda x: len(x[1])))
+        eliminated_ctis = set()
+        for cti_ids in cti_eliminated_by_lemmas.values():
+            [eliminated_ctis.add(cti_id) for cti_id in cti_ids]
+        logging.info(f"Eliminated {len(eliminated_ctis)} / {len(ctis)} CTIs in this round")
+        return cti_eliminated_by_lemmas
+
+
+    def get_ctis_eliminate_state_info(self, add_invs: dict, lemmas: dict, ctis: dict,
+                                      chunk_id: int, cfg_path, seed: int) -> dict:
+        tla_name = f"{self.spec_name}_CTIEliminate_{seed}_chunk_{chunk_id}"
+        tla_content = f"---- MODULE {tla_name} ----\n"
+        tla_content += f"EXTENDS {self.spec_name}, Naturals, TLC\n\n"
+        tla_content += self.config['model_consts'] + "\n"
+        invars = ""
+        inv_vals = "InvVals ==\n  /\\ TRUE\n"
+        cti_check_next = "CTICheckNext ==\n  /\\ NextUnchanged\n  /\\ UNCHANGED ctiId\n"
+        for name, content in lemmas.items():
+            tla_content += f"VARIABLE {name}_val\n"
+            invars += f"{name} == {content}\n"
+            inv_vals += f"  /\\ {name}_val = {name}\n"
+            cti_check_next += f"  /\\ UNCHANGED {name}_val"
+
+        tla_content += "VARIABLE ctiId\n\n"
+        for name, content in add_invs.items():
+            tla_content += f"{name} == {content}\n"
+        tla_content += "\n" + invars + "\n"
+        tla_content += "kCTIs ==\n"
+        for hash_code, cti in ctis.items():
+            tla_content += f"\t\\/ {cti.getCTIStateString()}\n"
+            tla_content += f"\t   /\\ ctiId = \"{hash_code}\"\n"
+        tla_content += "\n"
+        tla_content += inv_vals + "\n"
+
+        tla_content += ("CTICheckInit ==\n"
+                        "  /\\ kCTIs\n"
+                        "  /\\ InvVals\n")
+        for name in add_invs.keys():
+            tla_content += f"  /\\ {name}\n"
+        tla_content += "\n"
+
+        tla_content += cti_check_next + "\n"
+        tla_content += "===="
+        tla_path = os.path.join(self.gen_dir, f"{tla_name}.tla")
+        with open(tla_path, 'w') as f:
+            f.write(tla_content)
+        json_path = os.path.join(self.state_dir, f"{tla_name}.json")
+        metadir = os.path.join(self.state_dir, f"{tla_name}_metadir")
+        cmd = (f" java -cp {Checker.TLC_PATH} tlc2.TLC -workers {self.worker_num} "
+               f" -maxSetSize {Checker.TLC_MAX_SET_SIZE} -deadlock -continue "
+               f" -dump json {json_path} -noGenerateSpecTE -metadir {metadir} -checkAllInvariants  "
+               f" -config {os.path.relpath(cfg_path, self.cwd)} {os.path.relpath(tla_path, self.cwd)} ")
+        logging.info(f"Eliminate CTIs with command chunk_{chunk_id}: {cmd}")
+        with Checker.TLC_CMD_LOCK:
+            sub_process = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, cwd=self.cwd)
+            time.sleep(Checker.TLC_CMD_SLEEP)
+        output = sub_process.stdout.read().decode("utf-8")
+        exit_code = sub_process.wait()
+        if 'Error: ' in output or 'error: ' in output:
+            raise Exception(f"Eliminate CTIs failed with error: {output}")
+        with open(json_path, 'r') as f:
+            cti_states = json.load(f)['states']
+        return cti_states
 
 
 class CTI:

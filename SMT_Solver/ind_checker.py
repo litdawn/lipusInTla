@@ -24,7 +24,7 @@ class SMT_verifier:
         path2dump = path2tla[:path2tla.find("/") + 1] + path2tla[path2tla.find("/") + 1:-3] + "json"
         command = (
             f'java -cp {config.TLC_PATH} tlc2.TLC -continue -deadlock -workers 4 -config {path2config} -dump {path2dump} {path2tla}')
-        # command = f"java.exe -jar apalache-0.44.2/lib/apalache.jar check --inv=IndCand --run-dir=gen_tla/apalache-cti-out --config={path2config} {path2tla} "
+        # command = f"java.exe -jar apalache-0.44.2/lib/apalache.jar check --inv=IndCand --run-dir=gen_tla_dir/apalache-cti-out --config={path2config} {path2tla} "
         result = subprocess.run(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         # 输出结果
         # print(result.stderr.decode("gbk"))
