@@ -227,7 +227,7 @@ class Checker:
             f.write(cfg_content)
 
         cmd = (f" java -cp {Checker.TLC_PATH} tlc2.TLC -workers {self.worker_num} -deadlock -continue "
-               f" -simulate {self.simulate_num} -depth {self.depth} "
+               f" -simulate num={self.simulate_num} -depth {self.depth} "
                f" -seed {seed} -maxSetSize {Checker.TLC_MAX_SET_SIZE} "
                f" -config {os.path.relpath(cfg_path, self.cwd)} {os.path.relpath(tla_path, self.cwd)} ")
         logging.info(f"Generate CTIs with command: {cmd}")
