@@ -97,19 +97,9 @@ class PT_generator:
         action_vector = self.pi(self.concat_state_vec(), overall_feature)
         action_distribution, action_raw = self.distributionlize(action_vector, list(self.state_vec.values()))
 
-        # seeds_num = random.randint(2, 3)
-
-        # # 是否重复出现
-        # new_candidate, raw_lemmas = sampling(action_distribution, self.seed_tmpl.seeds, seeds_num)
-        # while self.if_already_generate(raw_lemmas):
-        #     new_candidate, raw_lemmas = sampling(action_distribution, self.seed_tmpl.seeds, seeds_num)
-
         new_candidate, raw_lemmas = sampling(action_distribution, self.seed_tmpl.seeds, self.depth)
         self.depth += 1
 
-        # 将lemma加入candidates
-        # self.candidate.update({f"inv_{self.lemma_pointer}": new_candidate[0]})
-        # self.lemma_pointer += 1
 
         self.last_predicted_reward_list = predicted_reward_list
         self.last_selected_lemma = raw_lemmas
@@ -122,26 +112,6 @@ class PT_generator:
                 lemmas = [f"{name} ==  {self.seed_tmpl.quant_inv} {inv}"]
 
         return self.candidate, lemmas
-
-    # 设置奖励和伽马值：根据Deg的值设置奖励和伽马值。
-    # 如果Deg是 "VERY"，那么奖励是 -10，伽马值是0.1。
-    # 如果Deg是 "MEDIUM"，那么奖励是 - 5，伽马值是0.05。
-    # 如果Deg是 "LITTLE"，那么奖励是 - 1，伽马值是0.01。
-    # 初始化严格损失：初始化严格损失为0。如果可以使用GPU，那么将严格损失转移到GPU上。
-    # 计算严格损失：对于self.last_action_or_value中的每一个元素，如果它应该被严格处理（由ShouldStrict函数判断），那么就计算严格损失。
-    #       如果这个动作是选择一个动作，那么就计算严格性分布或松散性分布，并计算严格性损失。
-    #       如果这个动作是选择一个值，那么就计算均方误差损失（但是请注意，这部分代码目前被注释掉了，所以实际上并不会执行）。然后将严格损失累加到总的严格损失上，并将计数器加1。
-    # 计算平均严格损失：如果计数器不为0，那么就将总的严格损失除以计数器，得到平均严格损失。
-    # 计算动作损失并进行学习步骤：调用self.ALoss(reward)
-    # 计算动作损失，然后调用self.LearnStep((a_loss + strict_loss))
-    # 进行学习步骤。
-    # def cache_inv(self, inv):
-    #     self.already_generate.add(tuple(inv))
-    #     # self.all_checked_invs = self.all_checked_invs.union(set(map(quant_inv_fn, list(invs))))
-    #     return
-
-    # def if_already_generate(self, inv):
-    #     return tuple(inv) in self.already_generate
 
     def decide_little_prise(self, successes):
         reward = {}

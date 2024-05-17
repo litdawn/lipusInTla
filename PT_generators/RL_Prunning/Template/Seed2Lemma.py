@@ -61,6 +61,7 @@ def generate_combinations(expressions):
             elif selection[i] == -1:
                 combination.append(f'~({expressions[i]})')
                 selected.append(expressions[i])
+        selected.sort()
         if tuple(selected) not in seed2lemma.seed_tuples:
             seed2lemma.seed_tuples.add(tuple(selected))
             combinations.append(combination)
