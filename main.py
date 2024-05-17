@@ -64,9 +64,9 @@ def main(path2tla, path2cfg, path2json, path2config):
         wrong_lemma = dict()
         is_inv = checker.check_invariants(lemmas)
         is_inv_names = list(is_inv.keys())
-        for inv_name,s in lemmas.items():
+        for inv_name, s in lemmas.items():
             if inv_name not in is_inv_names:
-                wrong_lemma.update({inv_name: -2})#todo 具体赋值
+                wrong_lemma.update({inv_name: -2})  # todo 具体赋值
 
         if len(is_inv) < 1:
             log.info(f">>>iteration {iteration}: 均没通过不变式检查，花费{timer.get_time(TIMER.LEMMA_CHECKER)}")
@@ -75,9 +75,9 @@ def main(path2tla, path2cfg, path2json, path2config):
         log.info(
             f">>>iteration {iteration}: 不变式检测结束，{is_inv_names}是不变式，花费{timer.get_time(TIMER.LEMMA_CHECKER)}")
 
-
         timer.new_timer(TIMER.CTI_ELIMINATOR)
         add2can = checker.check_deduction(candidate, is_inv)
+        add2can = prune(add2can)
         new_eliminate_ctis = checker.eliminate_ctis(candidate, add2can, ctis)
         log.info(f"消除cti阶段花费{timer.get_time(TIMER.CTI_ELIMINATOR)}")
 
@@ -93,7 +93,7 @@ def main(path2tla, path2cfg, path2json, path2config):
 
         for inv_name in is_inv_names:
             if inv_name not in add2can_name:
-                wrong_lemma.update({inv_name: -2}) #todo 具体赋值
+                wrong_lemma.update({inv_name: -2})  # todo 具体赋值
 
         if len(add2can) == 0 and len(ctis) > 0:
             log.info(f">>>iteration {iteration}: 都被之前的candidate蕴含了，应该严格一点")
@@ -104,17 +104,17 @@ def main(path2tla, path2cfg, path2json, path2config):
             pt_generator.prise("LITTLE", eliminate_num)
         elif len(ctis) == 0:
             log.info(f">>>iteration {iteration}: 看起来cti没了，检测归纳不变式&开始生成更多的cti")
-            timer.new_timer(TIMER.CTI_GENERATOR)
-            candidate.update(add2can)
-            solved, new_ctis = checker.check_induction(candidate)
-            if solved:
-                log.info("找到结果")
-                save_result(candidate)
-                break
-            ctis = ctis.union(new_ctis)
-            log.info(
-                f">>>iteration {iteration}: 找到了{len(new_ctis)}个CTI, 目前CTI的总数是{len(ctis)}，"
-                f"花费{timer.get_time(TIMER.CTI_GENERATOR)}")
+        timer.new_timer(TIMER.CTI_GENERATOR)
+        candidate.update(add2can)
+        solved, new_ctis = checker.check_induction(candidate)
+        if solved:
+            log.info("找到结果")
+            save_result(candidate)
+            break
+        ctis = ctis.union(new_ctis)
+        log.info(
+            f">>>iteration {iteration}: 找到了{len(new_ctis)}个CTI, 目前CTI的总数是{len(ctis)}，"
+            f"花费{timer.get_time(TIMER.CTI_GENERATOR)}")
     # print(pt_generator.loss_list)
     print(pt_generator.reward_list)
     print(iteration)
@@ -133,9 +133,42 @@ def del_from_ctis(orig_k_ctis, eliminated_ctis):
     return new_ctis
 
 
+def prune(inv_dict):
+    prune_content = {}
+    prune_result = {}
+
+    def count_and(item):
+        return item.count('\\/')
+
+    def find_keys_with_substring(target):
+        matching_keys = [key for key in prune_content.values() if key in target]
+        return True if matching_keys else False
+
+    def deal_with_content(inv_content):
+        return inv_content.split(":")[-1].strip()
+
+    sorted_dict = sorted(inv_dict.items(), key=lambda x: count_and(x[1]), reverse=False)
+    min_num = 2
+    for i, (inv_name, content) in enumerate(sorted_dict):
+        if i == 0:
+            min_num = count_and(content)
+        if count_and(content) == min_num:
+            prune_content.update({deal_with_content(content): inv_name})
+        elif find_keys_with_substring(content):
+            continue
+        else:
+            prune_content.update({deal_with_content(content): inv_name})
+    for inv_content,inv_name in prune_content.items():
+        prune_result.update({inv_name: inv_dict[inv_name]})
+
+    del inv_dict
+    return prune_result
+
+
+
 if __name__ == "__main__":
-    begin = timer.new_timer("total")
-    name = "toy_consensus_epr"
+    begin = timer.new_timer("TwoPhase")
+    name = "toy_consensus_forall"
     benchmark_path = os.path.join(os.getcwd(), "Benchmarks")
     config.specname = name
     config.TLC_PATH = os.path.join(os.getcwd(), "tla2tools.jar")
