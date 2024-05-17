@@ -3,7 +3,10 @@ from PT_generators.RL_Prunning.NNs.NeuralNetwork import *
 from PT_generators.RL_Prunning.Template.Seed2Lemma import *
 from PT_generators.RL_Prunning.Template.Lemma2Candidate import *
 import torch.nn.functional as f
+from torch import tensor
 
+
+# torch.autograd.set_detect_anomaly(True)
 
 class PT_generator:
     def __init__(self, seed_tmpl, name):
@@ -11,6 +14,7 @@ class PT_generator:
         self.last_predicted_reward_list = None
         self.reward_list = []
         self.last_selected_lemma = None
+        self.last_generate_invs = None
         self.last_distribution_output = None
         # self.already_generate = set()
 
@@ -47,7 +51,7 @@ class PT_generator:
         #     self.load_parameters(config.ppath)
         # self.init_parameters()
 
-        self.candidate = dict()
+        self.candidate = {}
         # self.lemma_pointer = 0
         # self.init_candidate()
 
@@ -98,32 +102,39 @@ class PT_generator:
         action_distribution, action_raw = self.distributionlize(action_vector, list(self.state_vec.values()))
 
         new_candidate, raw_lemmas = sampling(action_distribution, self.seed_tmpl.seeds, self.depth)
-        self.depth += 1
+        while len(new_candidate) == 0:
+            new_candidate, raw_lemmas = sampling(action_distribution, self.seed_tmpl.seeds, self.depth)
 
+        self.depth += 1
 
         self.last_predicted_reward_list = predicted_reward_list
         self.last_selected_lemma = raw_lemmas
+
         self.last_distribution_output = action_raw
         if config.use_self_generate:
             lemmas = Lemma2Candidate.add_quant(f"inv_{self.lemma_pointer - 1}", new_candidate[0], self.seed_tmpl.quants)
         else:
-            lemmas = []
+            lemmas = {}
             for name, inv in new_candidate.items():
-                lemmas = [f"{name} ==  {self.seed_tmpl.quant_inv} {inv}"]
-
+                lemmas.update({name: f"{self.seed_tmpl.quant_inv} {inv}"})
+        self.last_generate_invs = lemmas
         return self.candidate, lemmas
 
     def decide_little_prise(self, successes):
         reward = {}
         for name, cti_num in successes.items():
-            reward.update({name: cti_num * cti_num})
+            reward.update({name: cti_num})
         return reward
 
     def decide_very_prise(self, successes):
         return 10
 
+    def update_candidate(self, names: list):
+        for name in names:
+            self.candidate.update({name: self.last_generate_invs[name]})
+
     def prise(self, deg, successes: dict):
-        self.candidate = self.candidate.update(successes)
+        self.update_candidate(list(successes.keys()))
         if deg == "VERY":
             reward = self.decide_very_prise(successes)
         elif deg == "LITTLE":
@@ -132,25 +143,26 @@ class PT_generator:
             reward = {name: 0 for name in successes.keys()}
 
         self.reward_list.extend(reward.values())
-        for name, val in reward:
-            a_loss = self.a_loss(val, name)
-            self.learn_step(a_loss)
+        a_loss = tensor([[0]], dtype=torch.float32)
+        for name, val in reward.items():
+            a_loss += self.a_loss(val, name)
+        self.learn_step(a_loss)
 
-    def decide_very_punish(self, failures:dict):
+    def decide_very_punish(self, failures: dict):
         reward = dict()
         for name, sth in failures.items():
-            reward.update({name:(-10, 0.1)})
+            reward.update({name: (-10, 0.1)})
         return reward
 
     def decide_little_punish(self, failures):
         reward = dict()
         for name, sth in failures.items():
-            reward.update({name:(-1, 0.2)})
+            reward.update({name: (-1, 0.2)})
         return reward
 
     def punish(self, deg, failures: dict):
         if deg == "VERY":
-            reward =  self.decide_very_punish(failures)
+            reward = self.decide_very_punish(failures)
         elif deg == "MEDIUM":
             reward = {name: (-5, 0.05) for name in failures.keys()}
         elif deg == "LITTLE":
@@ -158,14 +170,15 @@ class PT_generator:
         else:
             reward = {name: (0, 0.01) for name in failures.keys()}
         self.reward_list.extend([a[0] for a in reward.values()])
-
+        strict_loss = tensor([[0]], dtype=torch.float32)
+        a_loss = tensor([[0]], dtype=torch.float32)
         for name, val in reward.items():
             sd = strictness_distribution(self.seed_tmpl.seeds, self.last_selected_lemma[name])
             loss_strictness = -torch.mm(torch.log_softmax(
                 self.last_distribution_output.reshape(1, -1), 1), sd) * val[1]
-            strict_loss = loss_strictness.reshape([1, 1]) / len(self.last_selected_lemma[name])
-            a_loss = self.a_loss(val[0], name)
-            self.learn_step((a_loss + strict_loss))
+            strict_loss += loss_strictness.reshape([1, 1]) / len(self.last_selected_lemma[name])
+            a_loss += self.a_loss(val[0], name)
+        self.learn_step((a_loss + strict_loss))
 
     # 计算奖励列表：根据final_reward和discounter计算每一步的奖励，并将结果存储在reward_list中。
     # 计算预测损失：对于self.last_predicted_reward_list中的每一个元素，计算预测的奖励和上一步的预测奖励，然后根据动作的类型计算损失。如果这个动作是选择一个动作，那么就计算交叉熵损失。如果这个动作是选择一个值，那么就计算均方误差损失（但是请注意，这部分代码目前被注释掉了，所以实际上并不会执行）。然后将损失乘以奖励和上一步的预测奖励的差值，并累加到总的预测损失上。

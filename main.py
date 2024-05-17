@@ -23,18 +23,12 @@ def save_result(invs):
 
 
 def main(path2tla, path2cfg, path2json, path2config):
-    # Step 1. Input the three formation of the code
-
-    # path2CFile, path2CFG, path2SMT = parseArgs()
-    # Step 2. Load the Partial Template Generator.
-
-    # tla_ins, seed_tmpl = tlaparser.main(path2cfg, path2json)
     tla_ins, seed_tmpl = tlaparser.main_from_json(path2cfg, path2json, path2config)
 
     pt_generator = PT_generator(seed_tmpl, name)
 
     tmp_bench = os.path.join(os.getcwd(), "Benchmarks")
-    checker = Checker(name, seed_tmpl, os.path.join(tmp_bench, "Result"))
+    checker = Checker(name, seed_tmpl.json_data, os.path.join(tmp_bench, "Result"))
     # smt_verifier = SMT_verifier(tla_ins.variables)
     # Step 3. ENTER the ICE Solving Loop
     solved, ctis = checker.check_induction({})
@@ -48,71 +42,71 @@ def main(path2tla, path2cfg, path2json, path2config):
             print(pt_generator.reward_list)
 
         current_time = timer.get_and_refesh(TIMER.EPOCH)
-        log.info(f"第{iteration}轮已经结束，本轮耗时{current_time}")
+        log.info(f"第{iteration}轮已经结束，本轮耗时{current_time}，总耗时{timer.get_time(TIMER.TOTAL)}")
         if current_time >= config.Limited_time:
             log.error("Loop invariant Inference is OOT")
             return None, None
         iteration += 1
-
 
         log.info("==============================================================================================")
         log.info(f">>>iteration {iteration}: 开始寻找下一个引理不变式")
 
         timer.new_timer(TIMER.LEMMA_GENERATOR)
         candidate, lemmas = pt_generator.generate_next(ctis)  # candidate是候选归纳不变式， lemma是新生成的引理不变式候选者字典
-        if candidate is None:
+        if len(lemmas) == 0:
             log.error("没找到下一个引理不变式")
-            return None, None
+            continue
         log.info(
-            f">>>iteration {iteration}: 找到了一些候选者 {str(candidate)}，"
+            f">>>iteration {iteration}: 找到了一些候选者 {lemmas.keys()}，"
             f"花费{timer.get_time(TIMER.LEMMA_GENERATOR)}，开始不变式检查")
         timer.new_timer(TIMER.LEMMA_CHECKER)
 
+        wrong_lemma = dict()
         is_inv = checker.check_invariants(lemmas)
+        is_inv_names = list(is_inv.keys())
+        for inv_name,s in lemmas.items():
+            if inv_name not in is_inv_names:
+                wrong_lemma.update({inv_name: -2})#todo 具体赋值
+
         if len(is_inv) < 1:
-            # 如果没通过不变式的检查，应该宽松一点
-            log.info(f">>>iteration {iteration}: 均通过不变式检查，花费{timer.get_time(TIMER.LEMMA_CHECKER)}")
-            pt_generator.punish('VERY', lemmas)
+            log.info(f">>>iteration {iteration}: 均没通过不变式检查，花费{timer.get_time(TIMER.LEMMA_CHECKER)}")
+            pt_generator.punish('VERY', wrong_lemma)
             continue
-        else:
-            log.info(
-                f">>>iteration {iteration}: 不变式检测结束，{is_inv}是不变式，花费{timer.get_time(TIMER.LEMMA_CHECKER)}")
-            # 找出不变式全文
-            can2test = dict()
-            for raw_name, raw_can in lemmas.items():
-                if raw_name in is_inv:
-                    can2test.update({raw_name: raw_can})
+        log.info(
+            f">>>iteration {iteration}: 不变式检测结束，{is_inv_names}是不变式，花费{timer.get_time(TIMER.LEMMA_CHECKER)}")
 
-            timer.new_timer(TIMER.CTI_ELIMINATOR)
-            # new_eliminate_ctis, e_ctis = checker.check_deduction(candidate, can2test, ctis)
-            new_eliminate_ctis = checker.eliminate_ctis(can2test,ctis)
-            log.info(f"消除了一些cti，花费{timer.get_time(TIMER.CTI_ELIMINATOR)}")
 
-            delete_lemmas = dict()
-            eliminate_num = dict()
-            for inv_name, e_cti in new_eliminate_ctis.items():
-                if len(e_cti) > 0:
-                    old_len = len(ctis)
-                    ctis = ctis - e_cti
-                    if len(ctis) < old_len:
-                        eliminate_num.update({inv_name: old_len-len(ctis)})
-                    else:
-                        e_cti = set()
-                if len(e_cti) == 0:
-                    can2test.pop(inv_name)
-                    delete_lemmas.update({inv_name: lemmas[inv_name]}) #todo 修改这里成为某种指标
+        timer.new_timer(TIMER.CTI_ELIMINATOR)
+        add2can = checker.check_deduction(candidate, is_inv)
+        new_eliminate_ctis = checker.eliminate_ctis(candidate, add2can, ctis)
+        log.info(f"消除cti阶段花费{timer.get_time(TIMER.CTI_ELIMINATOR)}")
 
-            if len(can2test) == 0 and len(ctis) > 0:
-                log.info(f">>>iteration {iteration}: {delete_lemmas} 被之前的candidate蕴含了，应该严格一点")
-                pt_generator.punish('LITTLE', delete_lemmas)
-                continue
-            elif len(can2test) > 0 and len(ctis) > 0:
-                log.info(f">>>iteration {iteration}: 找到了{len(can2test)}个正确的不变式，继续")
-                pt_generator.prise("LITTLE", eliminate_num)
+        new_eliminate_ctis_name = list(new_eliminate_ctis.keys())
+        add2can_name = list(add2can.keys())
+        eliminate_num = dict()
+        for inv_name, e_cti in add2can.items():
+            if inv_name in new_eliminate_ctis_name:
+                old_len = len(ctis)
+                ctis = del_from_ctis(ctis, new_eliminate_ctis[inv_name])
+                eliminate_num.update({inv_name: old_len - len(ctis)})
+            eliminate_num.update({inv_name: 6})
 
-            log.info(f">>>iteration {iteration}: 开始生成更多的cti")
+        for inv_name in is_inv_names:
+            if inv_name not in add2can_name:
+                wrong_lemma.update({inv_name: -2}) #todo 具体赋值
+
+        if len(add2can) == 0 and len(ctis) > 0:
+            log.info(f">>>iteration {iteration}: 都被之前的candidate蕴含了，应该严格一点")
+            pt_generator.punish('LITTLE', wrong_lemma)
+            continue
+        elif len(add2can) > 0 and len(ctis) > 0:
+            log.info(f">>>iteration {iteration}: 找到了{len(add2can)}个正确的不变式{add2can.keys()}，继续")
+            pt_generator.prise("LITTLE", eliminate_num)
+        elif len(ctis) == 0:
+            log.info(f">>>iteration {iteration}: 看起来cti没了，检测归纳不变式&开始生成更多的cti")
             timer.new_timer(TIMER.CTI_GENERATOR)
-            solved, new_ctis = checker.check_induction(candidate.update(can2test))
+            candidate.update(add2can)
+            solved, new_ctis = checker.check_induction(candidate)
             if solved:
                 log.info("找到结果")
                 save_result(candidate)
@@ -130,9 +124,18 @@ def main(path2tla, path2cfg, path2json, path2config):
         return
 
 
+def del_from_ctis(orig_k_ctis, eliminated_ctis):
+    new_ctis = set()
+    for cti in orig_k_ctis:
+        hashed = str(hash(cti))
+        if hashed not in eliminated_ctis:
+            new_ctis.add(cti)
+    return new_ctis
+
+
 if __name__ == "__main__":
     begin = timer.new_timer("total")
-    name = ""
+    name = "lockserv"
     benchmark_path = os.path.join(os.getcwd(), "Benchmarks")
     config.specname = name
     config.TLC_PATH = os.path.join(os.getcwd(), "tla2tools.jar")

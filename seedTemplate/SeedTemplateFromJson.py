@@ -4,10 +4,12 @@ import os.path
 
 class SeedTemplate:
     def __init__(self,tla_ins, path2configDotJson=""):
-        json_data = ""
+        json_data = {}
         try:
             with open(path2configDotJson, 'r') as f:
-                json_data = json.load(f)
+                self.json_data = json.load(f)
+                json_data = self.json_data
+
         except FileNotFoundError:
             print("Error: failed to load the json file.")
             exit(1)
