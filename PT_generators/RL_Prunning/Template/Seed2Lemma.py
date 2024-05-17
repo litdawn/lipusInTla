@@ -93,7 +93,7 @@ def strictness_distribution(seed_list, seeds_selected):
     res = torch.ones(len(seed_list), 1, dtype=torch.float32)
     for i, every_seed in enumerate(seeds_selected):
         begin = every_seed.find("(")
-        end = every_seed.find(")")
+        end = len(every_seed)-1
         every_seed = every_seed[begin+1:end]
         res[get_seed_index(every_seed, seed_list, False), 0] *= distri_dict[i]
         # distri_dict[i] += 1 / len(seed_list)
