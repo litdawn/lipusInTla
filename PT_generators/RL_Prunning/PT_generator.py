@@ -120,25 +120,38 @@ class PT_generator:
         self.last_generate_invs = lemmas
         return self.candidate, lemmas
 
-    def decide_little_prise(self, successes):
-        reward = {}
-        for name, cti_num in successes.items():
-            reward.update({name: cti_num})
-        return reward
-
-    def decide_very_prise(self, successes):
-        return 10
-
     def update_candidate(self, names: list):
         for name in names:
             self.candidate.update({name: self.last_generate_invs[name]})
 
     def prise(self, deg, successes: dict):
         self.update_candidate(list(successes.keys()))
+
+        def normalization(target: dict, min_interval, max_interval):
+            # 找出字典中值的最小值和最大值
+            min_val = min(target.values())
+            max_val = max(target.values())
+
+            # 计算归一化的范围
+            range_val = max_val - min_val if max_val - min_val > 0 else 1
+
+            # 对字典中的值进行归一化处理
+            normalized_dict = {}
+            for key, _val in target.items():
+                normalized_val = ((_val - min_val) / range_val) * (max_interval - min_interval) + min_interval
+                normalized_dict[key] = normalized_val
+            return normalized_dict
+
+        def decide_little_prise(_successes):
+            return normalization(_successes, 0, 100)
+
+        def decide_very_prise():
+            return 101
+
         if deg == "VERY":
-            reward = self.decide_very_prise(successes)
+            reward = decide_very_prise()
         elif deg == "LITTLE":
-            reward = self.decide_little_prise(successes)
+            reward = decide_little_prise(successes)
         else:
             reward = {name: 0 for name in successes.keys()}
 
@@ -148,25 +161,38 @@ class PT_generator:
             a_loss += self.a_loss(val, name)
         self.learn_step(a_loss)
 
-    def decide_very_punish(self, failures: dict):
-        reward = dict()
-        for name, sth in failures.items():
-            reward.update({name: (-10, 0.1)})
-        return reward
-
-    def decide_little_punish(self, failures):
-        reward = dict()
-        for name, sth in failures.items():
-            reward.update({name: (-1, 0.2)})
-        return reward
-
     def punish(self, deg, failures: dict):
+
+        def normalization(target: dict, min_interval, max_interval):
+            # 找出字典中值的最小值和最大值
+            min_val = min(target.values())
+            max_val = max(target.values())
+
+            # 计算归一化的范围
+            range_val = max_val - min_val if max_val - min_val > 0 else 1
+
+            # 对字典中的值进行归一化处理
+            normalized_dict = {}
+            for key, _val in target.items():
+                normalized_val = (((_val[0] - min_val) / range_val) * (max_interval - min_interval) + min_interval, 0.1)
+                normalized_dict[key] = normalized_val
+            return normalized_dict
+
+        def decide_very_punish(_failures: dict):
+            return normalization(_failures, -100, -5)
+
+        def decide_little_punish(_failures: dict):
+            _reward = dict()
+            for name, sth in _failures.items():
+                _reward.update({name: (-1, 0.2)})
+            return _reward
+
         if deg == "VERY":
-            reward = self.decide_very_punish(failures)
+            reward = decide_very_punish(failures)
         elif deg == "MEDIUM":
             reward = {name: (-5, 0.05) for name in failures.keys()}
         elif deg == "LITTLE":
-            reward = self.decide_little_punish(failures)
+            reward = decide_little_punish(failures)
         else:
             reward = {name: (0, 0.01) for name in failures.keys()}
         self.reward_list.extend([a[0] for a in reward.values()])
@@ -177,7 +203,7 @@ class PT_generator:
             loss_strictness = -torch.mm(torch.log_softmax(
                 self.last_distribution_output.reshape(1, -1), 1), sd) * val[1]
             strict_loss += loss_strictness.reshape([1, 1]) / len(self.last_selected_lemma[name])
-            a_loss += self.a_loss(val[0], name)
+            a_loss += self.a_loss(val[0], name) / len(self.last_selected_lemma[name])
         self.learn_step((a_loss + strict_loss))
 
     # 计算奖励列表：根据final_reward和discounter计算每一步的奖励，并将结果存储在reward_list中。
@@ -217,14 +243,6 @@ class PT_generator:
         # print("mse_loss", mse_loss)
         # print("p_loss", p_loss)
         return p_loss + mse_loss
-
-    # def judge_by_time(self, ge_time):
-    #     if ge_time > config.generate_time["very"]:
-    #         self.prise("VERY")
-    #     elif ge_time > config.generate_time["little"]:
-    #         self.prise("LITTLE")
-    #     else:
-    #         self.punish("LOOSE", "LITTLE")
 
     def learn_step(self, loss):
         # if torch.cuda.is_available():

@@ -97,8 +97,6 @@ def strictness_distribution(seed_list, seeds_selected):
         end = len(every_seed)-1
         every_seed = every_seed[begin+1:end]
         res[get_seed_index(every_seed, seed_list, False), 0] *= distri_dict[i]
-        # distri_dict[i] += 1 / len(seed_list)
-    # normalization(distri_dict)
     if torch.cuda.is_available():
         res = res.cuda()
     return res

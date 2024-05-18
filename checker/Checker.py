@@ -90,14 +90,18 @@ class Checker:
             logging.error(f"Check invariants failed with error: {e}")
             return {}
         violated = set()
+        counter = 0
+        violated_dict = {}
         for line in output_lines:
             res = re.match(".*Invariant (Inv_.*) is violated", line)
             if res:
                 violated.add(res.group(1))
+                violated_dict[res.group(1)] = counter
+                counter += 1
         logging.info(f"Found {len(invariants) - len(violated)} / {len(invariants)} candidate invariants satisfied")
         return {inv_name: inv_content
                 for inv_name, inv_content in invariants.items()
-                if inv_name not in violated}
+                if inv_name not in violated}, violated_dict
 
     def check_deduction(self, deducting: dict, deducted: dict):
         """ check whether the disjunction of deducting implies deducted
@@ -399,7 +403,6 @@ class Checker:
             [eliminated_ctis.add(cti_id) for cti_id in cti_ids]
         logging.info(f"Eliminated {len(eliminated_ctis)} / {len(ctis)} CTIs in this round")
         return cti_eliminated_by_lemmas
-
 
     def get_ctis_eliminate_state_info(self, add_invs: dict, lemmas: dict, ctis: dict,
                                       chunk_id: int, cfg_path, seed: int) -> dict:
