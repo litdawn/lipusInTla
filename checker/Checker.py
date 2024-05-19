@@ -13,9 +13,9 @@ from concurrent.futures import ThreadPoolExecutor
 class Checker:
     TLC_PATH = os.path.join(os.getcwd(), "tla2tools.jar")
     TLC_MAX_SET_SIZE = 10 ** 8
-    ELIMINATE_CTIS_PER_CHUNK = 1000
+    ELIMINATE_CTIS_PER_CHUNK = 512
     TLC_CMD_LOCK = threading.Lock()
-    TLC_CMD_SLEEP = 0.15
+    JAVA_CMD = "java -XX:+UseParallelGC"
 
     def __init__(self, spec_name, config: dict, protocols_dir, worker_num="auto", simulate_num=12500, depth=6,
                  logging_level=logging.INFO, logging_file=None):
@@ -78,7 +78,7 @@ class Checker:
 
         metadir = os.path.join(self.state_dir, f"inv_check_{seed}")
 
-        cmd = (f" java -cp {Checker.TLC_PATH} tlc2.TLC -workers {self.worker_num} -deadlock -continue "
+        cmd = (f" {Checker.JAVA_CMD} -cp {Checker.TLC_PATH} tlc2.TLC -workers {self.worker_num} -deadlock -continue "
                f" -seed {seed} -metadir {metadir} -maxSetSize {Checker.TLC_MAX_SET_SIZE} -checkAllInvariants "
                f" -config {os.path.relpath(inv_check_path, self.cwd)} {os.path.relpath(tla_path, self.cwd)} ")
         logging.info(f"Check invariants with command: {cmd}")
@@ -147,7 +147,7 @@ class Checker:
 
         metadir = os.path.join(self.state_dir, f"deduction_check_{seed}")
 
-        cmd = (f" java -cp {Checker.TLC_PATH} tlc2.TLC -workers {self.worker_num} -deadlock -continue "
+        cmd = (f" {Checker.JAVA_CMD} -cp {Checker.TLC_PATH} tlc2.TLC -workers {self.worker_num} -deadlock -continue "
                f" -seed {seed} -metadir {metadir} -maxSetSize {Checker.TLC_MAX_SET_SIZE} -checkAllInvariants "
                f" -config {os.path.relpath(deduction_check_path, self.cwd)} {os.path.relpath(tla_path, self.cwd)} ")
 
@@ -197,7 +197,7 @@ class Checker:
             f.write(tla_content)
 
         metadir = os.path.join(self.state_dir, f"induction_check_{seed}")
-        cmd = (f" java -cp {Checker.TLC_PATH} tlc2.TLC -workers {self.worker_num} -deadlock -continue "
+        cmd = (f" {Checker.JAVA_CMD} -cp {Checker.TLC_PATH} tlc2.TLC -workers {self.worker_num} -deadlock -continue "
                f" -seed {seed} -metadir {metadir} -maxSetSize {Checker.TLC_MAX_SET_SIZE}  "
                f" -config {os.path.relpath(self.induction_check_path, self.cwd)} {os.path.relpath(tla_path, self.cwd)} ")
         logging.info(f"Check induction with command: {cmd}")
@@ -244,7 +244,7 @@ class Checker:
         with open(cfg_path, 'w') as f:
             f.write(cfg_content)
 
-        cmd = (f" java -cp {Checker.TLC_PATH} tlc2.TLC -workers {self.worker_num} -deadlock -continue "
+        cmd = (f" {Checker.JAVA_CMD} -cp {Checker.TLC_PATH} tlc2.TLC -workers {self.worker_num} -deadlock -continue "
                f" -simulate num={self.simulate_num} -depth {self.depth} "
                f" -seed {seed} -maxSetSize {Checker.TLC_MAX_SET_SIZE} "
                f" -config {os.path.relpath(cfg_path, self.cwd)} {os.path.relpath(tla_path, self.cwd)} ")
@@ -329,7 +329,7 @@ class Checker:
         json_path = os.path.join(self.state_dir, f"{tla_name}.json")
         metadir = os.path.join(self.state_dir, f"{tla_name}_metadir")
 
-        cmd = (f" java -cp {Checker.TLC_PATH} tlc2.TLC -workers {self.worker_num} "
+        cmd = (f" {Checker.JAVA_CMD} -cp {Checker.TLC_PATH} tlc2.TLC -workers {self.worker_num} "
                f" -maxSetSize {Checker.TLC_MAX_SET_SIZE} -deadlock -continue "
                f" -dump json {json_path} -noGenerateSpecTE -metadir {metadir} -checkAllInvariants  "
                f" -config {os.path.relpath(cfg_path, self.cwd)} {os.path.relpath(tla_path, self.cwd)} ")
@@ -456,15 +456,24 @@ class Checker:
             f.write(tla_content)
         json_path = os.path.join(self.state_dir, f"{tla_name}.json")
         metadir = os.path.join(self.state_dir, f"{tla_name}_metadir")
-        cmd = (f" java -cp {Checker.TLC_PATH} tlc2.TLC -workers {self.worker_num} "
+        cmd = (f" {Checker.JAVA_CMD} -cp {Checker.TLC_PATH} tlc2.TLC -workers {self.worker_num} "
                f" -maxSetSize {Checker.TLC_MAX_SET_SIZE} -deadlock -continue "
                f" -dump json {json_path} -noGenerateSpecTE -metadir {metadir} -checkAllInvariants  "
                f" -config {os.path.relpath(cfg_path, self.cwd)} {os.path.relpath(tla_path, self.cwd)} ")
         logging.info(f"Eliminate CTIs with command chunk_{chunk_id}: {cmd}")
+        # with Checker.TLC_CMD_LOCK:
+        #     sub_process = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, cwd=self.cwd)
+        #     time.sleep(Checker.TLC_CMD_SLEEP)
+        # output = sub_process.stdout.read().decode("utf-8")
+        output = ""
         with Checker.TLC_CMD_LOCK:
             sub_process = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, cwd=self.cwd)
-            time.sleep(Checker.TLC_CMD_SLEEP)
-        output = sub_process.stdout.read().decode("utf-8")
+            for line in iter(sub_process.stdout.readline, b''):
+                output += line.decode("utf-8")
+                if "Starting..." in line.decode("utf-8"):
+                    break
+
+        output += sub_process.stdout.read().decode("utf-8")
         exit_code = sub_process.wait()
         logging.debug(f"Eliminate CTIs output chunk_{chunk_id}: {output}")
         logging.debug(f"Eliminate CTIs output exit_code chunk_{chunk_id}: {exit_code}")
