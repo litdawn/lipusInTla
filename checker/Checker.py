@@ -170,7 +170,7 @@ class Checker:
         logging.info(f"Found {len(not_deducted)} / {len(deducted)} candidate invariants not deducted")
         return {name: deducted[name] for name in not_deducted}
 
-    def check_induction(self, ind_lemmas: dict):
+    def check_induction(self, ind_lemmas: dict, will_continue=False):
         """
         check induction with tlc
         :param ind_lemmas: list of lemmas' disjunction to check
@@ -199,7 +199,10 @@ class Checker:
         metadir = os.path.join(self.state_dir, f"induction_check_{seed}")
         cmd = (f" {Checker.JAVA_CMD} -cp {Checker.TLC_PATH} tlc2.TLC -workers {self.worker_num} -deadlock -continue "
                f" -seed {seed} -metadir {metadir} -maxSetSize {Checker.TLC_MAX_SET_SIZE}  "
-               f" -config {os.path.relpath(self.induction_check_path, self.cwd)} {os.path.relpath(tla_path, self.cwd)} ")
+               f" -config {os.path.relpath(self.induction_check_path, self.cwd)} "
+               f"{os.path.relpath(tla_path, self.cwd)} ")
+        if will_continue:
+            cmd = cmd.replace("-continue ", "")
         logging.info(f"Check induction with command: {cmd}")
         try:
             sub_process = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, cwd=self.cwd)
