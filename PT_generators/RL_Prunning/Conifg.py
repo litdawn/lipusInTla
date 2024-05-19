@@ -14,7 +14,7 @@ class Config:
     LinearPrograms = ["Problem_L" + str(i) for i in range(1, 134)]
     NonLinearPrograms = ["Problem_NL" + str(i) for i in range(1, 31)]
 
-    LearningRate = 1e-6
+    LearningRate = 0.01
 
     generate_time = {
         "very": 5.0,
@@ -23,7 +23,7 @@ class Config:
     min_num_conjuncts = 2
     max_num_conjuncts = 3
 
-    seed_num = 5
+    seed_num = 6
 
 
 config = Config()
