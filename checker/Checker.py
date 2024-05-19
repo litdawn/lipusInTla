@@ -84,8 +84,11 @@ class Checker:
         logging.info(f"Check invariants with command: {cmd}")
         try:
             sub_process = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, cwd=self.cwd)
-            output_lines = sub_process.stdout.read().decode("utf-8").splitlines()
+            output = sub_process.stdout.read().decode("utf-8")
+            output_lines = output.splitlines()
             exit_code = sub_process.wait()
+            logging.debug(f"Check invariants output: {output}")
+            logging.debug(f"Check invariants output exit_code: {exit_code}")
         except Exception as e:
             logging.error(f"Check invariants failed with error: {e}")
             return {}
@@ -147,8 +150,11 @@ class Checker:
         logging.info(f"Check deduction with command: {cmd}")
         try:
             sub_process = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, cwd=self.cwd)
-            output_lines = sub_process.stdout.read().decode("utf-8").splitlines()
+            output = sub_process.stdout.read().decode("utf-8")
+            output_lines = output.splitlines()
             exit_code = sub_process.wait()
+            logging.debug(f"Check deduction output: {output}")
+            logging.debug(f"Check deduction output exit_code: {exit_code}")
         except Exception as e:
             logging.error(f"Check deduction failed with error: {e}")
             return set()
@@ -195,6 +201,8 @@ class Checker:
             sub_process = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, cwd=self.cwd)
             output = sub_process.stdout.read().decode("utf-8")
             exit_code = sub_process.wait()
+            logging.debug(f"Check induction output: {output}")
+            logging.debug(f"Check induction output exit_code: {exit_code}")
         except Exception as e:
             logging.error(f"Check induction failed with error: {e}")
             return False, set()
@@ -241,6 +249,8 @@ class Checker:
             sub_process = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, cwd=self.cwd)
             output = sub_process.stdout.read().decode("utf-8")
             exit_code = sub_process.wait()
+            logging.debug(f"Generate CTIs output: {output}")
+            logging.debug(f"Generate CTIs output exit_code: {exit_code}")
         except Exception as e:
             logging.error(f"Generate CTIs failed with error: {e}")
             return set()
@@ -324,6 +334,8 @@ class Checker:
             sub_process = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, cwd=self.cwd)
             output = sub_process.stdout.read().decode("utf-8")
             exit_code = sub_process.wait()
+            logging.debug(f"Eliminate CTIs output: {output}")
+            logging.debug(f"Eliminate CTIs output exit_code: {exit_code}")
             if 'Error: ' in output or 'error: ' in output:
                 raise Exception(f"Eliminate CTIs failed with error: {output}")
         except Exception as e:
@@ -451,6 +463,8 @@ class Checker:
             time.sleep(Checker.TLC_CMD_SLEEP)
         output = sub_process.stdout.read().decode("utf-8")
         exit_code = sub_process.wait()
+        logging.debug(f"Eliminate CTIs output chunk_{chunk_id}: {output}")
+        logging.debug(f"Eliminate CTIs output exit_code chunk_{chunk_id}: {exit_code}")
         if 'Error: ' in output or 'error: ' in output:
             raise Exception(f"Eliminate CTIs failed with error: {output}")
         with open(json_path, 'r') as f:
