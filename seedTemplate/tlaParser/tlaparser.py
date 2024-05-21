@@ -18,10 +18,16 @@ def main(path2cfg, path2json):
 
 def main_from_json(path2cfg, path2json, path2config_json):
     from seedTemplate.SeedTemplateFromJson import SeedTemplate
-    with open(path2json, "r") as semantics, open(path2cfg, "r") as cfg:
-        semantics_data = json.load(semantics)
+    # with open(path2json, "r") as semantics, open(path2cfg, "r") as cfg:
+    #     semantics_data = json.load(semantics)
+    #     cfg_data = cfg.read().split("\n")
+    #     tla_ins = parse_file(semantics_data, cfg_data)
+    #     seed_tmpl = SeedTemplate(tla_ins, path2config_json)
+    #     seed_tmpl.generate()
+    #     return tla_ins, seed_tmpl
+    with open(path2cfg, "r") as cfg:
         cfg_data = cfg.read().split("\n")
-        tla_ins = parse_file(semantics_data, cfg_data)
+        tla_ins = parse_file({}, cfg_data)
         seed_tmpl = SeedTemplate(tla_ins, path2config_json)
         seed_tmpl.generate()
         return tla_ins, seed_tmpl
@@ -29,42 +35,43 @@ def main_from_json(path2cfg, path2json, path2config_json):
 
 # 主函数，输入一个json对象
 def parse_file(json_data, cfg_data):
-    content = json_data['body']
+
     # tla_ins = tla.TLA()
     # 处理常量
     constants = []
     variables = []
     actions = []
     states = []
-    if config.use_self_generate:
-        for param in content['declaredParams']:
-            constants.append({"name": param['paramName'], "info": parse_type(param['typeComment'])})
-        for var in content['definedVariables']:
-            variables.append({"name": var['variableName'], "info": parse_type(var['typeComment'])})
-        for operator in content['operatorDefinitions']:
-            if operator['type'] == "Action":
-                actions.append({"name": operator['operatorName'],
-                                "info": parse_type(operator['typeComment'], operator['concreteContent'])})
-            if operator['type'] == "State":
-                states.append(
-                    {"name": operator['operatorName'],
-                     "info": parse_type(concrete_content=operator['concreteContent'])})
-    else:
-        for param in content['declaredParams']:
-            constants.append({"name": param['paramName'], "info": parse_type("","",Type.DEFAULT)})
-        for var in content['definedVariables']:
-            variables.append({"name": var['variableName'], "info": parse_type("","",Type.DEFAULT)})
-        for operator in content['operatorDefinitions']:
-            if operator['type'] == "Action":
-                actions.append({"name": operator['operatorName'],
-                                "info": parse_type(concrete_content=operator['concreteContent'])})
-            if operator['type'] == "State":
-                states.append(
-                    {"name": operator['operatorName'],
-                     "info": parse_type(concrete_content=operator['concreteContent'])})
+    # content = json_data['body']
+    # if config.use_self_generate:
+    #     for param in content['declaredParams']:
+    #         constants.append({"name": param['paramName'], "info": parse_type(param['typeComment'])})
+    #     for var in content['definedVariables']:
+    #         variables.append({"name": var['variableName'], "info": parse_type(var['typeComment'])})
+    #     for operator in content['operatorDefinitions']:
+    #         if operator['type'] == "Action":
+    #             actions.append({"name": operator['operatorName'],
+    #                             "info": parse_type(operator['typeComment'], operator['concreteContent'])})
+    #         if operator['type'] == "State":
+    #             states.append(
+    #                 {"name": operator['operatorName'],
+    #                  "info": parse_type(concrete_content=operator['concreteContent'])})
+    # else:
+    #     for param in content['declaredParams']:
+    #         constants.append({"name": param['paramName'], "info": parse_type("","",Type.DEFAULT)})
+    #     for var in content['definedVariables']:
+    #         variables.append({"name": var['variableName'], "info": parse_type("","",Type.DEFAULT)})
+    #     for operator in content['operatorDefinitions']:
+    #         if operator['type'] == "Action":
+    #             actions.append({"name": operator['operatorName'],
+    #                             "info": parse_type(concrete_content=operator['concreteContent'])})
+    #         if operator['type'] == "State":
+    #             states.append(
+    #                 {"name": operator['operatorName'],
+    #                  "info": parse_type(concrete_content=operator['concreteContent'])})
 
     tla_ins = TLA()
-    tla_ins.init_var(constants, variables, actions, states)
+    # tla_ins.init_var(constants, variables, actions, states)
 
     for line in cfg_data:
         if line.startswith("INIT"):

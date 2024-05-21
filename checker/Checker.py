@@ -80,6 +80,7 @@ class Checker:
 
         cmd = (f" {Checker.JAVA_CMD} -cp {Checker.TLC_PATH} tlc2.TLC -workers {self.worker_num} -deadlock -continue "
                f" -seed {seed} -metadir {metadir} -maxSetSize {Checker.TLC_MAX_SET_SIZE} -checkAllInvariants "
+               # f"-simulate -depth={self.depth}"
                f" -config {os.path.relpath(inv_check_path, self.cwd)} {os.path.relpath(tla_path, self.cwd)} ")
         logging.info(f"Check invariants with command: {cmd}")
         try:
@@ -197,7 +198,7 @@ class Checker:
             f.write(tla_content)
 
         metadir = os.path.join(self.state_dir, f"induction_check_{seed}")
-        cmd = (f" {Checker.JAVA_CMD} -cp {Checker.TLC_PATH} tlc2.TLC -workers {self.worker_num} -deadlock -continue "
+        cmd = (f" {Checker.JAVA_CMD} -cp {Checker.TLC_PATH} tlc2.TLC -workers {self.worker_num} -deadlock -continue"# 
                f" -seed {seed} -metadir {metadir} -maxSetSize {Checker.TLC_MAX_SET_SIZE}  "
                f" -config {os.path.relpath(self.induction_check_path, self.cwd)} "
                f"{os.path.relpath(tla_path, self.cwd)} ")
