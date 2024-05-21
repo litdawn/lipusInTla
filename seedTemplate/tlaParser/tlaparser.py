@@ -1,5 +1,5 @@
 from seedTemplate.tlaParser.tla import TLA
-from seedTemplate.SeedTemplate import Type
+from seedTemplate.tlaParser.type import Type
 import json
 from PT_generators.RL_Prunning.Conifg import config
 
@@ -35,7 +35,6 @@ def main_from_json(path2cfg, path2json, path2config_json):
 
 # 主函数，输入一个json对象
 def parse_file(json_data, cfg_data):
-
     # tla_ins = tla.TLA()
     # 处理常量
     constants = []

@@ -1,4 +1,6 @@
-from seedTemplate.SeedTemplate import Type
+from typing import Dict
+
+from seedTemplate.tlaParser.type import Type
 from pyparsing import Forward, Combine, infixNotation, opAssoc, Keyword, Word, alphanums, Suppress, Optional, ZeroOrMore
 import re
 from PT_generators.RL_Prunning.Conifg import config
@@ -6,11 +8,11 @@ from PT_generators.RL_Prunning.Conifg import config
 
 class Element(object):
     def __init__(self):
-        self.self_type = 0  # array, set, action # bool, string
+        self.self_type: Type = Type.DEFAULT  # array, set, action # bool, string
         self.name = ""
         # set 有
         self.sub_num = 0
-        self.sub_type = ""
+        self.sub_type: Type = Type.DEFAULT
 
         # action 有 todo 改成{}
         self.param_type = ""

@@ -1,5 +1,5 @@
 import os
-
+import memory_profiler
 from PT_generators.RL_Prunning.PT_generator import PT_generator
 # from PT_generators.simple_generator import PT_generator
 from seedTemplate.tlaParser import tlaparser
@@ -22,7 +22,7 @@ def save_result(invs):
         f.write(strs)
     pass
 
-
+@memory_profiler.profile
 def main(path2tla, path2cfg, path2json, path2config):
     tla_ins, seed_tmpl = tlaparser.main_from_json(path2cfg, path2json, path2config)
 
@@ -57,16 +57,11 @@ def main(path2tla, path2cfg, path2json, path2config):
             continue
         log.info(
             f">>>iteration {iteration}: 找到了一些候选者 {lemmas.keys()}，"
-            f"花费{timer.get_time(TIMER.LEMMA_GENERATOR)}，开始不变式检查")
-        timer.new_timer(TIMER.LEMMA_CHECKER)
+            f"花费{timer.get_time(TIMER.LEMMA_GENERATOR)}s，开始不变式检查")
 
-        wrong_lemma = dict()
+        timer.new_timer(TIMER.LEMMA_CHECKER)
         is_inv, violate_dict = checker.check_invariants(lemmas)
         is_inv_names = list(is_inv.keys())
-        # for inv_name, s in lemmas.items():
-        #     if inv_name not in is_inv_names:
-        #         wrong_lemma.update({inv_name: -2})  # todo 具体赋值
-
         if len(is_inv) < 1:
             log.info(f">>>iteration {iteration}: 均没通过不变式检查，花费{timer.get_time(TIMER.LEMMA_CHECKER)}")
             pt_generator.punish('VERY', violate_dict)
@@ -84,8 +79,8 @@ def main(path2tla, path2cfg, path2json, path2config):
         eliminate_num = dict()
         if len(add2can) != 0:
             # new_eliminate_ctis = checker.eliminate_ctis(candidate, add2can, ctis)
-            new_eliminate_ctis = checker.eliminate_ctis_without_chunk(candidate,add2can,ctis)
-            log.info(f"消除cti阶段花费{timer.get_time(TIMER.CTI_ELIMINATOR)}")
+            new_eliminate_ctis = checker.eliminate_ctis_without_chunk(candidate, add2can, ctis)
+            log.info(f"消除cti阶段花费{timer.get_time(TIMER.CTI_ELIMINATOR)}s")
             new_eliminate_ctis_name = list(new_eliminate_ctis.keys())
 
             for inv_name, e_cti in add2can.items():
@@ -93,14 +88,14 @@ def main(path2tla, path2cfg, path2json, path2config):
                     old_len = len(ctis)
                     ctis = del_from_ctis(ctis, new_eliminate_ctis[inv_name])
                     eliminate_num.update({inv_name: old_len - len(ctis)})
-                # eliminate_num.update({inv_name: 6})
             print(eliminate_num)
         else:
-            log.info(f"消除cti阶段花费{timer.get_time(TIMER.CTI_ELIMINATOR)}")
+            log.info(f"消除cti阶段花费{timer.get_time(TIMER.CTI_ELIMINATOR)}s, 没有cti被消除")
 
+        wrong_lemma = dict()
         for inv_name in is_inv_names:
             if inv_name not in add2can_name:
-                wrong_lemma.update({inv_name: -2})  # todo 具体赋值
+                wrong_lemma.update({inv_name: -1})
 
         if len(add2can) == 0 and len(ctis) > 0:
             log.info(f">>>iteration {iteration}: 都被之前的candidate蕴含了，应该严格一点")
@@ -187,10 +182,11 @@ def prune(inv_dict):
 
     return prune_result
 
+
 if __name__ == "__main__":
     # test_prune()
     begin = timer.new_timer("total")
-    name = "TwoPhase"
+    name = "consensus_epr"
     benchmark_path = os.path.join(os.getcwd(), "Benchmarks")
     config.specname = name
     config.TLC_PATH = os.path.join(os.getcwd(), "tla2tools.jar")
@@ -359,5 +355,3 @@ def test_prune():
         'Inv_0_318': '\\A rmi \\in RM : \\A rmj \\in RM :  (rmState[rmj] = "aborted") \\/ (rmState[rmj] = "committed") \\/ (rmState[rmj] = "prepared") \\/ ~([type |-> "Commit"] \\in msgs) \\/ ~(rmState[rmi] = "working")',
         'Inv_0_319': '\\A rmi \\in RM : \\A rmj \\in RM :  (rmState[rmj] = "aborted") \\/ (rmState[rmj] = "committed") \\/ ~([type |-> "Commit"] \\in msgs) \\/ ~(rmState[rmi] = "working") \\/ ~(rmState[rmj] = "prepared")'}
     print(f"{len(list_input)}/{len(prune(list_input))}")
-
-

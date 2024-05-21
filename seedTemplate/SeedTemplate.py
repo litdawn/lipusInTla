@@ -1,14 +1,17 @@
-import random
 from itertools import combinations
 from itertools import permutations
 
+from typing import List
+
+from seedTemplate.tlaParser.tla import TLA
 from seedTemplate.tlaParser.type import Type
+from seedTemplate.tlaParser.tla import Element
 
 
 class SeedTemplate:
-    def __init__(self, tla_ins):
+    def __init__(self, tla_ins: TLA):
         self.quants = dict()
-        self.seeds = []
+        self.seeds= []
         self.set = []
         self.array = []
         self.bool = []
@@ -16,7 +19,7 @@ class SeedTemplate:
         self.def_var = ["VARA", "VARB", "VARC", "VARD", "VARE"]
         self.tla_ins = tla_ins
 
-    def fill_str(self, tla_ins):
+    def fill_str(self, tla_ins: TLA):
         cons = tla_ins.constants
         for con in iter(cons):
             self.set.append(con)
@@ -30,7 +33,7 @@ class SeedTemplate:
             #             self.add2str_and_bool({"name": "default", "self_type": con["info"]["sub_type"]})
             #     pass
 
-    def add2str_and_bool(self, var):
+    def add2str_and_bool(self, var: Element):
         if var.self_type == Type.STRING:
             self.str.append(var.name)
         elif var.self_type == Type.BOOL:
