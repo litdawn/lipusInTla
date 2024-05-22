@@ -8,7 +8,7 @@ import re
 import threading
 import time
 from concurrent.futures import ThreadPoolExecutor
-
+from memory_profiler import profile
 
 class Checker:
     TLC_PATH = os.path.join(os.getcwd(), "tla2tools.jar")
@@ -48,6 +48,7 @@ class Checker:
         with open(self.induction_check_path, 'w') as f:
             f.write(induction_check_content)
 
+    # @profile()
     def check_invariants(self, invariants: dict):
         """
         check invariants with tlc
@@ -80,7 +81,7 @@ class Checker:
 
         cmd = (f" {Checker.JAVA_CMD} -cp {Checker.TLC_PATH} tlc2.TLC -workers {self.worker_num} -deadlock -continue "
                f" -seed {seed} -metadir {metadir} -maxSetSize {Checker.TLC_MAX_SET_SIZE} -checkAllInvariants "
-               # f"-simulate -depth={self.depth}"
+               # f"-simulate -depth {self.depth}"
                f" -config {os.path.relpath(inv_check_path, self.cwd)} {os.path.relpath(tla_path, self.cwd)} ")
         logging.info(f"Check invariants with command: {cmd}")
         try:
@@ -107,6 +108,7 @@ class Checker:
                 for inv_name, inv_content in invariants.items()
                 if inv_name not in violated}, violated_dict
 
+    # @profile()
     def check_deduction(self, deducting: dict, deducted: dict):
         """ check whether the disjunction of deducting implies deducted
         :param deducting: list of invariants to deduct
@@ -171,6 +173,7 @@ class Checker:
         logging.info(f"Found {len(not_deducted)} / {len(deducted)} candidate invariants not deducted")
         return {name: deducted[name] for name in not_deducted}
 
+    # @profile()
     def check_induction(self, ind_lemmas: dict, will_continue=False):
         """
         check induction with tlc
@@ -198,8 +201,9 @@ class Checker:
             f.write(tla_content)
 
         metadir = os.path.join(self.state_dir, f"induction_check_{seed}")
-        cmd = (f" {Checker.JAVA_CMD} -cp {Checker.TLC_PATH} tlc2.TLC -workers {self.worker_num} -deadlock -continue"# 
+        cmd = (f" {Checker.JAVA_CMD} -cp {Checker.TLC_PATH} tlc2.TLC -workers 1 -deadlock -continue"# 
                f" -seed {seed} -metadir {metadir} -maxSetSize {Checker.TLC_MAX_SET_SIZE}  "
+               f"-simulate num=12500 -depth 12"
                f" -config {os.path.relpath(self.induction_check_path, self.cwd)} "
                f"{os.path.relpath(tla_path, self.cwd)} ")
         if will_continue:
@@ -220,6 +224,7 @@ class Checker:
             return False, ctis
         return True, set()
 
+    # @profile()
     def generate_cti(self, lemma_invs: dict):
         """
         generate CTIs with tlc, based on the given invariants
@@ -266,6 +271,7 @@ class Checker:
         logging.info(f"Found {len(ctis)} CTIs")
         return ctis
 
+    # @profile()
     def eliminate_ctis_without_chunk(self, add_invs: dict, lemmas: dict, ctis: set):
         """
         eliminate CTIs with tlc, based on the given lemmas
@@ -366,6 +372,7 @@ class Checker:
         logging.info(f"Eliminated {len(eliminated_ctis)} / {len(ctis)} CTIs in this round")
         return cti_eliminated_by_lemmas
 
+    # @profile()
     def eliminate_ctis(self, add_invs: dict, lemmas: dict, ctis: set):
         """
         eliminate CTIs with tlc, based on the given lemmas
@@ -420,6 +427,7 @@ class Checker:
         logging.info(f"Eliminated {len(eliminated_ctis)} / {len(ctis)} CTIs in this round")
         return cti_eliminated_by_lemmas
 
+    # @profile()
     def get_ctis_eliminate_state_info(self, add_invs: dict, lemmas: dict, ctis: dict,
                                       chunk_id: int, cfg_path, seed: int) -> dict:
         tla_name = f"{self.spec_name}_CTIEliminate_{seed}_chunk_{chunk_id}"

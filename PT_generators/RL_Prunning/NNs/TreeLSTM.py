@@ -87,8 +87,10 @@ class TreeLSTM(nn.Module):
         if state_rnn == "":
             state_rnn = self.rnns["other"]
         # child_features = torch.ones((1, config.SIZE_EXP_NODE_FEATURE))  # 创建一个 初始化均为1 的张量
-
-        child_feature_list = [torch.ones((1, config.SIZE_EXP_NODE_FEATURE))]
+        if torch.cuda.is_available():
+            child_feature_list = [torch.ones((1, config.SIZE_EXP_NODE_FEATURE)).cuda()]
+        else:
+            child_feature_list = [torch.ones((1, config.SIZE_EXP_NODE_FEATURE))]
         # child_feature_list = []
         # for var in self.vars.keys():
         #     if var in state_ele_list:
@@ -120,8 +122,11 @@ class TreeLSTM(nn.Module):
                 name = "?"
         else:
             name = var
-        origin = SymbolEmbeddings[name]
-        return origin
+        if torch.cuda.is_available():
+            return SymbolEmbeddings[name].cuda()
+        else:
+            return SymbolEmbeddings[name]
+
 
     # init next ind exp的特征
     def forward_three(self, init_exp, next_exp, ind_exp):

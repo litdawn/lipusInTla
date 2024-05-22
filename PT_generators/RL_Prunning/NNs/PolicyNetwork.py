@@ -25,7 +25,10 @@ class PolicyNetwork(nn.Module):
     #     except:
     #         return SymbolEmbeddings['?']
     def forward(self, state_vec, overall_feature):
-        program_feature = self.get_program_feature(self.ptg.specname, self.ptg.depth)
+        if torch.cuda.is_available():
+            program_feature = self.get_program_feature(self.ptg.specname, self.ptg.depth).cuda()
+        else:
+            program_feature = self.get_program_feature(self.ptg.specname, self.ptg.depth)
         l1out = self.layer(torch.cat([state_vec, overall_feature, program_feature], 1))
         return l1out
 

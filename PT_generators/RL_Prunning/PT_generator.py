@@ -1,12 +1,16 @@
+import random
+
 from torch.optim import Adam
 from PT_generators.RL_Prunning.NNs.NeuralNetwork import *
 from PT_generators.RL_Prunning.Template.Seed2Lemma import *
 from PT_generators.RL_Prunning.Template.Lemma2Candidate import *
 import torch.nn.functional as f
 from torch import tensor
+from memory_profiler import profile
 
 
 # torch.autograd.set_detect_anomaly(True)
+
 
 class PT_generator:
     def __init__(self, seed_tmpl, name):
@@ -69,6 +73,7 @@ class PT_generator:
         concatenated_features = torch.mean(suma, dim=0, keepdim=True)
         return concatenated_features
 
+    # @profile()
     def generate_next(self, cti):
 
         # 1 初始化
@@ -127,15 +132,10 @@ class PT_generator:
     def prise(self, deg, successes: dict):
         self.update_candidate(list(successes.keys()))
 
-        def normalization(target: dict, min_interval, max_interval):
-            # 找出字典中值的最小值和最大值
-            min_val = min(target.values())
-            max_val = max(target.values())
-
-            # 计算归一化的范围
+        def _normalization(target: dict, min_interval, max_interval):
+            min_val = 0 if len(target) == 0 else min(target.values())
+            max_val = 0 if len(target) == 0 else max(target.values())
             range_val = max_val - min_val if max_val - min_val > 0 else 1
-
-            # 对字典中的值进行归一化处理
             normalized_dict = {}
             for key, _val in target.items():
                 normalized_val = ((_val - min_val) / range_val) * (max_interval - min_interval) + min_interval
@@ -143,7 +143,7 @@ class PT_generator:
             return normalized_dict
 
         def decide_little_prise(_successes):
-            return normalization(_successes, 0, 100)
+            return _normalization(_successes, 2, 100)
 
         def decide_very_prise():
             return 101
@@ -156,22 +156,21 @@ class PT_generator:
             reward = {name: 0 for name in successes.keys()}
 
         self.reward_list.extend(reward.values())
-        a_loss = tensor([[0]], dtype=torch.float32)
+
+        if torch.cuda.is_available():
+            a_loss = tensor([[0]], dtype=torch.float32).cuda()
+        else:
+            a_loss = tensor([[0]], dtype=torch.float32)
         for name, val in reward.items():
             a_loss += self.a_loss(val, name)
         self.learn_step(a_loss)
 
+    # @profile()
     def punish(self, deg, failures: dict):
-
-        def normalization(target: dict, min_interval, max_interval):
-            # 找出字典中值的最小值和最大值
+        def _normalization(target: dict, min_interval, max_interval):
             min_val = min(target.values())
             max_val = max(target.values())
-
-            # 计算归一化的范围
             range_val = max_val - min_val if max_val - min_val > 0 else 1
-
-            # 对字典中的值进行归一化处理
             normalized_dict = {}
             for key, _val in target.items():
                 normalized_val = (((_val[0] - min_val) / range_val) * (max_interval - min_interval) + min_interval, 0.1)
@@ -179,7 +178,7 @@ class PT_generator:
             return normalized_dict
 
         def decide_very_punish(_failures: dict):
-            return normalization(_failures, -100, -5)
+            return _normalization(_failures, -100, -5)
 
         def decide_little_punish(_failures: dict):
             _reward = dict()
@@ -206,12 +205,7 @@ class PT_generator:
             a_loss += self.a_loss(val[0], name) / len(self.last_selected_lemma[name])
         self.learn_step((a_loss + strict_loss))
 
-    # 计算奖励列表：根据final_reward和discounter计算每一步的奖励，并将结果存储在reward_list中。
-    # 计算预测损失：对于self.last_predicted_reward_list中的每一个元素，计算预测的奖励和上一步的预测奖励，然后根据动作的类型计算损失。如果这个动作是选择一个动作，那么就计算交叉熵损失。如果这个动作是选择一个值，那么就计算均方误差损失（但是请注意，这部分代码目前被注释掉了，所以实际上并不会执行）。然后将损失乘以奖励和上一步的预测奖励的差值，并累加到总的预测损失上。
-    # 计算平均预测损失：将总的预测损失除以奖励列表的长度，得到平均预测损失。
-    # 计算均方误差损失：使用F.mse_loss函数计算奖励列表和预测奖励列表之间的均方误差损失。
-    # 返回总损失：将预测损失和均方误差损失相加，得到总损失，并返回。
-
+    # @profile()
     def a_loss(self, final_reward, lemma_name):
         discounter = 0.95
         reward_list = []
@@ -240,10 +234,9 @@ class PT_generator:
         else:
             mse_loss = f.mse_loss(tensor([reward_list], dtype=torch.float32),
                                   torch.cat(list(self.last_predicted_reward_list.values()), 1)).reshape([1, 1])
-        # print("mse_loss", mse_loss)
-        # print("p_loss", p_loss)
         return p_loss + mse_loss
 
+    # @profile()
     def learn_step(self, loss):
         # if torch.cuda.is_available():
         #     loss = loss.cuda()

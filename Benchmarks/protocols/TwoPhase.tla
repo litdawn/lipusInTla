@@ -149,13 +149,13 @@ IND ==
  /\ \A rmi \in RM : \A rmj \in RM : ([type |-> "Prepared", rm |-> rmj] \in msgs) \/ (~(rmState[rmj] = "prepared"))
  /\ \A rmi \in RM : \A rmj \in RM : (rmState[rmi] = "committed") \/ (~([type |-> "Prepared", rm |-> rmi] \in msgs) \/ (~(rmState[rmi] = "working")))
  /\ \A rmi \in RM : \A rmj \in RM : ~([type |-> "Commit"] \in msgs) \/ (~(rmState[rmi] = "working")
- /\ \A rmi \in RM : \A rmj \in RM : ([type |-> "Commit"] \in msgs) \/ (~(rmState[rmj] = "committed"))'
+ /\ \A rmi \in RM : \A rmj \in RM : ([type |-> "Commit"] \in msgs) \/ (~(rmState[rmj] = "committed"))
  /\ \A rmi \in RM : \A rmj \in RM : ~([type |-> "Commit"] \in msgs) \/ (~(tmState = "init")) \/ (~(rmState[rmj] = "prepared"))
  /\ \A rmi \in RM : \A rmj \in RM : ~([type |-> "Commit"] \in msgs) \/ (~(rmState[rmj] = "aborted"))
  /\ \A rmi \in RM : \A rmj \in RM : ([type |-> "Prepared", rm |-> rmi] \in msgs) \/ (~([type |-> "Commit"] \in msgs))
  /\ \A rmi \in RM : \A rmj \in RM : (rmState[rmj] = "working") \/ (~(tmState = "init")) \/ (~([type |-> "Abort"] \in msgs))
  /\ \A rmi \in RM : \A rmj \in RM : (rmState[rmj] = "prepared") \/ (~(rmState[rmj] = "working")) \/ (~(tmPrepared = RM))
- /\ \A rmi \in RM : \\A rmj \\in RM : ~([type |-> "Abort"] \\in msgs) \\/ (~([type |-> "Commit"] \\in msgs))
+ /\ \A rmi \in RM : \A rmj \in RM : ~([type |-> "Abort"] \in msgs) \\/ (~([type |-> "Commit"] \in msgs))
 
 
 ====

@@ -65,14 +65,14 @@ def generate_combinations(expressions):
                 selected.append(expressions[i])
         selected.sort()
         combination.sort()
-        if tuple(selected) not in seed2lemma.seed_tuples and len(selected)>0:
+        if tuple(selected) not in seed2lemma.seed_tuples and len(selected) > 0:
             seed2lemma.tmp_tuples.add(tuple(selected))
             combinations.append(combination)
     seed2lemma.seed_tuples = seed2lemma.seed_tuples.union(seed2lemma.tmp_tuples)
     return combinations
 
 
-def generate_lemmas(depth, seeds: list):
+def generate_lemmas(depth: int, seeds: list):
     """ Generate 'num_invs' random invariants with the specified number of conjuncts. """
     invs = dict()
     combinations = generate_combinations(seeds)
@@ -94,8 +94,8 @@ def strictness_distribution(seed_list, seeds_selected):
     res = torch.ones(len(seed_list), 1, dtype=torch.float32)
     for i, every_seed in enumerate(seeds_selected):
         begin = every_seed.find("(")
-        end = len(every_seed)-1
-        every_seed = every_seed[begin+1:end]
+        end = len(every_seed) - 1
+        every_seed = every_seed[begin + 1:end]
         res[get_seed_index(every_seed, seed_list, False), 0] *= distri_dict[i]
     if torch.cuda.is_available():
         res = res.cuda()
@@ -109,7 +109,6 @@ def normalization(dist):
         lister = [float(x) for x in list(dist[0])]
     sumer = sum(lister)
     lister = [x / sumer for x in lister]
-    # print("lister ",lister)
     return lister
 
 

@@ -73,7 +73,7 @@ class TLA:
         elif var.self_type == Type.ARRAY:
             var.index_type = info["index_type"]
             var.content = self.construct_var("content", info["content"])
-        elif var.self_type == Type.State:
+        elif var.self_type == Type.STATE:
             var.index_type = 0
             var.concrete_content = info["concrete_content"]
         return var
@@ -102,14 +102,13 @@ class TLA:
         quant_reg = re.compile(r"\\[AE](.*?):")
         expression = expression.split("==")[-1].strip()[2:]
         expression = quant_reg.sub("", expression)
-        # print(expression)
 
         if len(expression) == 0:
             return []
 
         # 定义操作数、函数名和符号
         identifier = Word(alphanums + "_" + "[]" + "{}")
-        function_name = Word(alphanums + "_")
+        action_name = Word(alphanums + "_")
         keyword_not = Keyword("~")
         keyword_subset = Keyword("\\subseteq")
         keyword_belongs_to = Keyword("\\in")
@@ -124,7 +123,6 @@ class TLA:
         LPAREN = Suppress("(")
         RPAREN = Suppress(")")
 
-        # 定义操作符优先级
         precedence = [
             (keyword_x, 2, opAssoc.LEFT),
             (keyword_subset, 2, opAssoc.LEFT),
@@ -136,21 +134,17 @@ class TLA:
             (keyword_or, 2, opAssoc.LEFT),
         ]
 
-        # 定义逻辑表达式
         expr = Forward()
         atom = Forward()
         identifiers = Combine(
             "<<" + Optional(keyword_not) + identifier + ZeroOrMore("," + Optional(keyword_not) + identifier) + ">>")
 
-        # 定义函数参数列表
-        arg = (identifier | identifiers) | function_name | "~" + identifier
+        arg = (identifier | identifiers) | action_name | "~" + identifier
         args_list = arg + ZeroOrMore("," + arg)
 
-        # 定义函数调用表达式
-        function_call = Combine(function_name + "(" + Optional(args_list) + ")")
+        action_call = Combine(action_name + "(" + Optional(args_list) + ")")
 
-        # 整体表达式
-        atom <<= "~" + LPAREN + expr + RPAREN | LPAREN + expr + RPAREN | function_call | identifiers | identifier
+        atom <<= "~" + LPAREN + expr + RPAREN | LPAREN + expr + RPAREN | action_call | identifiers | identifier
         expr <<= infixNotation(atom, precedence)
 
         return expr.parseString(expression)
@@ -162,7 +156,6 @@ class TLA:
             super(Element, self).__init__()
 
     class Constant(Element):
-        sub = {}
 
         def __init__(self):
             super(Element, self).__init__()
@@ -171,16 +164,15 @@ class TLA:
         def __init__(self, ):
             super(Element, self).__init__()
 
-
-if __name__ == "__main__":
-    # quant_reg = re.compile(r"\\[AE](.*?):")
-    inputs = (
-                 "Init == "
-                 " /\\ semaphore = [i \\in Server |-> TRUE]"
-                 "/\\ clientlocks = [i \\in Client |-> {}]"
-             ).split("==")[-1].strip()[2:]
-
-    # inputs = quant_reg.sub("", inputs)
-    # print(inputs)
-    a = TLA.parse_logic_expression(inputs)
-    print(a)
+# if __name__ == "__main__":
+#     # quant_reg = re.compile(r"\\[AE](.*?):")
+#     inputs = (
+#                  "Init == "
+#                  " /\\ semaphore = [i \\in Server |-> TRUE]"
+#                  "/\\ clientlocks = [i \\in Client |-> {}]"
+#              ).split("==")[-1].strip()[2:]
+#
+#     # inputs = quant_reg.sub("", inputs)
+#     # print(inputs)
+#     a = TLA.parse_logic_expression(inputs)
+#     print(a)

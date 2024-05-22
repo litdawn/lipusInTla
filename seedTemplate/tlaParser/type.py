@@ -7,5 +7,5 @@ class Type(Enum):
     ACTION = 3
     STRING = 4
     BOOL = 5
-    State = 6
-    DEFAULT=7
+    STATE = 6
+    DEFAULT = 7

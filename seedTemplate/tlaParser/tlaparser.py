@@ -104,7 +104,7 @@ def parse_file(json_data, cfg_data):
 
 
 #
-def parse_type(str="", concrete_content="", s_type=Type.State):
+def parse_type(str="", concrete_content="", s_type=Type.STATE):
     # @type: (Str, Str, Str, Str, Str) = > Bool
     # str = "Set(<<Str, Str, Str, Str>>)"
 
@@ -191,9 +191,9 @@ def parse_type(str="", concrete_content="", s_type=Type.State):
 
     # state
     if str == "":
-        if s_type == Type.State:
+        if s_type == Type.STATE:
             return {
-                "self_type": Type.State,
+                "self_type": Type.STATE,
                 "concrete_content": concrete_content
             }
         else:
