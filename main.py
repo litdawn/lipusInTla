@@ -153,6 +153,7 @@ def prune(inv_dict):
     prune_content = {}
     prune_result = {}
     MAX_LENGTH = 2
+    MIN_LENGTH= 1
 
     def count_and(item):
         return item.count('\\/')
@@ -181,10 +182,12 @@ def prune(inv_dict):
     min_num = 2
     for i, (inv_name, content) in enumerate(sorted_dict):
         if i == 0:
-            min_num = count_and(content)
+            min_num = max(count_and(content), MIN_LENGTH)
         if count_and(content) == min_num:
             prune_content.update({inv_name: deal_with_content(content)})
-        elif find_values_with_substring(content):
+        elif count_and(content) < min_num or count_and(content)> MAX_LENGTH:
+            continue
+        elif count_and(content) > min_num and find_values_with_substring(content):
             continue
         else:
             prune_content.update({inv_name: deal_with_content(content)})
@@ -198,7 +201,7 @@ if __name__ == "__main__":
     # test_prune()
     print(torch.cuda.is_available())
     begin = timer.new_timer("total")
-    name = "consensus_wo_decide"
+    name = "lockserv"
     benchmark_path = os.path.join(os.getcwd(), "Benchmarks")
     config.specname = name
     config.TLC_PATH = os.path.join(os.getcwd(), "tla2tools.jar")

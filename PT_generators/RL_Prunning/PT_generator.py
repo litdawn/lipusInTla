@@ -1,5 +1,6 @@
 import random
 
+import torch
 from torch.optim import Adam
 from PT_generators.RL_Prunning.NNs.NeuralNetwork import *
 from PT_generators.RL_Prunning.Template.Seed2Lemma import *
@@ -195,8 +196,13 @@ class PT_generator:
         else:
             reward = {name: (0, 0.01) for name in failures.keys()}
         self.reward_list.extend([a[0] for a in reward.values()])
-        strict_loss = tensor([[0]], dtype=torch.float32)
-        a_loss = tensor([[0]], dtype=torch.float32)
+
+        if torch.cuda.is_available():
+            strict_loss = tensor([[0]], dtype=torch.float32).cuda()
+            a_loss = tensor([[0]], dtype=torch.float32).cuda()
+        else:
+            strict_loss = tensor([[0]], dtype=torch.float32)
+            a_loss = tensor([[0]], dtype=torch.float32)
         for name, val in reward.items():
             sd = strictness_distribution(self.seed_tmpl.seeds, self.last_selected_lemma[name])
             loss_strictness = -torch.mm(torch.log_softmax(

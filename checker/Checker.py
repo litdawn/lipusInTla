@@ -18,7 +18,7 @@ class Checker:
     JAVA_CMD = "java -XX:+UseParallelGC"
 
     def __init__(self, spec_name, config: dict, protocols_dir, worker_num="auto", simulate_num=12500, depth=6,
-                 logging_level=logging.INFO, logging_file=None):
+                 logging_level=logging.DEBUG, logging_file=None):
         """
         :param spec_name: specification's name
         :param config: endive configuration content
@@ -87,6 +87,7 @@ class Checker:
         try:
             sub_process = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, cwd=self.cwd)
             output = sub_process.stdout.read().decode("utf-8")
+            # print(output)
             output_lines = output.splitlines()
             exit_code = sub_process.wait()
             logging.debug(f"Check invariants output: {output}")
@@ -212,6 +213,7 @@ class Checker:
         try:
             sub_process = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, cwd=self.cwd)
             output = sub_process.stdout.read().decode("utf-8")
+            # print(output)
             exit_code = sub_process.wait()
             logging.debug(f"Check induction output: {output}")
             logging.debug(f"Check induction output exit_code: {exit_code}")
