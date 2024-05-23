@@ -1,5 +1,5 @@
 import os
-import memory_profiler
+# import memory_profiler
 from PT_generators.RL_Prunning.PT_generator import PT_generator
 # from PT_generators.simple_generator import PT_generator
 from seedTemplate.tlaParser import tlaparser
@@ -32,6 +32,9 @@ def main(path2tla, path2cfg, path2json, path2config):
     tmp_bench = os.path.join(os.getcwd(), "Benchmarks")
     checker = Checker(name, seed_tmpl.json_data, os.path.join(tmp_bench, "Result"))
 
+    lemmas_generate_num = []
+    lemmas_is_invariant_num = []
+    lemmas_add_to_ind_num = []
     # solved = False
     # ctis = checker.generate_cti({})
     solved, ctis = checker.check_induction({})
@@ -55,6 +58,7 @@ def main(path2tla, path2cfg, path2json, path2config):
 
         timer.new_timer(TIMER.LEMMA_GENERATOR)
         candidate, lemmas = pt_generator.generate_next(ctis)  # candidate是候选归纳不变式， lemma是新生成的引理不变式候选者字典
+        lemmas_generate_num.append(len(lemmas))
         if len(lemmas) == 0:
             log.error("没找到下一个引理不变式")
             continue
@@ -64,13 +68,14 @@ def main(path2tla, path2cfg, path2json, path2config):
 
         timer.new_timer(TIMER.LEMMA_CHECKER)
         is_inv, violate_dict = checker.check_invariants(lemmas)
-        is_inv_names = list(is_inv.keys())
+        lemmas_is_invariant_num.append(len(is_inv))
         if len(is_inv) < 1:
             log.info(f">>>iteration {iteration}: 均没通过不变式检查，花费{timer.get_time(TIMER.LEMMA_CHECKER)}")
+            lemmas_add_to_ind_num.append(0)
             pt_generator.punish('VERY', violate_dict)
             continue
         log.info(
-            f">>>iteration {iteration}: 不变式检测结束，{is_inv_names}是不变式，花费{timer.get_time(TIMER.LEMMA_CHECKER)}")
+            f">>>iteration {iteration}: 不变式检测结束，{list(is_inv.keys())}是不变式，花费{timer.get_time(TIMER.LEMMA_CHECKER)}")
 
         timer.new_timer(TIMER.CTI_ELIMINATOR)
         add2can = prune(is_inv)
@@ -78,7 +83,7 @@ def main(path2tla, path2cfg, path2json, path2config):
         log.info(
             f">>>iteration {iteration}: 候选者精化，{len(add2can)}/{len(is_inv)}个不变式")
         # add2can = checker.check_deduction(candidate, add2can)
-        add2can_name = list(add2can.keys())
+
         eliminate_num = dict()
         new_add2can = {}
         if len(add2can) != 0:
@@ -100,12 +105,14 @@ def main(path2tla, path2cfg, path2json, path2config):
             log.info(f"消除cti阶段花费{timer.get_time(TIMER.CTI_ELIMINATOR)}s, 没有cti被消除")
 
         wrong_lemma = dict()
-        for inv_name in is_inv_names:
+        for inv_name in is_inv:
             if inv_name not in new_add2can:
                 wrong_lemma.update({inv_name: -1})
-        if len(ctis) < 5:
-            for cti in ctis:
-                print(cti)
+
+        lemmas_add_to_ind_num.append(len(new_add2can))
+        # if len(ctis) < 5:
+        #     for cti in ctis:
+        #         print(cti)
 
         if len(new_add2can) == 0 and len(ctis) > 0:
             log.info(f">>>iteration {iteration}: 都被之前的candidate蕴含了，应该严格一点")
@@ -131,13 +138,17 @@ def main(path2tla, path2cfg, path2json, path2config):
             log.info(
                 f">>>iteration {iteration}: 找到了{len(new_ctis)}个CTI, 目前CTI的总数是{len(ctis)}，"
                 f"花费{timer.get_time(TIMER.CTI_GENERATOR)}")
+
+    print(lemmas_generate_num)
+    print(lemmas_is_invariant_num)
+    print(lemmas_add_to_ind_num)
     # print(pt_generator.loss_list)
     # print(pt_generator.reward_list)
     # print(iteration)
-    try:
-        analyst = Analyst(accuracy_list=pt_generator.reward_list, loss_list=pt_generator.loss_list, iteration=iteration)
-    finally:
-        return
+    # try:
+    #     analyst = Analyst(accuracy_list=pt_generator.reward_list, loss_list=pt_generator.loss_list, iteration=iteration)
+    # finally:
+    return
 
 
 def del_from_ctis(orig_k_ctis, eliminated_ctis):
@@ -201,7 +212,7 @@ if __name__ == "__main__":
     # test_prune()
     print(torch.cuda.is_available())
     begin = timer.new_timer("total")
-    name = "lockserv"
+    name = "two_phase_commit"
     benchmark_path = os.path.join(os.getcwd(), "Benchmarks")
     config.specname = name
     config.TLC_PATH = os.path.join(os.getcwd(), "tla2tools.jar")

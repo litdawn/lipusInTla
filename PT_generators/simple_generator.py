@@ -10,53 +10,48 @@ class PT_generator:
         self.lemma_pointer = 0
         self.candidate = dict()
         self.seeds = seed_tmpl.seeds
-        self.init_candidate()
+        self.depth = 0
+        self.last_generate_invs = None
+        self.reward_list = []
 
-    def init_candidate(self):
-        self.candidate.clear()
-        if config.use_self_generate:
-            self.candidate.update({"Safety": self.seed_tmpl.tla_ins.inv})
-            self.candidate.update({"Typeok": self.seed_tmpl.tla_ins.type_ok})
-        else:
-            self.candidate.update({"Safety": self.seed_tmpl.safety})
-            self.candidate.update({"Typeok": self.seed_tmpl.typeok})
+    # def init_candidate(self):
+    #     self.candidate.clear()
+    #     if config.use_self_generate:
+    #         self.candidate.update({"Safety": self.seed_tmpl.tla_ins.inv})
+    #         self.candidate.update({"Typeok": self.seed_tmpl.tla_ins.type_ok})
+    #     else:
+    #         self.candidate.update({"Safety": self.seed_tmpl.safety})
+    #         self.candidate.update({"Typeok": self.seed_tmpl.typeok})
 
     def generate_next(self, cti):
         seeds_num = random.randint(2, 3)
-        new_candidate, raw_lemmas = sampling([], self.seeds, seeds_num,True)
-        while self.if_already_generate(raw_lemmas):
-            new_candidate, raw_lemmas = sampling([], self.seeds, seeds_num,True)
-
-        self.candidate.update({f"inv_{self.lemma_pointer}": new_candidate[0]})
-        self.lemma_pointer += 1
-        lemmas = [f"inv_{self.lemma_pointer - 1} ==  {self.seed_tmpl.quant_inv} {new_candidate[0]}"]
-
-        self.cache_inv(raw_lemmas)
+        new_candidate, raw_lemmas = sampling([], self.seeds,self.depth,True)
+        while len(new_candidate)==0:
+            new_candidate, raw_lemmas = sampling([], self.seeds, self.depth,True)
+        lemmas = {}
+        for name, inv in new_candidate.items():
+            lemmas.update({name: f"{self.seed_tmpl.quant_inv} {inv}"})
         # print(lemmas[0])
-        return self.candidate, lemmas, self.lemma_pointer - 1
+        self.depth += 1
+        self.last_generate_invs = lemmas
+        return self.candidate, lemmas
 
-    def cache_inv(self, inv):
-        self.already_generate.add(tuple(inv))
-        # self.all_checked_invs = self.all_checked_invs.union(set(map(quant_inv_fn, list(invs))))
-        return
+    def update_candidate(self, names: list):
+        for name in names:
+            self.candidate.update({name: self.last_generate_invs[name]})
 
     def punish(self, s_or_l, deg):
-        if deg == "VERY":
-            self.lemma_pointer -=1
         pass
 
-    def prise(self, deg):
+    def prise(self, deg, successes):
+        self.update_candidate(list(successes.keys()))
         pass
 
-    def if_already_generate(self, inv):
-        if tuple(inv) in self.already_generate:
-            return True
-        return False
 
-if __name__ == "__main__":
-    list1 = [1,2]
-    list2 = [2,1]
-    all_list = set()
-    all_list.update(set(list1))
-
-    print(set(list2) in all_list)
+# if __name__ == "__main__":
+#     list1 = [1,2]
+#     list2 = [2,1]
+#     all_list = set()
+#     all_list.update(set(list1))
+#
+#     print(set(list2) in all_list)

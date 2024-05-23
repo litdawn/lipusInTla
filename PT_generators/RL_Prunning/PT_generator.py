@@ -1,13 +1,10 @@
-import random
-
-import torch
 from torch.optim import Adam
 from PT_generators.RL_Prunning.NNs.NeuralNetwork import *
 from PT_generators.RL_Prunning.Template.Seed2Lemma import *
 from PT_generators.RL_Prunning.Template.Lemma2Candidate import *
 import torch.nn.functional as f
 from torch import tensor
-from memory_profiler import profile
+# from memory_profiler import profile
 
 
 # torch.autograd.set_detect_anomaly(True)
@@ -124,6 +121,7 @@ class PT_generator:
             for name, inv in new_candidate.items():
                 lemmas.update({name: f"{self.seed_tmpl.quant_inv} {inv}"})
         self.last_generate_invs = lemmas
+        print(self.candidate)
         return self.candidate, lemmas
 
     def update_candidate(self, names: list):
@@ -159,11 +157,21 @@ class PT_generator:
         self.reward_list.extend(reward.values())
 
         if torch.cuda.is_available():
+            strict_loss = tensor([[0]], dtype=torch.float32).cuda()
             a_loss = tensor([[0]], dtype=torch.float32).cuda()
         else:
+            strict_loss = tensor([[0]], dtype=torch.float32)
             a_loss = tensor([[0]], dtype=torch.float32)
         for name, val in reward.items():
+            sd = strictness_distribution(self.seed_tmpl.seeds, self.last_selected_lemma[name])
+            loss_strictness = -torch.mm(torch.log_softmax(
+                self.last_distribution_output.reshape(1, -1), dim=1), sd) * val
+            strict_loss += loss_strictness.reshape([1, 1]) / len(self.last_selected_lemma[name])
+            a_loss += self.a_loss(val, name) / len(self.last_selected_lemma[name])
+
             a_loss += self.a_loss(val, name)
+        print("aloss: ", a_loss)
+        print("strict_loss: ", strict_loss)
         self.learn_step(a_loss)
 
     # @profile()
@@ -174,11 +182,13 @@ class PT_generator:
             range_val = max_val - min_val if max_val - min_val > 0 else 1
             normalized_dict = {}
             for key, _val in target.items():
-                normalized_val = (((_val[0] - min_val) / range_val) * (max_interval - min_interval) + min_interval, 0.1)
+                normalized_val = (((_val - min_val) / range_val) * (max_interval - min_interval) + min_interval, 0.1)
                 normalized_dict[key] = normalized_val
             return normalized_dict
 
         def decide_very_punish(_failures: dict):
+            # for _f in _failures.keys():
+            #     _failures[_f] = (_failures[_f], 0.2)
             return _normalization(_failures, -100, -5)
 
         def decide_little_punish(_failures: dict):
@@ -195,7 +205,7 @@ class PT_generator:
             reward = decide_little_punish(failures)
         else:
             reward = {name: (0, 0.01) for name in failures.keys()}
-        self.reward_list.extend([a[0] for a in reward.values()])
+        # self.reward_list.extend([a[0] for a in reward.values()])
 
         if torch.cuda.is_available():
             strict_loss = tensor([[0]], dtype=torch.float32).cuda()
@@ -209,7 +219,10 @@ class PT_generator:
                 self.last_distribution_output.reshape(1, -1), 1), sd) * val[1]
             strict_loss += loss_strictness.reshape([1, 1]) / len(self.last_selected_lemma[name])
             a_loss += self.a_loss(val[0], name) / len(self.last_selected_lemma[name])
-        self.learn_step((a_loss + strict_loss))
+
+        print("aloss: ",a_loss)
+        print("strict_loss: ",strict_loss)
+        self.learn_step((config.ALOSS*a_loss + config.SLOSS*strict_loss))
 
     # @profile()
     def a_loss(self, final_reward, lemma_name):

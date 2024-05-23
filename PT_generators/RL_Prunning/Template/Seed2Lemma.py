@@ -1,7 +1,6 @@
 from Utilities.Logging import log
 import logging
 import torch
-# from torch import tensor
 import numpy as np
 from sympy import *
 from itertools import product
@@ -34,10 +33,9 @@ class Seed2Lemma:
     op_or.__str__ = op_or_str
     op_neg_str.__str__ = op_neg_str
 
-    DIST = []
-
 
 seed2lemma = Seed2Lemma()
+distri = {}
 
 
 def get_seed_index(last_seed, seed_list, is_tensor=True):
@@ -47,10 +45,12 @@ def get_seed_index(last_seed, seed_list, is_tensor=True):
                 return torch.tensor([i]).cuda() if is_tensor else i
             else:
                 return torch.tensor([i]) if is_tensor else i
+    print(last_seed)
     assert False  # should not be here
 
 
 def generate_combinations(expressions):
+    global seed2lemma
     combinations = []
     n = len(expressions)
     for selection in product([1, -1, 0], repeat=n):
@@ -90,16 +90,29 @@ def generate_lemmas(depth: int, seeds: list):
 
 
 def strictness_distribution(seed_list, seeds_selected):
-    distri_dict = [1 / len(seed_list)] * len(seed_list)
-    res = torch.ones(len(seed_list), 1, dtype=torch.float32)
+    global distri
+    if len(distri) == 0:
+        for seed in seed_list:
+            distri.update({seed: [1 / (len(seed_list))] * (len(seed_list))})
+    res = []
     for i, every_seed in enumerate(seeds_selected):
         begin = every_seed.find("(")
         end = len(every_seed) - 1
         every_seed = every_seed[begin + 1:end]
-        res[get_seed_index(every_seed, seed_list, False), 0] *= distri_dict[i]
+        for to_seed in seeds_selected:
+            begin = to_seed.find("(")
+            end = len(to_seed) - 1
+            to_seed = to_seed[begin + 1:end]
+            if to_seed != every_seed:
+                index = get_seed_index(to_seed, seed_list, False)
+                distri[every_seed][index] *= config.DISCOUNTER
+                distri[every_seed] = normalization(distri[every_seed])
+        res.append(torch.tensor(distri[every_seed]).cuda())
+    ans = torch.unsqueeze(torch.mean(torch.stack(res, dim=0), dim=0), dim=1)
     if torch.cuda.is_available():
-        res = res.cuda()
-    return res
+        ans = ans.cuda()
+    # print(distri)
+    return ans
 
 
 def normalization(dist):
